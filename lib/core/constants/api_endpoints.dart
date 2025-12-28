@@ -1,0 +1,151 @@
+// Complete API Endpoints - Matching Backend Exactly
+// lib/core/constants/api_endpoints.dart
+
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+class ApiEndpoints {
+  static String get baseUrl => dotenv.env['API_BASE_URL'] ?? '';
+
+  // ==================== AUTH ====================
+  static const String login = '/auth/login';
+  static const String register = '/auth/register';
+  static const String logout = '/auth/logout';
+  static const String refreshToken = '/auth/refresh';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
+  static const String verifyEmail = '/auth/verify-email';
+
+  // ==================== USER ====================
+  static const String me = '/users/me';
+  static const String updateProfile = '/users/me';
+  static const String uploadAvatar = '/users/me/avatar';
+  static const String changePassword = '/users/me/password';
+  static const String deleteAccount = '/users/me';
+  static String publicProfile(String id) => '/users/$id/public-profile';
+
+  // ==================== JOBS ====================
+  // Backend: app.use('/api/v1/jobs', jobRoutes)
+  static const String jobs = '/jobs';
+  static const String featuredJobs = '/jobs/featured';
+  static const String jobCategories = '/jobs/categories';
+
+  // Job by ID
+  static String job(String id) => '/jobs/$id'; // Used for GET, PUT (Update), and DELETE
+  static String similarJobs(String id) => '/jobs/$id/similar';
+
+  // Employer routes (special route in job.routes.js)
+
+  static const String myJobs = '/jobs/my-jobs'; // Fixed
+  static String updateJobStatus(String id) => '/jobs/$id/status';
+  static String jobApplicants(String id) => '/jobs/$id/applicants';
+
+  // ==================== MARKETPLACE ====================
+  // Backend: app.use('/api/v1/marketplace', marketplaceRoutes)
+  static const String products = '/marketplace/products';
+  static const String nearbyProducts = '/marketplace/products/nearby';
+  static const String categories = '/marketplace/categories';
+
+  // Product by ID
+  static String product(String id) => '/marketplace/products/$id';
+
+  // My products
+  static const String myProducts = '/marketplace/my-products';
+
+  // Product by seller
+  static String productsBySeller(String sellerId) =>
+      '/marketplace/products/seller/$sellerId';
+
+  // Product actions
+  static String markProductSold(String id) =>
+      '/marketplace/products/$id/mark-sold';
+  static String reportProduct(String id) =>
+      '/marketplace/products/$id/report';
+
+  // ==================== APPLICATIONS ====================
+  // Backend: app.use('/api/v1/applications', applicationRoutes)
+  // Routes inside application.routes.js:
+  //   - router.get('/my-applications', ...)
+  //   - router.post('/jobs/:jobId/apply', ...)
+  //   - router.get('/applications/:id', ...)
+
+  // Job Seeker routes
+  static const String myApplications = '/applications/my-applications';
+  static String applyJob(String jobId) => '/applications/jobs/$jobId/apply';
+  static String withdrawApplication(String id) =>
+      '/applications/applications/$id/withdraw';
+
+  // Shared routes
+  static const String applicationStats = '/applications/applications/stats';
+  static String application(String id) => '/applications/applications/$id';
+
+  // Employer routes
+  static String updateApplicationStatus(String id) =>
+      '/applications/applications/$id/status';
+  static String scheduleInterview(String id) =>
+      '/applications/applications/$id/interview';
+  static String rejectApplication(String id) =>
+      '/applications/applications/$id/reject';
+  static String shortlistApplication(String id) =>
+      '/applications/applications/$id/shortlist';
+
+  // ==================== CHAT ====================
+  // Backend: app.use('/api/v1/chats', chatRoutes)
+  static const String chats = '/chats';
+  static String chat(String id) => '/chats/$id';
+  static String chatMessages(String id) => '/chats/$id/messages';
+  static String startChat(String productId) => '/chats/product/$productId';
+  static String sendMessage(String chatId) => '/chats/$chatId/messages';
+  static String markAsRead(String chatId) => '/chats/$chatId/read';
+  static String deleteMessage(String messageId) => '/chats/messages/$messageId';
+
+  // ==================== COMPANIES ====================
+  // Backend: app.use('/api/v1/companies', companyRoutes)
+  static const String companies = '/companies';
+  static String company(String id) => '/companies/$id';
+  static const String myCompany = '/companies/my-company';
+  static const String searchUsers = '/users/search';
+  // Admin endpoints
+  static String companyAdmins(String companyId) => '/companies/$companyId/admins';
+  static String removeCompanyAdmin(String companyId, String adminId) =>
+      '/companies/$companyId/admins/$adminId';
+
+  // ==================== PAYMENTS ====================
+  // Backend: app.use('/api/v1/payments', paymentRoutes)
+  static const String createPayment = '/payments/create';
+  static String paymentStatus(String orderId) => '/payments/status/$orderId';
+  static const String balance = '/payments/balance';
+  static const String payout = '/payments/payout';
+  static const String transactions = '/payments/transactions';
+  static const String paymentMethods = '/payments/methods';
+
+  // ==================== ANALYTICS ====================
+  // Backend: app.use('/api/v1/analytics', analyticsRoutes)
+  static const String analytics = '/analytics';
+  static const String dashboardStats = '/analytics/user'; // Matches your router.get('/user')
+  static const String userAnalytics = '/analytics/users';
+  static const String jobAnalytics = '/analytics/jobs';
+  static const String marketplaceAnalytics = '/analytics/marketplace';
+
+  // ==================== ADMIN ====================
+  // Backend: app.use('/api/v1/admin', adminRoutes)
+  static const String adminUsers = '/admin/users';
+  static const String adminJobs = '/admin/jobs';
+  static const String adminProducts = '/admin/products';
+  static const String adminReports = '/admin/reports';
+  static String adminUser(String id) => '/admin/users/$id';
+  static String banUser(String id) => '/admin/users/$id/ban';
+  static String unbanUser(String id) => '/admin/users/$id/unban';
+
+  // ==================== GUEST ====================
+  // Backend: app.use('/api/v1/guest', guestRoutes)
+  static const String guestLogin = '/guest/login';
+  static const String guestJobs = '/guest/jobs';
+  static const String guestProducts = '/guest/products';
+}
+
+// Helper extension for building full URLs
+extension ApiEndpointsExtension on ApiEndpoints {
+  static String fullUrl(String endpoint) {
+    return '${ApiEndpoints.baseUrl}${endpoint}';
+  }
+}
