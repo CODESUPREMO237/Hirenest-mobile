@@ -1,6 +1,6 @@
 // ============================================================================
 // auth_service.dart (COMPLETE - Both Firebase & Backend JWT Tokens)
-// lib/core/services/auth_service.dart
+// lib/core/repositories/auth_service.dart
 // ============================================================================
 
 import 'dart:convert';
@@ -105,6 +105,7 @@ class AuthService {
 
   // ---------------- Auth State ----------------
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
+
   User? get currentFirebaseUser => _firebaseAuth.currentUser;
 
   // ---------------- Token Management ----------------
@@ -123,7 +124,8 @@ class AuthService {
       final token = await user.getIdToken(forceRefresh);
 
       if (token != null) {
-        print('✅ [AuthService.getIdToken] Firebase token: ${token.substring(0, 30)}...');
+        print('✅ [AuthService.getIdToken] Firebase token: ${token.substring(
+            0, 30)}...');
       } else {
         print('⚠️ [AuthService.getIdToken] Firebase token is null');
       }
@@ -131,7 +133,8 @@ class AuthService {
       return token;
     } catch (e, stackTrace) {
       print('❌ [AuthService.getIdToken] Error: $e');
-      AppLogger.error('Error getting Firebase token', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+          'Error getting Firebase token', error: e, stackTrace: stackTrace);
       return null;
     }
   }
@@ -150,17 +153,20 @@ class AuthService {
         return null;
       }
 
-      print('✅ [AuthService.getBackendToken] Backend JWT: ${token.substring(0, 30)}...');
+      print('✅ [AuthService.getBackendToken] Backend JWT: ${token.substring(
+          0, 30)}...');
 
       // Check if token is expired and refresh if needed
       if (!forceRefresh) {
-        final expiryStr = await _storage.read(key: '${StorageKeys.authToken}_expiry');
+        final expiryStr = await _storage.read(
+            key: '${StorageKeys.authToken}_expiry');
         if (expiryStr != null) {
           final expiry = DateTime.parse(expiryStr);
 
           // Refresh if token expires in less than 5 minutes
           if (expiry.isBefore(DateTime.now().add(const Duration(minutes: 5)))) {
-            print('🔄 [AuthService.getBackendToken] Token expiring soon, refreshing...');
+            print(
+                '🔄 [AuthService.getBackendToken] Token expiring soon, refreshing...');
             await refreshAccessToken();
             final newToken = await _storage.read(key: StorageKeys.authToken);
             print('✅ [AuthService.getBackendToken] Token refreshed');
@@ -172,7 +178,8 @@ class AuthService {
       return token;
     } catch (e, stackTrace) {
       print('❌ [AuthService.getBackendToken] Error: $e');
-      AppLogger.error('Error getting backend token', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+          'Error getting backend token', error: e, stackTrace: stackTrace);
       return null;
     }
   }
@@ -181,7 +188,8 @@ class AuthService {
   Future<void> _storeTokens(AuthTokens tokens) async {
     print('💾 [AuthService._storeTokens] Storing backend JWT tokens...');
     await _storage.write(key: StorageKeys.authToken, value: tokens.accessToken);
-    await _storage.write(key: StorageKeys.refreshToken, value: tokens.refreshToken);
+    await _storage.write(
+        key: StorageKeys.refreshToken, value: tokens.refreshToken);
 
     // Store expiry timestamp
     final expiryTime = DateTime.now().add(Duration(seconds: tokens.expiresIn));
@@ -201,7 +209,8 @@ class AuthService {
     }
 
     // Check if token is expired
-    final expiryStr = await _storage.read(key: '${StorageKeys.authToken}_expiry');
+    final expiryStr = await _storage.read(
+        key: '${StorageKeys.authToken}_expiry');
     if (expiryStr != null) {
       final expiry = DateTime.parse(expiryStr);
 
@@ -307,10 +316,11 @@ class AuthService {
 
         // Store user data
         final user = data['user'];
-        await _storage.write(key: StorageKeys.userId, value: user['_id']);
+        await _storage.write(key: StorageKeys.userId, value: user['id'] ?? user['_id']);
         await _storage.write(key: StorageKeys.userEmail, value: user['email']);
         await _storage.write(key: StorageKeys.userRole, value: user['role']);
-        await _storage.write(key: StorageKeys.userData, value: jsonEncode(user));
+        await _storage.write(
+            key: StorageKeys.userData, value: jsonEncode(user));
 
         // Sign in to Firebase with custom token
         final firebaseToken = data['firebaseToken'];
@@ -379,10 +389,11 @@ class AuthService {
 
         // Store user data
         final user = data['user'];
-        await _storage.write(key: StorageKeys.userId, value: user['_id']);
+        await _storage.write(key: StorageKeys.userId, value: user['id'] ?? user['_id']);
         await _storage.write(key: StorageKeys.userEmail, value: user['email']);
         await _storage.write(key: StorageKeys.userRole, value: user['role']);
-        await _storage.write(key: StorageKeys.userData, value: jsonEncode(user));
+        await _storage.write(
+            key: StorageKeys.userData, value: jsonEncode(user));
 
         AppLogger.info('Login successful: ${user['email']}');
         print('✅ [AuthService.login] Login complete - both tokens stored');
@@ -419,154 +430,149 @@ class AuthService {
   }
 
 
-
-
-
-
 // ============================================================================
 // OAuth Implementation Using app_links (Modern Replacement for uni_links)
 // Add to your auth_service.dart
 // ============================================================================
 
 
-
-
-
-
   /// ✅ GitHub Sign-In using app_links
   Future<AuthResult> signInWithGithub() async {
-  try {
-  print('🔐 [AuthService.signInWithGithub] Starting GitHub authentication...');
+    try {
+      print(
+          '🔐 [AuthService.signInWithGithub] Starting GitHub authentication...');
 
-  final clientId = AppConfig.githubClientId;
-  final redirectUri = AppConfig.githubRedirectUri;
+      final clientId = AppConfig.githubClientId;
+      final redirectUri = AppConfig.githubRedirectUri;
 
-  print('📋 [GitHub] Config check:');
-  print('   Client ID: ${clientId.isNotEmpty ? "✅ ${clientId.substring(0, 10)}..." : "❌ MISSING"}');
-  print('   Redirect URI: ${redirectUri.isNotEmpty ? "✅ $redirectUri" : "❌ MISSING"}');
+      print('📋 [GitHub] Config check:');
+      print('   Client ID: ${clientId.isNotEmpty ? "✅ ${clientId.substring(
+          0, 10)}..." : "❌ MISSING"}');
+      print('   Redirect URI: ${redirectUri.isNotEmpty
+          ? "✅ $redirectUri"
+          : "❌ MISSING"}');
 
-  if (clientId.isEmpty || redirectUri.isEmpty) {
-  throw AuthException('GitHub OAuth not configured');
-  }
+      if (clientId.isEmpty || redirectUri.isEmpty) {
+        throw AuthException('GitHub OAuth not configured');
+      }
 
-  // Generate state for CSRF protection
-  final state = _generateRandomString(32);
-  print('🔐 [GitHub] Generated state: ${state.substring(0, 10)}...');
+      // Generate state for CSRF protection
+      final state = _generateRandomString(32);
+      print('🔐 [GitHub] Generated state: ${state.substring(0, 10)}...');
 
-  // Build authorization URL
-  final authUrl = Uri.https('github.com', '/login/oauth/authorize', {
-  'client_id': clientId,
-  'redirect_uri': redirectUri,
-  'scope': 'read:user user:email',
-  'state': state,
-  });
+      // Build authorization URL
+      final authUrl = Uri.https('github.com', '/login/oauth/authorize', {
+        'client_id': clientId,
+        'redirect_uri': redirectUri,
+        'scope': 'read:user user:email',
+        'state': state,
+      });
 
-  print('🌐 [GitHub] Authorization URL: $authUrl');
+      print('🌐 [GitHub] Authorization URL: $authUrl');
 
-  // Create a completer to wait for the callback
-  _oauthCompleter = Completer<Map<String, String>>();
+      // Create a completer to wait for the callback
+      _oauthCompleter = Completer<Map<String, String>>();
 
-  // Set up deep link listener BEFORE opening browser
-  print('👂 [GitHub] Setting up app_links listener...');
-  _linkSubscription = _appLinks.uriLinkStream.listen(
-  (Uri uri) {
-  print('📥 [GitHub] Deep link received: $uri');
+      // Set up deep link listener BEFORE opening browser
+      print('👂 [GitHub] Setting up app_links listener...');
+      _linkSubscription = _appLinks.uriLinkStream.listen(
+            (Uri uri) {
+          print('📥 [GitHub] Deep link received: $uri');
 
-  if (uri.scheme == 'com.jobconnect' &&
-  uri.host == 'auth' &&
-  uri.path == '/github/callback') {
+          if (uri.scheme == 'com.jobconnect' &&
+              uri.host == 'auth' &&
+              uri.path == '/github/callback') {
+            print('✅ [GitHub] Valid GitHub OAuth callback detected!');
 
-  print('✅ [GitHub] Valid GitHub OAuth callback detected!');
+            if (_oauthCompleter != null && !_oauthCompleter!.isCompleted) {
+              final params = uri.queryParameters;
+              final code = params['code'];
+              final returnedState = params['state'];
+              final error = params['error'];
 
-  if (_oauthCompleter != null && !_oauthCompleter!.isCompleted) {
-  final params = uri.queryParameters;
-  final code = params['code'];
-  final returnedState = params['state'];
-  final error = params['error'];
+              print('🔍 [GitHub] Callback parameters:');
+              print('   Code: ${code?.substring(0, 10)}...');
+              print('   State: ${returnedState?.substring(0, 10)}...');
+              print('   Error: $error');
 
-  print('🔍 [GitHub] Callback parameters:');
-  print('   Code: ${code?.substring(0, 10)}...');
-  print('   State: ${returnedState?.substring(0, 10)}...');
-  print('   Error: $error');
+              if (error != null) {
+                print('❌ [GitHub] OAuth error: $error');
+                _oauthCompleter!.completeError(
+                  AuthException('GitHub authorization failed: $error'),
+                );
+              } else if (code == null) {
+                print('❌ [GitHub] No code in callback');
+                _oauthCompleter!.completeError(
+                  AuthException('No authorization code received'),
+                );
+              } else if (returnedState != state) {
+                print('❌ [GitHub] State mismatch!');
+                _oauthCompleter!.completeError(
+                  AuthException('State mismatch - possible security issue'),
+                );
+              } else {
+                print('✅ [GitHub] Code and state verified!');
+                _oauthCompleter!.complete({
+                  'code': code,
+                  'state': returnedState!,
+                });
+              }
+            }
+          } else {
+            print('ℹ️ [GitHub] Deep link not for GitHub OAuth: $uri');
+          }
+        },
+        onError: (err) {
+          print('❌ [GitHub] Deep link stream error: $err');
+          if (_oauthCompleter != null && !_oauthCompleter!.isCompleted) {
+            _oauthCompleter!.completeError(err);
+          }
+        },
+      );
 
-  if (error != null) {
-  print('❌ [GitHub] OAuth error: $error');
-  _oauthCompleter!.completeError(
-  AuthException('GitHub authorization failed: $error'),
-  );
-  } else if (code == null) {
-  print('❌ [GitHub] No code in callback');
-  _oauthCompleter!.completeError(
-  AuthException('No authorization code received'),
-  );
-  } else if (returnedState != state) {
-  print('❌ [GitHub] State mismatch!');
-  _oauthCompleter!.completeError(
-  AuthException('State mismatch - possible security issue'),
-  );
-  } else {
-  print('✅ [GitHub] Code and state verified!');
-  _oauthCompleter!.complete({
-  'code': code,
-  'state': returnedState!,
-  });
-  }
-  }
-  } else {
-  print('ℹ️ [GitHub] Deep link not for GitHub OAuth: $uri');
-  }
-  },
-  onError: (err) {
-  print('❌ [GitHub] Deep link stream error: $err');
-  if (_oauthCompleter != null && !_oauthCompleter!.isCompleted) {
-  _oauthCompleter!.completeError(err);
-  }
-  },
-  );
+      // Small delay to ensure listener is ready
+      await Future.delayed(const Duration(milliseconds: 100));
 
-  // Small delay to ensure listener is ready
-  await Future.delayed(const Duration(milliseconds: 100));
+      // Open browser with OAuth URL
+      print('🌐 [GitHub] Launching browser...');
+      final launched = await launchUrl(
+        authUrl,
+        mode: LaunchMode.externalApplication,
+      );
 
-  // Open browser with OAuth URL
-  print('🌐 [GitHub] Launching browser...');
-  final launched = await launchUrl(
-  authUrl,
-  mode: LaunchMode.externalApplication,
-  );
+      if (!launched) {
+        print('❌ [GitHub] Failed to launch browser');
+        await _cleanupOAuthListener();
+        throw AuthException('Could not open browser for GitHub authentication');
+      }
 
-  if (!launched) {
-  print('❌ [GitHub] Failed to launch browser');
-  await _cleanupOAuthListener();
-  throw AuthException('Could not open browser for GitHub authentication');
-  }
+      print('⏳ [GitHub] Waiting for OAuth callback (timeout: 5 minutes)...');
 
-  print('⏳ [GitHub] Waiting for OAuth callback (timeout: 5 minutes)...');
+      // Wait for callback with timeout
+      final params = await _oauthCompleter!.future.timeout(
+        const Duration(minutes: 5),
+        onTimeout: () {
+          print('⏱️ [GitHub] OAuth timed out');
+          throw AuthException('GitHub sign-in timed out');
+        },
+      );
 
-  // Wait for callback with timeout
-  final params = await _oauthCompleter!.future.timeout(
-  const Duration(minutes: 5),
-  onTimeout: () {
-  print('⏱️ [GitHub] OAuth timed out');
-  throw AuthException('GitHub sign-in timed out');
-  },
-  );
+      // Clean up listener
+      await _cleanupOAuthListener();
 
-  // Clean up listener
-  await _cleanupOAuthListener();
+      final code = params['code']!;
+      print('✅ [GitHub] Authorization code received: ${code.substring(
+          0, 10)}...');
 
-  final code = params['code']!;
-  print('✅ [GitHub] Authorization code received: ${code.substring(0, 10)}...');
-
-  // Exchange code for tokens via backend
-  return await _exchangeGithubCode(code, redirectUri);
-
-  } catch (e, st) {
-  await _cleanupOAuthListener();
-  print('❌ [GitHub] Exception: $e');
-  AppLogger.error('GitHub sign-in failed', error: e, stackTrace: st);
-  if (e is AuthException) rethrow;
-  throw AuthException('GitHub sign-in failed: ${e.toString()}');
-  }
+      // Exchange code for tokens via backend
+      return await _exchangeGithubCode(code, redirectUri);
+    } catch (e, st) {
+      await _cleanupOAuthListener();
+      print('❌ [GitHub] Exception: $e');
+      AppLogger.error('GitHub sign-in failed', error: e, stackTrace: st);
+      if (e is AuthException) rethrow;
+      throw AuthException('GitHub sign-in failed: ${e.toString()}');
+    }
   }
 
 
@@ -579,7 +585,8 @@ class AuthService {
   /// Microsoft Sign-In with PKCE (Secure for mobile apps)
   Future<AuthResult> signInWithMicrosoft() async {
     try {
-      print('🔐 [AuthService.signInWithMicrosoft] Starting Microsoft authentication with PKCE...');
+      print(
+          '🔐 [AuthService.signInWithMicrosoft] Starting Microsoft authentication with PKCE...');
 
       final clientId = AppConfig.microsoftClientId;
       final tenantId = AppConfig.microsoftTenantId;
@@ -623,7 +630,6 @@ class AuthService {
           if (uri.scheme == 'com.jobconnect' &&
               uri.host == 'auth' &&
               uri.path == '/microsoft/callback') {
-
             if (_oauthCompleter != null && !_oauthCompleter!.isCompleted) {
               final params = uri.queryParameters;
               final code = params['code'];
@@ -663,10 +669,12 @@ class AuthService {
       await Future.delayed(const Duration(milliseconds: 100));
 
       // Open browser
-      final launched = await launchUrl(authUrl, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+          authUrl, mode: LaunchMode.externalApplication);
       if (!launched) {
         await _cleanupOAuthListener();
-        throw AuthException('Could not open browser for Microsoft authentication');
+        throw AuthException(
+            'Could not open browser for Microsoft authentication');
       }
 
       print('⏳ [Microsoft] Waiting for OAuth callback...');
@@ -684,8 +692,8 @@ class AuthService {
       print('✅ [Microsoft] Authorization code received');
 
       // Exchange code with PKCE verifier
-      return await _exchangeMicrosoftCode(code, codeVerifierFromCallback, redirectUri);
-
+      return await _exchangeMicrosoftCode(
+          code, codeVerifierFromCallback, redirectUri);
     } catch (e, st) {
       await _cleanupOAuthListener();
       AppLogger.error('Microsoft sign-in failed', error: e, stackTrace: st);
@@ -695,11 +703,9 @@ class AuthService {
   }
 
   /// Exchange Microsoft code for backend tokens (with PKCE)
-  Future<AuthResult> _exchangeMicrosoftCode(
-      String code,
+  Future<AuthResult> _exchangeMicrosoftCode(String code,
       String codeVerifier,
-      String redirectUri,
-      ) async {
+      String redirectUri,) async {
     print('🔄 [Microsoft] Exchanging code with backend (PKCE)');
 
     final response = await http.post(
@@ -721,7 +727,7 @@ class AuthService {
       await _storeTokens(tokens);
 
       final user = data['user'];
-      await _storage.write(key: StorageKeys.userId, value: user['_id']);
+      await _storage.write(key: StorageKeys.userId, value: user['id'] ?? user['_id']);
       await _storage.write(key: StorageKeys.userEmail, value: user['email']);
       await _storage.write(key: StorageKeys.userRole, value: user['role']);
       await _storage.write(key: StorageKeys.userData, value: jsonEncode(user));
@@ -741,7 +747,8 @@ class AuthService {
       );
     } else {
       final errorData = jsonDecode(response.body);
-      throw AuthException(errorData['message'] ?? 'Microsoft authentication failed');
+      throw AuthException(
+          errorData['message'] ?? 'Microsoft authentication failed');
     }
   }
 
@@ -800,7 +807,8 @@ class AuthService {
                 AuthException('State mismatch'),
               );
             } else {
-              _oauthCompleter!.complete({'code': code, 'state': returnedState!});
+              _oauthCompleter!.complete(
+                  {'code': code, 'state': returnedState!});
             }
           }
         }
@@ -808,7 +816,8 @@ class AuthService {
 
       await Future.delayed(const Duration(milliseconds: 100));
 
-      final launched = await launchUrl(authUrl, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+          authUrl, mode: LaunchMode.externalApplication);
       if (!launched) {
         await _cleanupOAuthListener();
         throw AuthException('Could not open browser');
@@ -826,7 +835,6 @@ class AuthService {
 
       AppLogger.info('Microsoft account linked successfully');
       print('✅ [Microsoft Link] Complete!');
-
     } catch (e, st) {
       await _cleanupOAuthListener();
       AppLogger.error('Microsoft linking failed', error: e, stackTrace: st);
@@ -858,7 +866,8 @@ class AuthService {
       await fetchProfile();
     } else {
       final errorData = jsonDecode(response.body);
-      throw AuthException(errorData['message'] ?? 'Failed to link Microsoft account');
+      throw AuthException(
+          errorData['message'] ?? 'Failed to link Microsoft account');
     }
   }
 
@@ -868,71 +877,68 @@ class AuthService {
 
   /// Clean up OAuth listener
   Future<void> _cleanupOAuthListener() async {
-  print('🧹 Cleaning up OAuth listener...');
-  await _linkSubscription?.cancel();
-  _linkSubscription = null;
-  _oauthCompleter = null;
+    print('🧹 Cleaning up OAuth listener...');
+    await _linkSubscription?.cancel();
+    _linkSubscription = null;
+    _oauthCompleter = null;
   }
 
   /// Exchange GitHub code for backend tokens
-  Future<AuthResult> _exchangeGithubCode(String code, String redirectUri) async {
-  print('🔄 [GitHub] Exchanging code with backend at: $baseUrl/github/exchange');
+  Future<AuthResult> _exchangeGithubCode(String code,
+      String redirectUri) async {
+    print(
+        '🔄 [GitHub] Exchanging code with backend at: $baseUrl/github/exchange');
 
-  final response = await http.post(
-  Uri.parse('$baseUrl/github/exchange'),
-  headers: {'Content-Type': 'application/json'},
-  body: jsonEncode({'code': code}),
-  ).timeout(const Duration(seconds: 30));
+    final response = await http.post(
+      Uri.parse('$baseUrl/github/exchange'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'code': code}),
+    ).timeout(const Duration(seconds: 30));
 
-  print('📥 [GitHub] Backend response status: ${response.statusCode}');
+    print('📥 [GitHub] Backend response status: ${response.statusCode}');
 
-  if (response.statusCode == 200) {
-  final data = jsonDecode(response.body)['data'];
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body)['data'];
 
-  final tokens = AuthTokens.fromJson(data['tokens']);
-  await _storeTokens(tokens);
-  print('✅ [GitHub] Backend JWT tokens stored');
+      final tokens = AuthTokens.fromJson(data['tokens']);
+      await _storeTokens(tokens);
+      print('✅ [GitHub] Backend JWT tokens stored');
 
-  final user = data['user'];
-  await _storage.write(key: StorageKeys.userId, value: user['_id']);
-  await _storage.write(key: StorageKeys.userEmail, value: user['email']);
-  await _storage.write(key: StorageKeys.userRole, value: user['role']);
-  await _storage.write(key: StorageKeys.userData, value: jsonEncode(user));
-  print('✅ [GitHub] User data stored: ${user['email']}');
+      final user = data['user'];
+      await _storage.write(key: StorageKeys.userId, value: user['id'] ?? user['_id']);
+      await _storage.write(key: StorageKeys.userEmail, value: user['email']);
+      await _storage.write(key: StorageKeys.userRole, value: user['role']);
+      await _storage.write(key: StorageKeys.userData, value: jsonEncode(user));
+      print('✅ [GitHub] User data stored: ${user['email']}');
 
-  final firebaseToken = data['firebaseToken'];
-  if (firebaseToken != null && firebaseToken.isNotEmpty) {
-  await _firebaseAuth.signInWithCustomToken(firebaseToken);
-  print('✅ [GitHub] Firebase authentication complete');
+      final firebaseToken = data['firebaseToken'];
+      if (firebaseToken != null && firebaseToken.isNotEmpty) {
+        await _firebaseAuth.signInWithCustomToken(firebaseToken);
+        print('✅ [GitHub] Firebase authentication complete');
+      }
+
+      AppLogger.info('GitHub authentication successful: ${user['email']}');
+      print('🎉 [GitHub] Authentication flow complete!');
+
+      return AuthResult(
+        user: user,
+        tokens: tokens,
+        isNewUser: data['isNewUser'] ?? false,
+      );
+    } else if (response.statusCode == 404) {
+      final errorData = jsonDecode(response.body);
+      print('❌ [GitHub] User not found: ${errorData['message']}');
+      throw AuthException(
+        errorData['message'] ?? 'Account not found. Please register first.',
+        code: errorData['code'],
+      );
+    } else {
+      final errorData = jsonDecode(response.body);
+      print('❌ [GitHub] Backend error: ${errorData['message']}');
+      throw AuthException(
+          errorData['message'] ?? 'GitHub authentication failed');
+    }
   }
-
-  AppLogger.info('GitHub authentication successful: ${user['email']}');
-  print('🎉 [GitHub] Authentication flow complete!');
-
-  return AuthResult(
-  user: user,
-  tokens: tokens,
-  isNewUser: data['isNewUser'] ?? false,
-  );
-  } else if (response.statusCode == 404) {
-  final errorData = jsonDecode(response.body);
-  print('❌ [GitHub] User not found: ${errorData['message']}');
-  throw AuthException(
-  errorData['message'] ?? 'Account not found. Please register first.',
-  code: errorData['code'],
-  );
-  } else {
-  final errorData = jsonDecode(response.body);
-  print('❌ [GitHub] Backend error: ${errorData['message']}');
-  throw AuthException(errorData['message'] ?? 'GitHub authentication failed');
-  }
-  }
-
-
-
-
-
-
 
 
   Future<AuthResult> _completeSocialAuth(String provider, String idToken) async {
@@ -945,7 +951,7 @@ class AuthService {
         case 'github':
           credential = GithubAuthProvider.credential(idToken);
           break;
-        case 'twitter':
+        case 'microsoft':
           credential = TwitterAuthProvider.credential(
             accessToken: idToken,
             secret: '',
@@ -978,18 +984,26 @@ class AuthService {
         await _storeTokens(tokens);
 
         final user = data['user'];
-        await _storage.write(key: StorageKeys.userId, value: user['_id']);
+        await _storage.write(key: StorageKeys.userId, value: user['id'] ?? user['_id']);
         await _storage.write(key: StorageKeys.userEmail, value: user['email']);
         await _storage.write(key: StorageKeys.userRole, value: user['role']);
         await _storage.write(key: StorageKeys.userData, value: jsonEncode(user));
 
-        AppLogger.info('Social authentication successful: ${user['email']}');
+        if (data['isNewUser'] == true) {
+          AppLogger.info('New account created via $provider: ${user['email']}');
+        } else {
+          AppLogger.info('Existing user logged in via $provider: ${user['email']}');
+        }
 
         return AuthResult(
           user: user,
           tokens: tokens,
           isNewUser: data['isNewUser'] ?? false,
         );
+      } else if (res.statusCode == 404) {
+        // Fallback: Backend didn't auto-create, so we create here
+        print('📝 [Social Auth] 404 received - creating account via fallback...');
+        return await _createSocialAccount(provider, userCredential, firebaseToken);
       } else {
         final data = jsonDecode(res.body);
         throw AuthException(data['message'] ?? 'Social authentication failed');
@@ -1003,6 +1017,64 @@ class AuthService {
       throw AuthException('Social authentication failed. Please try again.');
     }
   }
+
+  /// ✅ Fallback method to create social account from Flutter side
+  /// (Only used if backend doesn't auto-create)
+  Future<AuthResult> _createSocialAccount(
+      String provider,
+      UserCredential userCredential,
+      String firebaseToken,
+      ) async {
+    try {
+      final user = userCredential.user!;
+
+      print('📝 [Social Auth Fallback] Creating account for: ${user.email}');
+
+      // Call backend registration endpoint
+      final res = await http.post(
+        Uri.parse('$baseUrl/social/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'provider': provider,
+          'idToken': firebaseToken,
+          'email': user.email,
+          'displayName': user.displayName,
+          'photoURL': user.photoURL,
+        }),
+      );
+
+      if (res.statusCode == 201 || res.statusCode == 200) {
+        final data = jsonDecode(res.body)['data'];
+
+        final tokens = AuthTokens.fromJson(data['tokens']);
+        await _storeTokens(tokens);
+
+        final userData = data['user'];
+        await _storage.write(key: StorageKeys.userId, value: userData['id'] ?? userData['_id']);
+        await _storage.write(key: StorageKeys.userEmail, value: userData['email']);
+        await _storage.write(key: StorageKeys.userRole, value: userData['role']);
+        await _storage.write(key: StorageKeys.userData, value: jsonEncode(userData));
+
+        AppLogger.info('Social account created via fallback: ${userData['email']}');
+        print('✅ [Social Auth Fallback] Account created');
+
+        return AuthResult(
+          user: userData,
+          tokens: tokens,
+          isNewUser: true,
+        );
+      } else {
+        final data = jsonDecode(res.body);
+        throw AuthException(data['message'] ?? 'Failed to create account');
+      }
+    } catch (e, st) {
+      AppLogger.error('Social account creation failed', error: e, stackTrace: st);
+      if (e is AuthException) rethrow;
+      throw AuthException('Failed to create account. Please try again.');
+    }
+  }
+
+
 
   Future<String> _getGoogleIdToken() async {
     try {

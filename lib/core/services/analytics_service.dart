@@ -1,6 +1,6 @@
 // ============================================================================
 // analytics_service.dart
-// lib/core/services/analytics_service.dart
+// lib/core/repositories/analytics_service.dart
 // ============================================================================
 
 import 'package:firebase_analytics/firebase_analytics.dart';

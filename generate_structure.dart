@@ -7,7 +7,7 @@ final Map<String, List<String>> structure = {
   'lib/core/constants': ['api_endpoints.dart', 'app_constants.dart', 'storage_keys.dart'],
   'lib/core/network': ['api_client.dart', 'api_interceptors.dart', 'socket_client.dart'],
   'lib/core/router': ['app_router.dart'],
-  'lib/core/services': [
+  'lib/core/repositories': [
     'auth_service.dart',
     'storage_service.dart',
     'payment_service.dart',

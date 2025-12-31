@@ -428,7 +428,7 @@ flutter run --release
 flutter test
 
 # Test specific file
-flutter test test/unit/services/auth_service_test.dart
+flutter test test/unit/repositories/auth_service_test.dart
 ```
 
 ### Build for Production

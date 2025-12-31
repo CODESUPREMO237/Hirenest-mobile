@@ -1,7 +1,7 @@
 
 // ============================================================================
 // notification_service.dart
-// lib/core/services/notification_service.dart
+// lib/core/repositories/notification_service.dart
 // ============================================================================
 
 import 'package:firebase_messaging/firebase_messaging.dart';

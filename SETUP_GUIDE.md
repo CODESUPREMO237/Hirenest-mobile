@@ -52,7 +52,7 @@ flutter doctor -v
 *.jks
 *.keystore
 ios/Runner/GoogleService-Info.plist
-android/app/google-services.json
+android/app/google-repositories.json
 ```
 
 #### 1.3 Setup CI/CD (Optional)
@@ -87,7 +87,7 @@ jobs:
 #### 2.1 Create Folder Structure
 ```bash
 # Create all necessary folders
-mkdir -p lib/core/{config,constants,network,router,services,theme,utils,widgets}
+mkdir -p lib/core/{config,constants,network,router,repositories,theme,utils,widgets}
 mkdir -p lib/features/{auth,marketplace,jobs,chat,profile,home}/{data,domain,presentation}
 mkdir -p assets/{images,icons,lottie,fonts}
 ```

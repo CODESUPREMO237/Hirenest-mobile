@@ -128,7 +128,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                       'Connect you with job opportunities',
                       'Personalize your experience',
                       'Send relevant notifications',
-                      'Improve our services',
+                      'Improve our repositories',
                       'Ensure platform security',
                     ]),
                   ],

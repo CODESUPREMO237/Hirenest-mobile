@@ -1,6 +1,6 @@
 // ============================================================================
 // BIOMETRIC AUTHENTICATION SERVICE (UPDATED 2025 API)
-// lib/core/services/biometric_service.dart
+// lib/core/repositories/biometric_service.dart
 // ============================================================================
 
 import 'package:flutter/services.dart';
@@ -121,7 +121,7 @@ class BiometricService {
     }
   }
 
-  // lib/core/services/biometric_service.dart
+  // lib/core/repositories/biometric_service.dart
 
 // Add this inside the BiometricService class:
   Future<bool> hasSavedCredentials() async {

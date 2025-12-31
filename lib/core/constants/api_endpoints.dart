@@ -128,13 +128,16 @@ class ApiEndpoints {
 
   // ==================== ADMIN ====================
   // Backend: app.use('/api/v1/admin', adminRoutes)
+  // ==================== ADMIN ====================
+  static const String adminDashboard = '/admin/dashboard';
   static const String adminUsers = '/admin/users';
-  static const String adminJobs = '/admin/jobs';
-  static const String adminProducts = '/admin/products';
-  static const String adminReports = '/admin/reports';
   static String adminUser(String id) => '/admin/users/$id';
-  static String banUser(String id) => '/admin/users/$id/ban';
-  static String unbanUser(String id) => '/admin/users/$id/unban';
+  static String toggleUserBlock(String id) => '/admin/users/$id/toggle-block';
+  static String deleteUser(String id) => '/admin/users/$id';
+  static String moderateJob(String id) => '/admin/jobs/$id/moderate';
+  static String moderateProduct(String id) => '/admin/products/$id/moderate';
+  static const String adminReported = '/admin/reported';
+
 
   // ==================== GUEST ====================
   // Backend: app.use('/api/v1/guest', guestRoutes)

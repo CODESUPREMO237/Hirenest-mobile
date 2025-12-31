@@ -1,6 +1,6 @@
 // ============================================================================
 // cache_service.dart
-// lib/core/services/cache_service.dart
+// lib/core/repositories/cache_service.dart
 // ============================================================================
 
 import 'dart:convert';

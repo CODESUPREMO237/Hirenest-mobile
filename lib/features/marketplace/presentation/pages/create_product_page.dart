@@ -131,13 +131,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage>
 
   Future<Position?> _determinePosition() async {
     try {
-      // Check if location services are enabled
+      // Check if location repositories are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        AppLogger.warn('Location services are disabled.');
+        AppLogger.warn('Location repositories are disabled.');
         if (mounted) {
           setState(() => _locationError =
-          'Location services are disabled. Please enable location in your device settings.');
+          'Location repositories are disabled. Please enable location in your device settings.');
         }
         return null;
       }
