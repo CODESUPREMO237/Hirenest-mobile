@@ -19,7 +19,6 @@ import '../../features/company/presentation/pages/create_company_page.dart';
 import '../../features/company/presentation/pages/edit_company_page.dart';
 import '../../features/company/presentation/pages/manage_admins_page.dart';
 import '../../features/home/presentation/pages/main_page.dart';
-import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/home/presentation/pages/guest_dashboard.dart';
 
 // Jobs
@@ -321,6 +320,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/company/dashboard',
         builder: (context, state) => const CompanyDashboardPage(),
+      ),
+      // ADD THIS ROUTE HERE:
+      GoRoute(
+        path: '/company/manage-admins',
+        builder: (context, state) => const ManageAdminsPage(),
       ),
       GoRoute(
         path: '/company/create',

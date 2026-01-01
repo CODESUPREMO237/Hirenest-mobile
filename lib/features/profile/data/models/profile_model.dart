@@ -361,6 +361,9 @@ class ProfileDetailsModel {
   final String? bio;
   final String? avatar;
   final ProfileLocationModel? location;
+  final double ratingsAverage;
+  final int ratingsQuantity;
+
 
   ProfileDetailsModel({
     this.firstName,
@@ -369,6 +372,8 @@ class ProfileDetailsModel {
     this.bio,
     this.avatar,
     this.location,
+    this.ratingsAverage = 0.0,
+    this.ratingsQuantity = 0,
   });
 
   String get displayName {
@@ -397,6 +402,9 @@ class ProfileDetailsModel {
       location: json['location'] != null
           ? ProfileLocationModel.fromJson(json['location'])
           : null,
+      // ✅ PARSE RATING FIELDS FROM JSON
+      ratingsAverage: (json['ratingsAverage'] ?? 0).toDouble(),
+      ratingsQuantity: (json['ratingsQuantity'] ?? 0).toInt(),
     );
   }
 
@@ -408,6 +416,8 @@ class ProfileDetailsModel {
       'bio': bio,
       'avatar': avatar,
       'location': location?.toJson(),
+      'ratingsAverage': ratingsAverage,
+      'ratingsQuantity': ratingsQuantity,
     };
   }
 }

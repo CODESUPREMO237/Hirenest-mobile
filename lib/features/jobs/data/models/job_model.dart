@@ -65,6 +65,7 @@ class JobModel {
       return '';
     }
 
+
     return JobModel(
       id: json['_id'] ?? json['id'] ?? '',
       title: json['title'] ?? '',

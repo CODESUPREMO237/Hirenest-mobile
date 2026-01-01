@@ -1,12 +1,14 @@
 // ============================================================================
-// applications_page.dart - ROLE-AWARE VERSION (FIXED)
+// applications_page.dart - WITH RATING FEATURE
 // lib/features/applications/presentation/pages/applications_page.dart
 // ============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/applications_provider.dart'; // ✅ FIXED PATH
+import '../../../reviews/presentation/widgets/rating_dialog.dart';
+import '../providers/applications_provider.dart';
 import '../widgets/application_card.dart';
+
 
 class ApplicationsPage extends ConsumerWidget {
   const ApplicationsPage({super.key});
@@ -83,7 +85,6 @@ class ApplicationsPage extends ConsumerWidget {
                     );
                   }
 
-                  // ✅ Get role safely for card display
                   final isEmployer = roleAsync.whenOrNull(
                     data: (role) => role == 'employer',
                   ) ?? false;
@@ -92,11 +93,38 @@ class ApplicationsPage extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     itemCount: applications.length,
                     itemBuilder: (context, index) {
+                      final application = applications[index];
+
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: ApplicationCard(
-                          application: applications[index],
-                          isEmployerView: isEmployer,
+                        child: Column(
+                          children: [
+                            ApplicationCard(
+                              application: application,
+                              isEmployerView: isEmployer,
+                            ),
+
+                            // ✅ ADD RATING BUTTON FOR JOB SEEKERS
+                            if (!isEmployer && _canRateEmployer(application))
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => _showRatingDialog(
+                                      context,
+                                      ref,
+                                      application,
+                                    ),
+                                    icon: const Icon(Icons.star_outline, size: 18),
+                                    label: const Text('Rate Employer'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.amber[700],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       );
                     },
@@ -133,13 +161,64 @@ class ApplicationsPage extends ConsumerWidget {
     );
   }
 
-  /// Build stats row based on role
+  // ✅ NEW: Check if job seeker can rate employer
+  bool _canRateEmployer(dynamic application) {
+    // Allow rating if:
+    // 1. Application was rejected (to rate interview experience)
+    // 2. Application was accepted and job is completed
+    final status = application.status?.toLowerCase() ?? '';
+    return status == 'rejected' || status == 'completed' || status == 'accepted';
+  }
+
+  // ✅ NEW: Show rating dialog
+  void _showRatingDialog(
+      BuildContext context,
+      WidgetRef ref,
+      dynamic application,
+      ) {
+    // Extract employer info safely
+    final employerId = application.job?.employer?.id ??
+        application.job?.employerId ?? '';
+    final employerName = application.job?.company?.name ??
+        application.job?.employer?.name ??
+        'Employer';
+    final jobId = application.job?.id ?? application.jobId ?? '';
+
+    if (employerId.isEmpty || jobId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot submit rating: Missing employer or job information'),
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => RatingDialog(
+        jobId: jobId,
+        revieweeId: employerId,
+        revieweeName: employerName,
+      ),
+    ).then((success) {
+      if (success == true) {
+        // Refresh applications list to show updated status
+        ref.invalidate(myApplicationsProvider);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Thank you for your feedback!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
+  }
+
   Widget _buildStatsRow(BuildContext context, Map<String, int> stats, String role) {
-    // ✅ SAFE: Extract values with default fallback
     int getStatValue(String key) => stats[key] ?? 0;
 
     if (role == 'employer') {
-      // Employer sees: Total, Pending, Reviewing, Interviewing
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -150,7 +229,6 @@ class ApplicationsPage extends ConsumerWidget {
         ],
       );
     } else {
-      // Job seeker sees: Total, Pending, Shortlisted, Rejected
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -163,7 +241,6 @@ class ApplicationsPage extends ConsumerWidget {
     }
   }
 
-  /// Build empty state based on role
   Widget _buildEmptyState(BuildContext context, String role) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,

@@ -185,19 +185,55 @@ class AuthService {
   }
 
   /// Store authentication tokens securely
+// Replace your _storeTokens method in auth_service.dart with this:
+
+  /// Store authentication tokens securely with verification
   Future<void> _storeTokens(AuthTokens tokens) async {
     print('💾 [AuthService._storeTokens] Storing backend JWT tokens...');
-    await _storage.write(key: StorageKeys.authToken, value: tokens.accessToken);
-    await _storage.write(
-        key: StorageKeys.refreshToken, value: tokens.refreshToken);
 
-    // Store expiry timestamp
-    final expiryTime = DateTime.now().add(Duration(seconds: tokens.expiresIn));
-    await _storage.write(
-      key: '${StorageKeys.authToken}_expiry',
-      value: expiryTime.toIso8601String(),
-    );
-    print('✅ [AuthService._storeTokens] Backend tokens stored successfully');
+    try {
+      // Store all tokens
+      await _storage.write(key: StorageKeys.authToken, value: tokens.accessToken);
+      await _storage.write(key: StorageKeys.refreshToken, value: tokens.refreshToken);
+
+      // Store expiry timestamp
+      final expiryTime = DateTime.now().add(Duration(seconds: tokens.expiresIn));
+      await _storage.write(
+        key: '${StorageKeys.authToken}_expiry',
+        value: expiryTime.toIso8601String(),
+      );
+
+      // ✅ CRITICAL: Add a small delay to ensure storage completes
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // ✅ VERIFY the tokens were stored correctly
+      final storedToken = await _storage.read(key: StorageKeys.authToken);
+      final storedRefresh = await _storage.read(key: StorageKeys.refreshToken);
+
+      if (storedToken == null || storedRefresh == null) {
+        print('❌ [AuthService._storeTokens] VERIFICATION FAILED - tokens not in storage!');
+
+        // Retry once
+        print('🔄 [AuthService._storeTokens] Retrying storage...');
+        await Future.delayed(const Duration(milliseconds: 200));
+
+        await _storage.write(key: StorageKeys.authToken, value: tokens.accessToken);
+        await _storage.write(key: StorageKeys.refreshToken, value: tokens.refreshToken);
+
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        final retryToken = await _storage.read(key: StorageKeys.authToken);
+        if (retryToken == null) {
+          throw AuthException('Failed to store authentication tokens');
+        }
+      }
+
+      print('✅ [AuthService._storeTokens] Backend tokens stored and verified');
+    } catch (e, stackTrace) {
+      print('❌ [AuthService._storeTokens] Storage error: $e');
+      AppLogger.error('Token storage failed', error: e, stackTrace: stackTrace);
+      throw AuthException('Failed to store authentication tokens');
+    }
   }
 
   /// Get valid access token (auto-refresh if expired)
@@ -981,29 +1017,50 @@ class AuthService {
         final data = jsonDecode(res.body)['data'];
 
         final tokens = AuthTokens.fromJson(data['tokens']);
+
+        // ✅ CRITICAL FIX: Ensure tokens are fully stored before proceeding
         await _storeTokens(tokens);
 
+        // ✅ Add a small delay to ensure storage completes (especially on Android)
+        await Future.delayed(const Duration(milliseconds: 100));
+
         final user = data['user'];
-        await _storage.write(key: StorageKeys.userId, value: user['id'] ?? user['_id']);
+
+        // ✅ Store user data with proper null checking
+        final userId = user['id'] ?? user['_id'];
+        if (userId == null) {
+          throw AuthException('Invalid user data received from backend');
+        }
+
+        await _storage.write(key: StorageKeys.userId, value: userId.toString());
         await _storage.write(key: StorageKeys.userEmail, value: user['email']);
         await _storage.write(key: StorageKeys.userRole, value: user['role']);
         await _storage.write(key: StorageKeys.userData, value: jsonEncode(user));
 
+        // ✅ Another small delay to ensure all writes complete
+        await Future.delayed(const Duration(milliseconds: 100));
+
         if (data['isNewUser'] == true) {
-          AppLogger.info('New account created via $provider: ${user['email']}');
+          AppLogger.info('🎉 New account created via $provider: ${user['email']}');
+          print('🎉 [Social Auth] New user registered: ${user['email']}');
         } else {
-          AppLogger.info('Existing user logged in via $provider: ${user['email']}');
+          AppLogger.info('✅ Existing user logged in via $provider: ${user['email']}');
+          print('✅ [Social Auth] Existing user logged in: ${user['email']}');
         }
+
+        // ✅ Verify token was stored before returning
+        final storedToken = await _storage.read(key: StorageKeys.authToken);
+        if (storedToken == null) {
+          print('❌ [Social Auth] Token verification failed - not stored!');
+          throw AuthException('Failed to store authentication tokens');
+        }
+        print('✅ [Social Auth] Token verified in storage');
 
         return AuthResult(
           user: user,
           tokens: tokens,
           isNewUser: data['isNewUser'] ?? false,
         );
-      } else if (res.statusCode == 404) {
-        // Fallback: Backend didn't auto-create, so we create here
-        print('📝 [Social Auth] 404 received - creating account via fallback...');
-        return await _createSocialAccount(provider, userCredential, firebaseToken);
       } else {
         final data = jsonDecode(res.body);
         throw AuthException(data['message'] ?? 'Social authentication failed');
@@ -1018,9 +1075,11 @@ class AuthService {
     }
   }
 
+
+
   /// ✅ Fallback method to create social account from Flutter side
   /// (Only used if backend doesn't auto-create)
-  Future<AuthResult> _createSocialAccount(
+  Future<AuthResult> createSocialAccount(
       String provider,
       UserCredential userCredential,
       String firebaseToken,

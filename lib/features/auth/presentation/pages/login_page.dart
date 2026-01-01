@@ -216,32 +216,88 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   // ===================== SOCIAL LOGIN =====================
+// Replace your _handleGoogleSignIn method with this fixed version
 
   Future<void> _handleGoogleSignIn() async {
+    if (!mounted) return;
+
     setState(() => _isGoogleLoading = true);
 
     try {
-      final result = await ref.read(authServiceProvider).signInWithGoogle();
+      final authService = ref.read(authServiceProvider);
+      final result = await authService.signInWithGoogle();
+
+      // ✅ CRITICAL: Wait longer for storage operations to complete
+      // FlutterSecureStorage writes are async and may take longer on Android
+      await Future.delayed(const Duration(milliseconds: 500));
 
       if (!mounted) return;
 
+      // ✅ Verify tokens with retry logic
+      String? token;
+      int retries = 3;
+
+      while (retries > 0 && token == null) {
+        token = await authService.getBackendToken();
+        if (token == null) {
+          print('⚠️ Token not available yet, retrying... ($retries attempts left)');
+          await Future.delayed(const Duration(milliseconds: 200));
+          retries--;
+        }
+      }
+
+      if (token == null) {
+        throw AuthException('Authentication completed but tokens not available');
+      }
+
+      print('✅ Token verified: ${token.substring(0, 30)}...');
+
+      if (!mounted) return;
+
+      // ✅ Navigate based on user type
       if (result.isNewUser) {
         _showWelcomeDialog();
       } else {
         context.go('/');
       }
     } on AuthException catch (e) {
-      _showError(e.message);
+      if (mounted) _showError(e.message);
+    } catch (e) {
+      print('❌ Google sign-in error: $e');
+      if (mounted) _showError('Google sign-in failed. Please try again.');
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
+// Apply the same fix to GitHub and Microsoft handlers
   Future<void> _handleGithubSignIn() async {
+    if (!mounted) return;
     setState(() => _isGithubLoading = true);
 
     try {
-      final result = await ref.read(authServiceProvider).signInWithGithub();
+      final authService = ref.read(authServiceProvider);
+      final result = await authService.signInWithGithub();
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return;
+
+      // Verify tokens with retry
+      String? token;
+      int retries = 3;
+
+      while (retries > 0 && token == null) {
+        token = await authService.getBackendToken();
+        if (token == null) {
+          await Future.delayed(const Duration(milliseconds: 200));
+          retries--;
+        }
+      }
+
+      if (token == null) {
+        throw AuthException('Authentication completed but tokens not available');
+      }
 
       if (!mounted) return;
 
@@ -251,18 +307,41 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         context.go('/');
       }
     } on AuthException catch (e) {
-      _showError(e.message);
+      if (mounted) _showError(e.message);
+    } catch (e) {
+      if (mounted) _showError('GitHub sign-in failed. Please try again.');
     } finally {
       if (mounted) setState(() => _isGithubLoading = false);
     }
   }
 
-  // Add these handler methods:
   Future<void> _handleMicrosoftSignIn() async {
+    if (!mounted) return;
     setState(() => _isMicrosoftLoading = true);
 
     try {
-      final result = await ref.read(authServiceProvider).signInWithMicrosoft();
+      final authService = ref.read(authServiceProvider);
+      final result = await authService.signInWithMicrosoft();
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return;
+
+      // Verify tokens with retry
+      String? token;
+      int retries = 3;
+
+      while (retries > 0 && token == null) {
+        token = await authService.getBackendToken();
+        if (token == null) {
+          await Future.delayed(const Duration(milliseconds: 200));
+          retries--;
+        }
+      }
+
+      if (token == null) {
+        throw AuthException('Authentication completed but tokens not available');
+      }
 
       if (!mounted) return;
 
@@ -272,11 +351,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         context.go('/');
       }
     } on AuthException catch (e) {
-      _showError(e.message);
+      if (mounted) _showError(e.message);
+    } catch (e) {
+      if (mounted) _showError('Microsoft sign-in failed. Please try again.');
     } finally {
       if (mounted) setState(() => _isMicrosoftLoading = false);
     }
   }
+
+  // Add these handler methods:
+
   // ===================== UI HELPERS =====================
 
   void _showError(String message) {

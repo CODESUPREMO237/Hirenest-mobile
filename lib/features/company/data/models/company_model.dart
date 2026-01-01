@@ -1,5 +1,7 @@
 // Company Model
 // lib/features/company/data/models/company_model.dart
+import '../../../auth/data/models/user_model.dart';
+
 class CompanyModel {
   final String id;
   final String name;
@@ -13,7 +15,7 @@ class CompanyModel {
   final String? contactPhone;
   final List<Location>? locations;
   final CompanyStats? stats;
-  final List<String> admins; // We will extract IDs from the objects
+  final List<UserModel> admins;
   final String createdBy;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -56,11 +58,23 @@ class CompanyModel {
           : null,
       stats: json['stats'] != null ? CompanyStats.fromJson(json['stats']) : null,
 
-      // FIX: Handle admins if they are objects instead of strings
+      // Updated Admins Logic
       admins: json['admins'] != null
-          ? (json['admins'] as List).map((admin) {
-        if (admin is String) return admin;
-        return admin['_id'].toString(); // Extract ID from the object
+          ? (json['admins'] as List).map((adminData) {
+        if (adminData is String) {
+          // Handle case where it's just an ID string
+          return UserModel(
+            id: adminData,
+            email: '',
+            role: 'user',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+        } else if (adminData is Map<String, dynamic>) {
+          // Handle case where it's the full object (from your log)
+          return UserModel.fromJson(adminData);
+        }
+        return UserModel.empty();
       }).toList()
           : [],
 

@@ -1,12 +1,16 @@
+// ============================================================================
+// job_applicants_page.dart - WITH RATING FEATURE FOR EMPLOYERS
 // lib/features/jobs/presentation/pages/job_applicants_page.dart
+// ============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../applications/presentation/pages/applicant_details_page.dart';
 import '../../../applications/data/models/application_model.dart';
 import '../../../applications/data/repositories/applications_repository.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../reviews/presentation/widgets/rating_dialog.dart';
+
 
 class JobApplicantsPage extends ConsumerStatefulWidget {
   final String jobId;
@@ -104,10 +108,7 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
             },
             child: Column(
               children: [
-                // Stats Summary
                 _buildStatsSummary(applicants),
-
-                // Applicants List
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
@@ -123,6 +124,11 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
                           filteredApplicants[index],
                         ),
                         onReject: () => _rejectApplicant(
+                          filteredApplicants[index],
+                        ),
+                        // ✅ ADD RATING CALLBACK
+                        onRate: () => _rateApplicant(
+                          context,
                           filteredApplicants[index],
                         ),
                       );
@@ -164,6 +170,40 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
           .toList();
     }
     return applicants.where((app) => app.status == _selectedFilter).toList();
+  }
+
+  // ✅ NEW: Rate applicant method
+  void _rateApplicant(BuildContext context, ApplicationModel application) {
+    final applicantId = application.applicantDetails?.id ?? application.applicant;
+    final applicantName = application.applicantDetails?.profile?.firstName ?? 'Applicant';
+
+    if (applicantId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot submit rating: Missing applicant information'),
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => RatingDialog(
+        jobId: widget.jobId,
+        revieweeId: applicantId,
+        revieweeName: applicantName,
+      ),
+    ).then((success) {
+      if (success == true && mounted) {
+        ref.invalidate(jobApplicantsProvider(widget.jobId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rating submitted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
   }
 
   Widget _buildStatsSummary(List<ApplicationModel> applicants) {
@@ -218,11 +258,7 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 80,
-            color: Colors.grey[300],
-          ),
+          Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[300]),
           const SizedBox(height: 16),
           Text(
             _selectedFilter == 'all'
@@ -237,10 +273,7 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
           const SizedBox(height: 8),
           Text(
             'Applications will appear here when candidates apply',
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey[500], fontSize: 14),
           ),
         ],
       ),
@@ -295,10 +328,9 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
   }
 
   void _viewApplicantDetails(BuildContext context, ApplicationModel application) {
-    // Navigation: /jobs/:jobId/applicants/:applicationId
     context.push(
       '/jobs/${widget.jobId}/applicants/${application.id}',
-      extra: application, // Pass the full model to avoid a second API call
+      extra: application,
     );
   }
 
@@ -414,18 +446,20 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-// Applicant Card Widget
+// ✅ UPDATED: Applicant Card with Rating Button
 class _ApplicantCard extends StatelessWidget {
   final ApplicationModel application;
   final VoidCallback onTap;
   final VoidCallback onShortlist;
   final VoidCallback onReject;
+  final VoidCallback onRate; // ✅ NEW
 
   const _ApplicantCard({
     required this.application,
     required this.onTap,
     required this.onShortlist,
     required this.onReject,
+    required this.onRate, // ✅ NEW
   });
 
   @override
@@ -446,7 +480,6 @@ class _ApplicantCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  // Avatar
                   CircleAvatar(
                     radius: 30,
                     backgroundImage: profile?.avatar != null
@@ -463,7 +496,6 @@ class _ApplicantCard extends StatelessWidget {
                         : null,
                   ),
                   const SizedBox(width: 12),
-                  // Name and Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,12 +523,10 @@ class _ApplicantCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Status Badge
                   _StatusBadge(status: application.status),
                 ],
               ),
               const SizedBox(height: 12),
-              // Stats Row
               Row(
                 children: [
                   Icon(Icons.work_outline, size: 16, color: Colors.grey[600]),
@@ -515,6 +545,7 @@ class _ApplicantCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
+
               // Action Buttons
               if (application.status == 'pending')
                 Row(
@@ -541,6 +572,23 @@ class _ApplicantCard extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+
+              // ✅ NEW: Show rating button if accepted
+              if (application.status == 'accepted')
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: onRate,
+                      icon: const Icon(Icons.star, size: 18),
+                      label: const Text('Rate Applicant'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.amber[700],
+                      ),
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -609,13 +657,11 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-// Provider for Applications Repository
 final applicationsRepositoryProvider = Provider<ApplicationsRepository>((ref) {
   final dio = ref.watch(dioProvider);
   return ApplicationsRepository(dio);
 });
 
-// Provider for Job Applicants
 final jobApplicantsProvider = FutureProvider.family<List<ApplicationModel>, String>(
       (ref, jobId) async {
     final repository = ref.watch(applicationsRepositoryProvider);

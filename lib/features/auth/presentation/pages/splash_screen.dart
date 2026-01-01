@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/services/auth_service.dart';
 
@@ -11,6 +12,8 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
+  final _storage = const FlutterSecureStorage();
+
   @override
   void initState() {
     super.initState();
@@ -18,22 +21,63 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _initialize() async {
-    // Wait for splash animation (gives user time to see your logo)
-    await Future.delayed(const Duration(seconds: 3));
-
+    await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
     final authService = ref.read(authServiceProvider);
 
     try {
-      final token = await authService.getIdToken();
+      // ✅ Try to get token with retry logic (for race conditions)
+      String? token;
+      int retries = 5;
+
+      while (retries > 0 && token == null) {
+        token = await authService.getBackendToken();
+        if (token == null) {
+          debugPrint('⚠️ Token not found, retry ${6 - retries}/5');
+          await Future.delayed(const Duration(milliseconds: 300));
+          retries--;
+        }
+      }
+
       if (token != null) {
-        await authService.fetchProfile();
-        if (mounted) context.go('/');
+        debugPrint('✅ Token found: ${token.substring(0, 30)}...');
+
+        // Check for cached user data
+        final userData = await _storage.read(key: "userData");
+
+        if (userData != null) {
+          debugPrint('✅ User data cached, navigating to home');
+          if (mounted) context.go('/');
+          return;
+        }
+
+        // If no cached data, fetch it
+        debugPrint('⚠️ No cached user data, fetching from server...');
+        try {
+          await authService.fetchProfile();
+          debugPrint('✅ Profile fetched successfully');
+          if (mounted) context.go('/');
+        } catch (e) {
+          debugPrint('❌ Profile fetch failed: $e');
+          // Continue to login even if profile fetch fails
+          // The app will fetch it later
+          if (mounted) context.go('/');
+        }
       } else {
+        debugPrint('❌ No token after retries, navigating to login');
         if (mounted) context.go('/auth/login');
       }
     } catch (e) {
+      debugPrint("❌ Splash Error: $e");
+
+      // Force logout to clear bad session
+      try {
+        await authService.signOut();
+      } catch (logoutError) {
+        debugPrint("⚠️ Logout error: $logoutError");
+      }
+
       if (mounted) context.go('/auth/login');
     }
   }
@@ -41,7 +85,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Using a white background to match your logo's clean aesthetic
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -50,7 +93,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // --- YOUR LOGO ---
+              // Logo
               Hero(
                 tag: 'app_icon',
                 child: Container(
@@ -68,12 +111,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   ),
                   child: ClipOval(
                     child: Image.asset(
-                      'assets/images/app_icon.png', // Ensure this path matches your folder
+                      'assets/images/app_icon.png',
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => const Icon(
-                          Icons.work,
-                          size: 80,
-                          color: Colors.blue
+                        Icons.work,
+                        size: 80,
+                        color: Colors.blue,
                       ),
                     ),
                   ),
@@ -81,11 +124,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               ),
               const SizedBox(height: 32),
 
-              // --- APP NAME ---
+              // App Name
               const Text(
                 'JobConnect',
                 style: TextStyle(
-                  color: Color(0xFF0D47A1), // Deep Blue to match your logo
+                  color: Color(0xFF0D47A1),
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
@@ -93,7 +136,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               ),
               const SizedBox(height: 12),
 
-              // --- TAGLINE ---
+              // Tagline
               Text(
                 'Connecting Talent with Opportunity',
                 style: TextStyle(
@@ -105,7 +148,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
               const SizedBox(height: 60),
 
-              // --- LOADING INDICATOR ---
+              // Loading Indicator
               const CircularProgressIndicator(
                 strokeWidth: 3,
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D47A1)),

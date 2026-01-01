@@ -22,6 +22,7 @@ class ApiEndpoints {
   static const String changePassword = '/users/me/password';
   static const String deleteAccount = '/users/me';
   static String publicProfile(String id) => '/users/$id/public-profile';
+  static String userById(String id) => '/users/$id';
 
   // ==================== JOBS ====================
   // Backend: app.use('/api/v1/jobs', jobRoutes)
@@ -138,12 +139,11 @@ class ApiEndpoints {
   static String moderateProduct(String id) => '/admin/products/$id/moderate';
   static const String adminReported = '/admin/reported';
 
-
-  // ==================== GUEST ====================
-  // Backend: app.use('/api/v1/guest', guestRoutes)
-  static const String guestLogin = '/guest/login';
-  static const String guestJobs = '/guest/jobs';
-  static const String guestProducts = '/guest/products';
+// ==================== REVIEWS ====================
+  // Backend: app.use('/api/v1/reviews', reviewRoutes)
+  static const String reviews = '/reviews';
+  static String userReviews(String userId) => '/reviews/user/$userId';
+  static String jobReviews(String jobId) => '/reviews/job/$jobId'; // Added for completeness
 }
 
 // Helper extension for building full URLs

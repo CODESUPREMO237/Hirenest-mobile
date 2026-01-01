@@ -17,6 +17,7 @@ class UserModel {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+
   UserModel({
     required this.id,
     required this.email,
@@ -127,6 +128,8 @@ class ProfileData {
   final String? avatar;
   final String? headline;
   final LocationData? location;
+  final double ratingsAverage;
+  final int ratingsQuantity;
 
   ProfileData({
     this.firstName,
@@ -137,6 +140,8 @@ class ProfileData {
     this.avatar,
     this.headline,
     this.location,
+    this.ratingsAverage = 0.0,
+    this.ratingsQuantity = 0,
   });
 
   factory ProfileData.fromJson(Map<String, dynamic> json) {
@@ -156,6 +161,10 @@ class ProfileData {
         location: json['location'] != null
             ? LocationData.fromJson(json['location'] as Map<String, dynamic>)
             : null,
+        // ✅ MAP FROM JSON (matches backend names)
+        ratingsAverage: (json['ratingsAverage'] ?? 0).toDouble(),
+        ratingsQuantity: (json['ratingsQuantity'] ?? 0).toInt(),
+
       );
     } catch (e, stack) {
       AppLogger.error('Error parsing ProfileData', error: e, stackTrace: stack);
@@ -173,6 +182,8 @@ class ProfileData {
       'avatar': avatar,
       'headline': headline,
       'location': location?.toJson(),
+      'ratingsAverage': ratingsAverage,
+      'ratingsQuantity': ratingsQuantity,
     };
   }
 }
