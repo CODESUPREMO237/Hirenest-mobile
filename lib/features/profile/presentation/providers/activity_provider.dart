@@ -15,7 +15,8 @@ final recentActivityProvider = Provider<List<Map<String, dynamic>>>((ref) {
     activities.add({
       'type': 'job',
       'title': 'New Job Matching You',
-      'message': '${job.title} at ${job.company.name}', // Changed from companyName to company.name      'time': job.createdAt,
+      'message': '${job.title} at ${job.company.name}',  // ← Fixed: Added closing quote
+      'time': job.createdAt,  // ← Fixed: This was on the comment line
       'icon': Icons.work_outline,
       'color': Colors.blue,
     });

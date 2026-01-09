@@ -56,6 +56,8 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
                 children: [
                   TextField(
                     decoration: const InputDecoration(labelText: 'Skill Name'),
+                    textCapitalization: TextCapitalization.words,
+                    autofocus: true,
                     onChanged: (value) => skillName = value,
                   ),
                   const SizedBox(height: 16),
@@ -74,6 +76,7 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
                     title: const Text('Required'),
                     value: isRequired,
                     onChanged: (value) => setState(() => isRequired = value!),
+                    contentPadding: EdgeInsets.zero,
                   ),
                 ],
               );
@@ -86,10 +89,10 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (skillName.isNotEmpty) {
-                  setState(() {
+                if (skillName.trim().isNotEmpty) {
+                  this.setState(() {
                     _skills.add({
-                      'name': skillName,
+                      'name': skillName.trim(),
                       'level': level,
                       'required': isRequired,
                     });
@@ -118,6 +121,8 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
               labelText: 'Benefit',
               hintText: 'e.g., Health Insurance',
             ),
+            textCapitalization: TextCapitalization.words,
+            autofocus: true,
             onChanged: (value) => benefit = value,
           ),
           actions: [
@@ -127,8 +132,8 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (benefit.isNotEmpty) {
-                  setState(() => _selectedBenefits.add(benefit));
+                if (benefit.trim().isNotEmpty) {
+                  setState(() => _selectedBenefits.add(benefit.trim()));
                   Navigator.pop(context);
                 }
               },
@@ -141,11 +146,53 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
   }
 
   Future<void> _submitJob() async {
+    // Validate form
     if (!_formKey.currentState!.validate()) return;
 
+    // Save form to ensure all values are captured
+    _formKey.currentState!.save();
+
+    // Validate skills
     if (_skills.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add at least one skill')),
+        const SnackBar(
+          content: Text('Please add at least one skill'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Validate salary range
+    final minSalary = double.tryParse(_minSalaryController.text.trim().replaceAll(RegExp(r'[,\s]'), ''));
+    final maxSalary = double.tryParse(_maxSalaryController.text.trim().replaceAll(RegExp(r'[,\s]'), ''));
+
+    if (minSalary == null || maxSalary == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter valid salary amounts'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (minSalary >= maxSalary) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maximum salary must be greater than minimum salary'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (minSalary < 0 || maxSalary < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Salary amounts cannot be negative'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -156,15 +203,15 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
       final repository = ref.read(jobsRepositoryProvider);
 
       await repository.createJob(
-        title: _titleController.text,
-        description: _descriptionController.text,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
         jobType: _jobType,
         category: _category,
         experienceLevel: _experienceLevel,
         location: {
           'type': _locationType,
           'address': {
-            'city': _cityController.text,
+            'city': _cityController.text.trim(),
             'country': 'Cameroon',
           },
           'coordinates': {
@@ -173,8 +220,8 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
           },
         },
         salary: {
-          'min': double.parse(_minSalaryController.text),
-          'max': double.parse(_maxSalaryController.text),
+          'min': minSalary,
+          'max': maxSalary,
           'currency': 'XAF',
           'period': 'monthly',
           'showSalary': _showSalary,
@@ -189,14 +236,21 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
 
         // Show success and navigate back
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Job posted successfully!')),
+          const SnackBar(
+            content: Text('Job posted successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to post job: $e')),
+          SnackBar(
+            content: Text('Failed to post job: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     } finally {
@@ -225,10 +279,15 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
                 decoration: const InputDecoration(
                   labelText: 'Job Title *',
                   hintText: 'e.g., Senior Full-Stack Developer',
+                  border: OutlineInputBorder(),
                 ),
+                textCapitalization: TextCapitalization.words,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Please enter job title';
+                  }
+                  if (value.trim().length < 3) {
+                    return 'Job title must be at least 3 characters';
                   }
                   return null;
                 },
@@ -239,7 +298,10 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
               // Job Type
               DropdownButtonFormField<String>(
                 value: _jobType,
-                decoration: const InputDecoration(labelText: 'Job Type *'),
+                decoration: const InputDecoration(
+                  labelText: 'Job Type *',
+                  border: OutlineInputBorder(),
+                ),
                 items: const [
                   DropdownMenuItem(value: 'full-time', child: Text('Full-time')),
                   DropdownMenuItem(value: 'part-time', child: Text('Part-time')),
@@ -255,7 +317,10 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
               // Category
               DropdownButtonFormField<String>(
                 value: _category,
-                decoration: const InputDecoration(labelText: 'Category *'),
+                decoration: const InputDecoration(
+                  labelText: 'Category *',
+                  border: OutlineInputBorder(),
+                ),
                 items: const [
                   DropdownMenuItem(value: 'Technology', child: Text('Technology')),
                   DropdownMenuItem(value: 'Marketing', child: Text('Marketing')),
@@ -274,7 +339,10 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
               // Experience Level
               DropdownButtonFormField<String>(
                 value: _experienceLevel,
-                decoration: const InputDecoration(labelText: 'Experience Level *'),
+                decoration: const InputDecoration(
+                  labelText: 'Experience Level *',
+                  border: OutlineInputBorder(),
+                ),
                 items: const [
                   DropdownMenuItem(value: 'entry', child: Text('Entry Level')),
                   DropdownMenuItem(value: 'mid', child: Text('Mid Level')),
@@ -313,10 +381,12 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
                 controller: _cityController,
                 decoration: const InputDecoration(
                   labelText: 'City *',
-                  hintText: 'Douala',
+                  hintText: 'e.g., Douala',
+                  border: OutlineInputBorder(),
                 ),
+                textCapitalization: TextCapitalization.words,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Please enter city';
                   }
                   return null;
@@ -341,11 +411,17 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
                       decoration: const InputDecoration(
                         labelText: 'Min',
                         prefixText: 'XAF ',
+                        border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
+                        if (value == null || value.trim().isEmpty) {
                           return 'Required';
+                        }
+                        final cleanValue = value.trim().replaceAll(RegExp(r'[,\s]'), '');
+                        final salary = double.tryParse(cleanValue);
+                        if (salary == null || salary <= 0) {
+                          return 'Invalid amount';
                         }
                         return null;
                       },
@@ -358,11 +434,17 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
                       decoration: const InputDecoration(
                         labelText: 'Max',
                         prefixText: 'XAF ',
+                        border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
+                        if (value == null || value.trim().isEmpty) {
                           return 'Required';
+                        }
+                        final cleanValue = value.trim().replaceAll(RegExp(r'[,\s]'), '');
+                        final salary = double.tryParse(cleanValue);
+                        if (salary == null || salary <= 0) {
+                          return 'Invalid amount';
                         }
                         return null;
                       },
@@ -387,13 +469,15 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
                   labelText: 'Job Description *',
                   hintText: 'Describe the role, responsibilities, and what you\'re looking for...',
                   alignLabelWithHint: true,
+                  border: OutlineInputBorder(),
                 ),
+                textCapitalization: TextCapitalization.sentences,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Please enter job description';
                   }
-                  if (value.length < 200) {
-                    return 'Description should be at least 200 characters';
+                  if (value.trim().length < 200) {
+                    return 'Description should be at least 200 characters (${value.trim().length}/200)';
                   }
                   return null;
                 },
@@ -427,7 +511,10 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Center(
-                    child: Text('No skills added yet'),
+                    child: Text(
+                      'No skills added yet. Add at least one skill.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
                 )
               else
@@ -476,7 +563,10 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Center(
-                    child: Text('No benefits added yet'),
+                    child: Text(
+                      'No benefits added yet',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
                 )
               else
@@ -500,7 +590,10 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitJob,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: _isSubmitting
                     ? const SizedBox(
@@ -511,8 +604,15 @@ class _CreateJobPageState extends ConsumerState<CreateJobPage> {
                     color: Colors.white,
                   ),
                 )
-                    : const Text('Post Job'),
+                    : const Text(
+                  'Post Job',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),

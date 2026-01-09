@@ -1,4 +1,4 @@
-// Jobs Page
+// Jobs Page - FIXED
 // ============================================================================
 // jobs_page.dart
 // lib/features/jobs/presentation/pages/jobs_page.dart
@@ -26,6 +26,11 @@ class _JobsPageState extends ConsumerState<JobsPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+
+    // ✅ FIX: Load jobs when page is first opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(jobsProvider.notifier).loadJobs(refresh: true);
+    });
   }
 
   @override
@@ -44,7 +49,7 @@ class _JobsPageState extends ConsumerState<JobsPage> {
   @override
   Widget build(BuildContext context) {
     final jobsAsync = ref.watch(jobsProvider);
-
+    final isLoading = ref.watch(jobsPaginationLoadingProvider);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Browse Jobs'),
@@ -76,18 +81,23 @@ class _JobsPageState extends ConsumerState<JobsPage> {
               decoration: InputDecoration(
                 hintText: 'Search jobs...',
                 prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                   icon: const Icon(Icons.clear),
                   onPressed: () {
                     _searchController.clear();
                     ref.read(jobsProvider.notifier).search('');
+                    setState(() {});
                   },
                 )
                     : null,
               ),
               onChanged: (value) {
                 ref.read(jobsProvider.notifier).search(value);
+                setState(() {}); // Update UI to show/hide clear button
               },
             ),
           ),
@@ -101,59 +111,134 @@ class _JobsPageState extends ConsumerState<JobsPage> {
               child: jobsAsync.when(
                 data: (jobs) {
                   if (jobs.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.work_outline, size: 64, color: Colors.grey[400]),
-                          const SizedBox(height: 16),
-                          const Text('No jobs found'),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () {
-                              ref.read(jobsProvider.notifier).loadJobs(refresh: true);
-                            },
-                            child: const Text('Refresh'),
-                          ),
-                        ],
-                      ),
-                    );
+                    return _buildEmptyState();
                   }
 
                   return ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: jobs.length,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: jobs.length + (isLoading ? 1 : 0),
                     itemBuilder: (context, index) {
-                      return JobCard(
-                        job: jobs[index],
-                        onTap: () => context.push('/jobs/${jobs[index].id}'),
+                      // Show loading indicator at the end while loading more
+                      if (index == jobs.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: JobCard(
+                          job: jobs[index],
+                          onTap: () => context.push('/jobs/${jobs[index].id}'),
+                        ),
                       );
                     },
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text('Error: $error'),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          ref.read(jobsProvider.notifier).loadJobs(refresh: true);
-                        },
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
+                error: (error, stack) => _buildErrorState(error),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.work_outline,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No jobs found',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try adjusting your filters or search',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                ref.read(jobsProvider.notifier).loadJobs(refresh: true);
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(Object error) {
+    return Center(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 80,
+                color: Colors.red[400],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Oops! Something went wrong',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.read(jobsProvider.notifier).loadJobs(refresh: true);
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

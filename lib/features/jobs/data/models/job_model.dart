@@ -1,12 +1,15 @@
 // ============================================================================
-// job_model.dart (FIXED)
+// job_model.dart (IMPROVED - with employer details)
 // lib/features/jobs/data/models/job_model.dart
 // ============================================================================
+
+import '../../../auth/data/models/user_model.dart';
 
 class JobModel {
   final String id;
   final String title;
-  final String postedBy;
+  final String postedBy; // String ID
+  final UserModel? postedByDetails; // ✅ ADD THIS: Full employer details when populated
   final String description;
   final String jobType;
   final String category;
@@ -18,9 +21,9 @@ class JobModel {
   final List<String> benefits;
   final String status;
   final DateTime? applicationDeadline;
-  final JobStatsModel? stats;  // ✅ Added stats object
+  final JobStatsModel? stats;
   final bool isApplied;
-  final List<ScreeningQuestionModel>? screeningQuestions; // ✅ ADD THIS
+  final List<ScreeningQuestionModel>? screeningQuestions;
 
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -29,6 +32,7 @@ class JobModel {
     required this.id,
     required this.title,
     required this.postedBy,
+    this.postedByDetails, // ✅ ADD THIS
     required this.description,
     required this.jobType,
     required this.category,
@@ -40,19 +44,17 @@ class JobModel {
     required this.benefits,
     required this.status,
     this.applicationDeadline,
-    this.stats,  // ✅ Added stats
+    this.stats,
     this.isApplied = false,
-    this.screeningQuestions, // ✅ ADD THIS
-
+    this.screeningQuestions,
     required this.createdAt,
     required this.updatedAt,
   });
 
-  // ✅ Convenience getters for backward compatibility
+  // ✅ Convenience getters
   int get applicantsCount => stats?.applications ?? 0;
   int get views => stats?.views ?? 0;
   int get uniqueViews => stats?.uniqueViews ?? 0;
-
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
     // Helper to safely extract IDs from either Strings or nested Objects
@@ -65,29 +67,46 @@ class JobModel {
       return '';
     }
 
+    // ✅ Parse postedBy field - handle both String ID and populated object
+    String postedById = '';
+    UserModel? postedByUser;
+
+    if (json['postedBy'] is Map<String, dynamic>) {
+      // postedBy is populated with full user object
+      try {
+        postedByUser = UserModel.fromJson(json['postedBy']);
+        postedById = postedByUser.id;
+        print('✅ JobModel: postedBy is populated object (${postedByUser.email})');
+      } catch (e) {
+        print('⚠️ JobModel: Error parsing postedBy object: $e');
+        postedById = extractId(json['postedBy']);
+      }
+    } else if (json['postedBy'] is String) {
+      // postedBy is just an ID string
+      postedById = json['postedBy'];
+      print('✅ JobModel: postedBy is ID string ($postedById)');
+    }
 
     return JobModel(
       id: json['_id'] ?? json['id'] ?? '',
       title: json['title'] ?? '',
-      postedBy: extractId(json['postedBy']),
+      postedBy: postedById,
+      postedByDetails: postedByUser, // ✅ Store populated user
       description: json['description'] ?? '',
       jobType: json['jobType'] ?? '',
       category: json['category'] ?? '',
       experienceLevel: json['experienceLevel'] ?? '',
 
-      // FIX: Check if company is a Map before parsing, otherwise provide a dummy/empty model
       company: json['company'] is Map<String, dynamic>
           ? CompanyModel.fromJson(json['company'])
           : CompanyModel(id: extractId(json['company']), name: 'Loading...'),
 
-      // FIX: Defensive parsing for Location
       location: json['location'] is Map<String, dynamic>
           ? JobLocationModel.fromJson(json['location'])
           : JobLocationModel(type: 'onsite', address: AddressModel(city: '', country: '')),
 
       salary: json['salary'] != null ? SalaryModel.fromJson(json['salary']) : null,
 
-      // FIX: Defensive parsing for Requirements
       requirements: json['requirements'] is Map<String, dynamic>
           ? RequirementsModel.fromJson(json['requirements'])
           : RequirementsModel(skills: [], yearsOfExperience: YearsOfExperienceModel(min: 0)),
@@ -101,7 +120,6 @@ class JobModel {
           ? JobStatsModel.fromJson(json['stats'])
           : null,
       isApplied: json['isApplied'] ?? false,
-      // ✅ Parse screening questions
       screeningQuestions: json['screeningQuestions'] != null
           ? (json['screeningQuestions'] as List)
           .map((q) => ScreeningQuestionModel.fromJson(q))
@@ -111,7 +129,6 @@ class JobModel {
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : DateTime.now(),
     );
   }
-
 
   Map<String, dynamic> toJson() {
     return {
@@ -136,12 +153,13 @@ class JobModel {
     };
   }
 }
-// ✅ ADD THIS NEW MODEL CLASS
+
+// Rest of your model classes remain the same...
 class ScreeningQuestionModel {
   final String question;
-  final String type; // 'text', 'yes_no', 'multiple_choice'
+  final String type;
   final bool required;
-  final List<String>? options; // For multiple_choice type
+  final List<String>? options;
 
   ScreeningQuestionModel({
     required this.question,
@@ -155,9 +173,7 @@ class ScreeningQuestionModel {
       question: json['question'] ?? '',
       type: json['type'] ?? 'text',
       required: json['required'] ?? false,
-      options: json['options'] != null
-          ? List<String>.from(json['options'])
-          : null,
+      options: json['options'] != null ? List<String>.from(json['options']) : null,
     );
   }
 
@@ -171,7 +187,6 @@ class ScreeningQuestionModel {
   }
 }
 
-
 class JobStatsModel {
   final int views;
   final int uniqueViews;
@@ -184,7 +199,6 @@ class JobStatsModel {
   });
 
   factory JobStatsModel.fromJson(Map<String, dynamic> json) {
-    // Helper to force anything into an int safely
     int toInt(dynamic value) {
       if (value == null) return 0;
       if (value is int) return value;
@@ -198,7 +212,6 @@ class JobStatsModel {
       applications: toInt(json['applications']),
     );
   }
-
 
   Map<String, dynamic> toJson() {
     return {
@@ -225,11 +238,7 @@ class CompanyModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'name': name,
-      'logo': logo,
-    };
+    return {'_id': id, 'name': name, 'logo': logo};
   }
 }
 
@@ -247,10 +256,7 @@ class JobLocationModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'type': type,
-      'address': address?.toJson(),
-    };
+    return {'type': type, 'address': address?.toJson()};
   }
 }
 
@@ -270,11 +276,7 @@ class AddressModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'city': city,
-      'state': state,
-      'country': country,
-    };
+    return {'city': city, 'state': state, 'country': country};
   }
 }
 
@@ -328,10 +330,7 @@ class RequirementsModel {
 
   factory RequirementsModel.fromJson(Map<String, dynamic> json) {
     return RequirementsModel(
-      skills: (json['skills'] as List?)
-          ?.map((s) => SkillModel.fromJson(s))
-          .toList() ??
-          [],
+      skills: (json['skills'] as List?)?.map((s) => SkillModel.fromJson(s)).toList() ?? [],
       yearsOfExperience: json['yearsOfExperience'] != null
           ? YearsOfExperienceModel.fromJson(json['yearsOfExperience'])
           : null,
@@ -362,11 +361,7 @@ class SkillModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'required': required,
-      'level': level,
-    };
+    return {'name': name, 'required': required, 'level': level};
   }
 }
 
@@ -389,11 +384,7 @@ class YearsOfExperienceModel {
     );
   }
 
-
   Map<String, dynamic> toJson() {
-    return {
-      'min': min,
-      'max': max,
-    };
+    return {'min': min, 'max': max};
   }
 }

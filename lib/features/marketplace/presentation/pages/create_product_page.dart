@@ -131,13 +131,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage>
 
   Future<Position?> _determinePosition() async {
     try {
-      // Check if location repositories are enabled
+      // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        AppLogger.warn('Location repositories are disabled.');
+        AppLogger.warn('Location services are disabled.');
         if (mounted) {
           setState(() => _locationError =
-          'Location repositories are disabled. Please enable location in your device settings.');
+          'Location is disabled. Please enable location in your device settings.');
         }
         return null;
       }
@@ -207,6 +207,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage>
       return;
     }
 
+    // Save form to update quantity
+    _formKey.currentState!.save();
+
     // Check for images
     if (_selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -216,6 +219,17 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage>
         ),
       );
       AppLogger.warn('No images selected.');
+      return;
+    }
+
+    // Check maximum images
+    if (_selectedImages.length > 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maximum 10 images allowed.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
@@ -296,7 +310,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage>
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
         category: _category,
-        price: double.parse(_priceController.text),
+        price: double.parse(_priceController.text.trim()),
         currency: 'XAF',
         negotiable: _negotiable,
         condition: _condition,
@@ -443,11 +457,20 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage>
                     if (value == null || value.trim().isEmpty) {
                       return 'Price is required';
                     }
-                    final price = double.tryParse(value);
+                    // Remove any spaces or commas that users might enter
+                    final cleanValue = value.trim().replaceAll(RegExp(r'[,\s]'), '');
+                    final price = double.tryParse(cleanValue);
                     if (price == null || price <= 0) {
                       return 'Please enter a valid price';
                     }
                     return null;
+                  },
+                  onSaved: (value) {
+                    // Clean the value before saving
+                    if (value != null && value.trim().isNotEmpty) {
+                      final cleanValue = value.trim().replaceAll(RegExp(r'[,\s]'), '');
+                      _priceController.text = cleanValue;
+                    }
                   },
                 ),
                 const SizedBox(height: 8),
@@ -566,8 +589,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage>
                     }
                     return null;
                   },
-                  onChanged: (newValue) {
-                    final qty = int.tryParse(newValue);
+                  onSaved: (newValue) {
+                    final qty = int.tryParse(newValue ?? '');
                     if (qty != null && qty > 0) {
                       _quantity = qty;
                     }

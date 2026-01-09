@@ -1,25 +1,25 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../data/models/chat_model.dart';
 import '../../data/repositories/chat_repository.dart';
 
-/// AsyncNotifierProvider for chat list
-///
+part 'chats_provider.g.dart';
+
 /// Provider to fetch details for a specific chat
-final chatDetailProvider = FutureProvider.family<ChatModel, String>((ref, chatId) async {
+@riverpod
+Future<ChatModel> chatDetail(ChatDetailRef ref, String chatId) async {
   final repository = ref.read(chatRepositoryProvider);
   return await repository.getChat(chatId);
-});
+}
 
-final chatsProvider =
-AsyncNotifierProvider<ChatsNotifier, List<ChatModel>>(ChatsNotifier.new);
-
-class ChatsNotifier extends AsyncNotifier<List<ChatModel>> {
+/// Chats list provider with auto-refresh on page return
+@riverpod
+class Chats extends _$Chats {
   late final ChatRepository _repository;
 
   @override
   Future<List<ChatModel>> build() async {
     _repository = ref.read(chatRepositoryProvider);
-    return loadChats(); // initial load
+    return loadChats();
   }
 
   /// Load chats from API or database
@@ -47,6 +47,4 @@ class ChatsNotifier extends AsyncNotifier<List<ChatModel>> {
       state = AsyncError(e, st);
     }
   }
-
-
 }

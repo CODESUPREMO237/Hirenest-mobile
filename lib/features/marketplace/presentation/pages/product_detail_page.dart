@@ -232,7 +232,17 @@ class ProductDetailPage extends ConsumerWidget {
                       isChatLoading.value = true;
                       try {
                         final repository = ref.read(chatRepositoryProvider);
-
+// Validate the seller ID exists
+                        if (product.seller.id == null || product.seller.id.isEmpty) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Unable to start chat: Seller information is missing'),
+                              ),
+                            );
+                          }
+                          return; // Exit early
+                        }
                         // 1. Get the chatId (this is a String, not an object)
                         final String chatId = await repository.getOrCreateChat(
                           receiverId: product.seller.id,

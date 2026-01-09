@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/services/payment_service.dart';
 import '../../../applications/presentation/providers/applications_provider.dart';
+import '../../../reviews/presentation/widgets/rating_display_widget.dart';
 import '../../../reviews/presentation/widgets/rating_summary_widget.dart';
 import '../providers/profile_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -24,12 +25,12 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push('/profile/settings'),
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.settings_outlined),
+        //     onPressed: () => context.push('/profile/settings'),
+        //   ),
+        // ],
       ),
       body: profileAsync.when(
         data: (profile) {
@@ -183,66 +184,71 @@ class ProfilePage extends ConsumerWidget {
                         const SizedBox(height: 12),
 
 
-                        // ✅ FIXED: Job Performance Rating (for job seekers)
-                        // ============================================================================
-                        // ✅ FIXED: Job Performance Rating (for job seekers)
 
-                        if (profile.profile?.ratingsAverage != null &&
-                            profile.profile?.ratingsQuantity != null &&
-                            profile.profile!.ratingsQuantity! > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: RatingSummaryWidget(
-                              // ✅ Correct path: profile.profile.ratingsAverage
-                              rating: profile.profile!.ratingsAverage,
-                              count: profile.profile!.ratingsQuantity,
-                              size: 18,
-                            ),
-                          ),
 
-                        // ⭐ Marketplace Rating (for sellers/employers)
-                        if (profile.marketplaceStats?.sellerRating != null &&
-                            profile.marketplaceStats!.sellerRating!.count > 0)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.store,
-                                      color: Colors.white,
-                                      size: 16
-                                  ),
-                                  const SizedBox(width: 6),
-                                  RatingSummaryWidget(
-                                    rating: profile.marketplaceStats!
-                                        .sellerRating!.average,
-                                    count: profile.marketplaceStats!
-                                        .sellerRating!.count,
-                                    size: 16,
-                                  ),
-                                ],
-                              ),
+
+
+// Job Performance Rating (for job seekers)
+                  if (profile.profile?.ratingsAverage != null &&
+                  profile.profile?.ratingsQuantity != null &&
+                  profile.profile!.ratingsQuantity! > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: RatingDisplayWidget(
+                      rating: profile.profile!.ratingsAverage,
+                      count: profile.profile!.ratingsQuantity,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+
+// ⭐ Marketplace Rating (for sellers/employers)
+                  if (profile.marketplaceStats?.sellerRating != null &&
+                      profile.marketplaceStats!.sellerRating!.count > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.store,
+                                color: Colors.white,
+                                size: 16
                             ),
-                          ),
+                            const SizedBox(width: 6),
+                            RatingDisplayWidget(
+                              rating: profile.marketplaceStats!.sellerRating!.average,
+                              count: profile.marketplaceStats!.sellerRating!.count,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+
                       ],
                     ),
                   ),
+
+
+
                   // 🎯 Profile Completion Alert
                   if (completionData['percentage'] < 100)
                     _buildCompletionAlert(context, completionData),

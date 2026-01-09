@@ -977,6 +977,9 @@ class AuthService {
   }
 
 
+  // Fix the _completeSocialAuth method in auth_service.dart
+// Replace your existing _completeSocialAuth method with this:
+
   Future<AuthResult> _completeSocialAuth(String provider, String idToken) async {
     try {
       OAuthCredential credential;
@@ -997,13 +1000,20 @@ class AuthService {
           throw AuthException('Unsupported social provider');
       }
 
+      // 1. Sign in to Firebase first
+      print('🔐 [Social Auth] Step 1: Signing into Firebase...');
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      print('✅ [Social Auth] Firebase sign-in complete');
 
+      // 2. Get Firebase token
       final firebaseToken = await userCredential.user?.getIdToken();
       if (firebaseToken == null) {
         throw AuthException('Failed to get Firebase token');
       }
+      print('✅ [Social Auth] Firebase token obtained');
 
+      // 3. Exchange with backend
+      print('📡 [Social Auth] Step 2: Exchanging token with backend...');
       final res = await http.post(
         Uri.parse('$baseUrl/social'),
         headers: {'Content-Type': 'application/json'},
@@ -1011,34 +1021,52 @@ class AuthService {
           'provider': provider,
           'idToken': firebaseToken,
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body)['data'];
 
+        // 4. Store backend JWT tokens
         final tokens = AuthTokens.fromJson(data['tokens']);
-
-        // ✅ CRITICAL FIX: Ensure tokens are fully stored before proceeding
+        print('💾 [Social Auth] Step 3: Storing backend tokens...');
         await _storeTokens(tokens);
 
-        // ✅ Add a small delay to ensure storage completes (especially on Android)
-        await Future.delayed(const Duration(milliseconds: 100));
+        // 5. Verify storage
+        await Future.delayed(const Duration(milliseconds: 200));
+        final storedToken = await _storage.read(key: StorageKeys.authToken);
+        if (storedToken == null) {
+          throw AuthException('Failed to store authentication tokens');
+        }
+        print('✅ [Social Auth] Backend tokens verified in storage');
 
+        // 6. Store user data
         final user = data['user'];
-
-        // ✅ Store user data with proper null checking
         final userId = user['id'] ?? user['_id'];
         if (userId == null) {
           throw AuthException('Invalid user data received from backend');
         }
 
+        print('💾 [Social Auth] Step 4: Storing user data...');
         await _storage.write(key: StorageKeys.userId, value: userId.toString());
         await _storage.write(key: StorageKeys.userEmail, value: user['email']);
         await _storage.write(key: StorageKeys.userRole, value: user['role']);
         await _storage.write(key: StorageKeys.userData, value: jsonEncode(user));
 
-        // ✅ Another small delay to ensure all writes complete
-        await Future.delayed(const Duration(milliseconds: 100));
+        // 7. Wait for storage to complete
+        await Future.delayed(const Duration(milliseconds: 200));
+        print('✅ [Social Auth] User data stored');
+
+        // 8. CRITICAL: Wait for Firebase auth state to propagate
+        print('⏳ [Social Auth] Step 5: Waiting for Firebase auth state...');
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // 9. Verify Firebase user is ready
+        final currentUser = _firebaseAuth.currentUser;
+        if (currentUser == null) {
+          print('⚠️ [Social Auth] Firebase user not ready, waiting longer...');
+          await Future.delayed(const Duration(seconds: 1));
+        }
+        print('✅ [Social Auth] Firebase user confirmed: ${currentUser?.email}');
 
         if (data['isNewUser'] == true) {
           AppLogger.info('🎉 New account created via $provider: ${user['email']}');
@@ -1048,13 +1076,7 @@ class AuthService {
           print('✅ [Social Auth] Existing user logged in: ${user['email']}');
         }
 
-        // ✅ Verify token was stored before returning
-        final storedToken = await _storage.read(key: StorageKeys.authToken);
-        if (storedToken == null) {
-          print('❌ [Social Auth] Token verification failed - not stored!');
-          throw AuthException('Failed to store authentication tokens');
-        }
-        print('✅ [Social Auth] Token verified in storage');
+        print('🎊 [Social Auth] ========== AUTHENTICATION COMPLETE ==========');
 
         return AuthResult(
           user: user,
@@ -1131,6 +1153,68 @@ class AuthService {
       if (e is AuthException) rethrow;
       throw AuthException('Failed to create account. Please try again.');
     }
+  }
+  // Replace the isAuthenticated method in auth_service.dart
+
+  /// Check if user is authenticated (has valid tokens)
+  /// Returns true only if BOTH Firebase and backend tokens exist
+  Future<bool> isAuthenticated() async {
+    try {
+      // Check backend token
+      final backendToken = await _storage.read(key: StorageKeys.authToken);
+      final hasBackendToken = backendToken != null && backendToken.isNotEmpty;
+
+      // Check Firebase auth
+      final firebaseUser = _firebaseAuth.currentUser;
+      final hasFirebaseAuth = firebaseUser != null;
+
+      print('🔐 [AuthService.isAuthenticated] Backend token: ${hasBackendToken ? "✅" : "❌"}');
+      print('🔐 [AuthService.isAuthenticated] Firebase auth: ${hasFirebaseAuth ? "✅" : "❌"}');
+
+      // BOTH must be present for authenticated state
+      final isAuth = hasBackendToken && hasFirebaseAuth;
+
+      if (!isAuth) {
+        // Debug: Show what's missing
+        if (!hasBackendToken) {
+          print('⚠️ [AuthService.isAuthenticated] Missing backend token');
+        }
+        if (!hasFirebaseAuth) {
+          print('⚠️ [AuthService.isAuthenticated] Missing Firebase auth');
+
+          // Additional debug: Check if we just signed in
+          final recentToken = await _storage.read(key: StorageKeys.authToken);
+          if (recentToken != null) {
+            print('ℹ️ [AuthService.isAuthenticated] Backend token exists but Firebase not ready yet');
+          }
+        }
+      }
+
+      return isAuth;
+    } catch (e) {
+      print('❌ [AuthService.isAuthenticated] Error: $e');
+      return false;
+    }
+  }
+
+  /// Alternative method: Wait for authentication to be ready (with timeout)
+  Future<bool> waitForAuthentication({Duration timeout = const Duration(seconds: 5)}) async {
+    final startTime = DateTime.now();
+
+    while (DateTime.now().difference(startTime) < timeout) {
+      final isAuth = await isAuthenticated();
+
+      if (isAuth) {
+        print('✅ [AuthService.waitForAuthentication] Authentication ready!');
+        return true;
+      }
+
+      // Wait a bit before checking again
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+
+    print('⏱️ [AuthService.waitForAuthentication] Timeout waiting for authentication');
+    return false;
   }
 
 
@@ -1260,6 +1344,25 @@ class AuthService {
       throw AuthException('Failed to send reset email');
     }
   }
+  /// Get cached user data from secure storage
+  Future<Map<String, dynamic>?> getCachedUserData() async {
+    try {
+      final userData = await _storage.read(key: StorageKeys.userData);
+      if (userData == null) {
+        print('ℹ️ [AuthService.getCachedUserData] No cached user data found');
+        return null;
+      }
+
+      final user = jsonDecode(userData) as Map<String, dynamic>;
+      print('✅ [AuthService.getCachedUserData] Found cached data for: ${user['email']}');
+      return user;
+    } catch (e, st) {
+      AppLogger.error('Failed to get cached user data', error: e, stackTrace: st);
+      return null;
+    }
+  }
+
+
 
   Future<Map<String, dynamic>> fetchProfile() async {
     try {

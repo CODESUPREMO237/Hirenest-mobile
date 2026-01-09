@@ -56,6 +56,41 @@ class ProductModel {
     if (images.isEmpty) return '';
     return images.firstWhere((img) => img.isPrimary, orElse: () => images[0]).url;
   }
+
+  // NEW: CopyWith method for immutable updates
+  ProductModel copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? category,
+    PriceModel? price,
+    String? condition,
+    List<ProductImageModel>? images,
+    LocationModel? location,
+    StockModel? stock,
+    SellerModel? seller,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? status,
+    StatsModel? stats,
+  }) {
+    return ProductModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      price: price ?? this.price,
+      condition: condition ?? this.condition,
+      images: images ?? this.images,
+      location: location ?? this.location,
+      stock: stock ?? this.stock,
+      seller: seller ?? this.seller,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      status: status ?? this.status,
+      stats: stats ?? this.stats,
+    );
+  }
 }
 
 @JsonSerializable(explicitToJson: true)

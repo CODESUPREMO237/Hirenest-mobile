@@ -290,9 +290,7 @@ class MarketplaceRepository {
   }
 
   // Get my products
-// lib/features/marketplace/data/repositories/marketplace_repository.dart
 
-// lib/features/marketplace/data/repositories/marketplace_repository.dart
 
   Future<PaginatedResponse<ProductModel>> getMyProducts({
     int page = 1,

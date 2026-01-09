@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/PaginatedProductsNotifier.dart';
+import '../providers/products_state.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_shimmer_grid.dart';
 import '../widgets/category_chips.dart';
-import '../widgets/product_filter_sheet.dart';
+import '../widgets/product_filters_widget.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/widgets/error_widget.dart';
 import 'package:go_router/go_router.dart';
@@ -20,9 +21,7 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
   final ScrollController scrollController = ScrollController();
   final TextEditingController searchController = TextEditingController();
 
-  String? _selectedCategory;
-  double? _minPrice;
-  double? _maxPrice;
+
 
   @override
   void initState() {
@@ -44,24 +43,13 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
     super.dispose();
   }
 
+// Inside _MarketplacePageState
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => ProductFilterSheet(
-        initialCategory: _selectedCategory,
-        initialMinPrice: _minPrice,
-        initialMaxPrice: _maxPrice,
-        onApply: (category, minPrice, maxPrice) {
-          setState(() {
-            _selectedCategory = category;
-            _minPrice = minPrice;
-            _maxPrice = maxPrice;
-          });
-          ref.read(paginatedProductsProvider.notifier).refresh();
-          Navigator.pop(context);
-        },
-      ),
+      backgroundColor: Colors.transparent, // Keeps the rounded corners visible
+      builder: (context) => const ProductFiltersWidget(), // Use the correct name
     );
   }
 
@@ -73,6 +61,10 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
       appBar: AppBar(
         title: const Text("Marketplace"),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list), // Add this button
+            onPressed: _showFilterSheet,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => ref.read(paginatedProductsProvider.notifier).refresh(),
@@ -104,11 +96,19 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: CategoryChips(
-                      categories: ['Electronics', 'Furniture', 'Clothing', 'Books', 'Other'],
-                      selectedCategory: _selectedCategory,
+                      // 1. Matches the categories in your Filter Widget
+                      categories: const ['Electronics', 'Fashion', 'Home', 'Sports', 'Books', 'Toys', 'Other'],
+
+                      // 2. Use ?. and ?? to handle potential null filters
+                      selectedCategory: productsState.filters?.category,
+
                       onSelected: (cat) {
-                        setState(() => _selectedCategory = cat);
-                        ref.read(paginatedProductsProvider.notifier).refresh();
+                        print("DEBUG: Selected category is: $cat"); // If you click All, this should print null
+                        // 3. Handle null by providing a default ProductFilters object if state.filters is null
+                        final currentFilters = productsState.filters ?? const ProductFilters();
+                        final newFilters = currentFilters.copyWith(category: cat);
+
+                        ref.read(paginatedProductsProvider.notifier).applyFilters(newFilters);
                       },
                     ),
                   ),

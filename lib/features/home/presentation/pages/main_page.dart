@@ -10,7 +10,6 @@ import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../pages/home_page.dart';
 import '../pages/employer_dashboard.dart';
-import '../pages/guest_dashboard.dart';
 
 final selectedIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -32,18 +31,9 @@ class MainPage extends ConsumerWidget {
 
         final userRole = user.role ?? 'guest';
         final isEmployer = userRole == 'employer';
-        final isGuest = userRole == 'guest' || userRole.isEmpty;
 
         // Different pages based on user role
-        final pages = isGuest
-            ? [
-          const GuestDashboard(),
-          const MarketplacePage(),
-          const JobsPage(),
-          const GuestDashboard(), // Placeholder for disabled chat
-          const ProfilePage(),
-        ]
-            : isEmployer
+        final pages = isEmployer
             ? [
           const EmployerDashboardPage(),
           const MarketplacePage(),
@@ -60,43 +50,7 @@ class MainPage extends ConsumerWidget {
         ];
 
         // Different nav items based on user role
-        final navigationDestinations = isGuest
-            ? [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Badge(
-              label: Text('Limited'),
-              backgroundColor: Colors.orange,
-              child: const Icon(Icons.shopping_bag_outlined),
-            ),
-            selectedIcon: const Icon(Icons.shopping_bag),
-            label: 'Marketplace',
-          ),
-          NavigationDestination(
-            icon: Badge(
-              label: Text('Limited'),
-              backgroundColor: Colors.orange,
-              child: const Icon(Icons.work_outline),
-            ),
-            selectedIcon: const Icon(Icons.work),
-            label: 'Jobs',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.block_outlined),
-            selectedIcon: Icon(Icons.block),
-            label: 'Chat',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ]
-            : isEmployer
+        final navigationDestinations = isEmployer
             ? const [
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
@@ -169,16 +123,6 @@ class MainPage extends ConsumerWidget {
             child: NavigationBar(
               selectedIndex: selectedIndex,
               onDestinationSelected: (index) {
-                // Prevent navigation to chat for guests
-                if (isGuest && index == 3) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Chat is disabled for guest users. Please sign up!'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                  return;
-                }
                 ref.read(selectedIndexProvider.notifier).state = index;
               },
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,

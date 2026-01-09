@@ -104,12 +104,11 @@ class ChatRepository {
     return response.data['data']['count'];
   }
 
-  // lib/features/chat/data/repositories/chat_repository.dart
 
-// lib/features/chat/data/repositories/chat_repository.dart
 
 // Use this for BOTH the Profile Page and the Product Detail Page
   Future<String> getOrCreateChat({required String receiverId, String? productId}) async {
+
     try {
       final response = await dio.post(
         ApiEndpoints.chats,

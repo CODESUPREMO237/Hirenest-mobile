@@ -23,18 +23,23 @@ class JobsNotifier extends StateNotifier<AsyncValue<List<JobModel>>> {
   bool _hasMore = true;
   JobFilters _filters = JobFilters();
 
-  JobsNotifier(this.ref) : super(const AsyncValue.loading()) {
-    loadJobs();
-  }
+  JobsNotifier(this.ref) : super(const AsyncValue.loading()) ;
+
 
   Future<void> loadJobs({bool refresh = false}) async {
     if (refresh) {
       _currentPage = 1;
       _hasMore = true;
       state = const AsyncValue.loading();
+      ref.read(jobsPaginationLoadingProvider.notifier).state = false;
     }
 
     if (!_hasMore && !refresh) return;
+
+    // Set pagination loading only when not refreshing
+    if (!refresh) {
+      ref.read(jobsPaginationLoadingProvider.notifier).state = true;
+    }
 
     try {
       final repository = ref.read(jobsRepositoryProvider);
@@ -61,6 +66,8 @@ class JobsNotifier extends StateNotifier<AsyncValue<List<JobModel>>> {
       _currentPage++;
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
+    } finally {
+      ref.read(jobsPaginationLoadingProvider.notifier).state = false;
     }
   }
 
@@ -74,6 +81,8 @@ class JobsNotifier extends StateNotifier<AsyncValue<List<JobModel>>> {
     loadJobs(refresh: true);
   }
 }
+// Add this after JobsNotifier class
+final jobsPaginationLoadingProvider = StateProvider<bool>((ref) => false);
 
 // ============================================================================
 // JOB DETAIL PROVIDER - WITH AUTODISPOSE FOR VIEW TRACKING

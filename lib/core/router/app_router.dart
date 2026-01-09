@@ -19,7 +19,6 @@ import '../../features/company/presentation/pages/create_company_page.dart';
 import '../../features/company/presentation/pages/edit_company_page.dart';
 import '../../features/company/presentation/pages/manage_admins_page.dart';
 import '../../features/home/presentation/pages/main_page.dart';
-import '../../features/home/presentation/pages/guest_dashboard.dart';
 
 // Jobs
 import '../../features/jobs/presentation/pages/edit_job_page.dart';
@@ -118,11 +117,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const RegisterPage(),
       ),
 
-      // Guest
-      GoRoute(
-        path: '/guest',
-        builder: (context, state) => const GuestDashboard(),
-      ),
 
       // Home / Main
       GoRoute(

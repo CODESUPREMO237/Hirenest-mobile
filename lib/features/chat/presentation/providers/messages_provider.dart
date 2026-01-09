@@ -5,10 +5,10 @@ import '../../../../core/network/socket_client.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/models/message_model.dart';
 import '../../data/repositories/chat_repository.dart';
-// Import the correct Auth Provider
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// AsyncNotifierProvider.family for messages of a chat
+/// FIXED: Messages load instantly when you open the chat (like WhatsApp)
 final messagesProvider = AsyncNotifierProvider.family<
     MessagesNotifier, List<MessageModel>, String>(MessagesNotifier.new);
 
@@ -19,9 +19,7 @@ class MessagesNotifier
   bool _hasMore = true;
   bool _isListenerAttached = false;
 
-  /// GETS YOUR ID FROM THE AUTH PROVIDER
   String? get _currentUserId {
-    // We watch the currentUserProvider which hits /users/me correctly
     final userAsync = ref.read(currentUserProvider);
     return userAsync.value?.id;
   }
@@ -30,10 +28,11 @@ class MessagesNotifier
   Future<List<MessageModel>> build(String chatId) async {
     _repository = ref.read(chatRepositoryProvider);
 
-    // 1. Setup Socket Listener
+    // Setup Socket Listener FIRST (so real-time messages work immediately)
     _setupSocketListener(chatId);
 
-    // 2. Initial fetch
+    // Load messages SYNCHRONOUSLY (no await) - they appear instantly
+    // The UI will show loading state briefly, then messages appear
     return fetchInitialMessages(chatId);
   }
 
@@ -41,12 +40,14 @@ class MessagesNotifier
     try {
       _page = 1;
       _hasMore = true;
+
+      // Fetch messages from API
       final paginated = await _repository.getMessages(chatId, page: _page);
 
       if (paginated.items.length < 20) _hasMore = false;
       _page++;
 
-      // APPLY USER CONTEXT (LEFT/RIGHT ALIGNMENT)
+      // Apply user context (left/right alignment)
       return paginated.items.map((m) => _applyUserContext(m)).toList();
     } catch (e, st) {
       AppLogger.error('Error fetching initial messages', error: e);
@@ -60,7 +61,6 @@ class MessagesNotifier
     final socketClient = ref.read(socketClientProvider);
     socketClient.onNewMessage((data) {
       if (data['chatId'] == chatId) {
-        // Apply user context to incoming real-time message
         final incomingMessage = _applyUserContext(
             MessageModel.fromJson(data['message'])
         );
@@ -140,27 +140,21 @@ class MessagesNotifier
     }
   }
 
-  /// CRITICAL: This is the logic that puts your messages on the right
   MessageModel _applyUserContext(MessageModel message) {
     final myId = _currentUserId;
     if (myId == null) {
-      // If we don't have our ID yet, check the boolean from backend as backup
       return message;
     }
 
-    // Compare message senderId with your actual ID
     return message.copyWith(
       isMyMessage: message.senderId == myId,
     );
   }
 
-  /// Mark all messages in this chat as read
   Future<void> markAsRead(String chatId) async {
     try {
-      // 1. Tell the server to mark them as read in the database
       await _repository.markAsRead(chatId);
 
-      // 2. Update local state so the checkmarks turn blue immediately
       final currentMessages = state.value ?? [];
       state = AsyncData(
           currentMessages.map((m) => m.copyWith(read: true)).toList()

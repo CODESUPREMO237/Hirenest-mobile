@@ -71,7 +71,7 @@ final Map<String, List<String>> structure = {
   'lib/features/marketplace/presentation/widgets': [
     'product_card.dart',
     'product_grid.dart',
-    'product_filter_sheet.dart',
+    'product_filters_widget.dart',
     'category_chips.dart',
     'image_gallery.dart',
     'seller_info_card.dart',

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/utils/logger.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -12,73 +12,133 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
-  final _storage = const FlutterSecureStorage();
-
   @override
   void initState() {
     super.initState();
     _initialize();
   }
 
+// Replace the _initialize method in your splash_screen.dart
+
   Future<void> _initialize() async {
+    // Show splash for minimum time
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
     final authService = ref.read(authServiceProvider);
 
     try {
-      // ✅ Try to get token with retry logic (for race conditions)
-      String? token;
-      int retries = 5;
+      debugPrint('🚀 [Splash] Initializing app...');
 
-      while (retries > 0 && token == null) {
-        token = await authService.getBackendToken();
-        if (token == null) {
-          debugPrint('⚠️ Token not found, retry ${6 - retries}/5');
-          await Future.delayed(const Duration(milliseconds: 300));
-          retries--;
+      // ✅ RETRY LOGIC: Check authentication multiple times to handle race conditions
+      bool isAuth = false;
+      int retries = 0;
+      const maxRetries = 3;
+
+      while (retries < maxRetries && !isAuth) {
+        isAuth = await authService.isAuthenticated();
+
+        if (!isAuth && retries < maxRetries - 1) {
+          debugPrint('⏳ [Splash] Not authenticated yet, waiting... (attempt ${retries + 1}/$maxRetries)');
+          await Future.delayed(Duration(milliseconds: 500 * (retries + 1)));
+          retries++;
+        } else {
+          break;
         }
       }
 
-      if (token != null) {
-        debugPrint('✅ Token found: ${token.substring(0, 30)}...');
-
-        // Check for cached user data
-        final userData = await _storage.read(key: "userData");
-
-        if (userData != null) {
-          debugPrint('✅ User data cached, navigating to home');
-          if (mounted) context.go('/');
-          return;
-        }
-
-        // If no cached data, fetch it
-        debugPrint('⚠️ No cached user data, fetching from server...');
-        try {
-          await authService.fetchProfile();
-          debugPrint('✅ Profile fetched successfully');
-          if (mounted) context.go('/');
-        } catch (e) {
-          debugPrint('❌ Profile fetch failed: $e');
-          // Continue to login even if profile fetch fails
-          // The app will fetch it later
-          if (mounted) context.go('/');
-        }
-      } else {
-        debugPrint('❌ No token after retries, navigating to login');
+      if (!isAuth) {
+        debugPrint('❌ [Splash] Not authenticated after $maxRetries attempts, going to login');
         if (mounted) context.go('/auth/login');
+        return;
       }
-    } catch (e) {
-      debugPrint("❌ Splash Error: $e");
 
-      // Force logout to clear bad session
+      debugPrint('✅ [Splash] User is authenticated');
+
+      // ✅ Step 2: Try to get cached user data first (instant)
+      final cachedUser = await authService.getCachedUserData();
+
+      if (cachedUser != null) {
+        debugPrint('✅ [Splash] Using cached user data for: ${cachedUser['email']}');
+        _navigateBasedOnRole(cachedUser);
+        return;
+      }
+
+      // ✅ Step 3: No cache found, fetch from server with retry
+      debugPrint('ℹ️ [Splash] No cached data, fetching from server...');
+      await _fetchAndNavigate(authService);
+
+    } catch (e, stackTrace) {
+      debugPrint('❌ [Splash] Error during initialization: $e');
+      AppLogger.error('Splash initialization failed', error: e, stackTrace: stackTrace);
+
+      // Clear auth data and go to login
       try {
-        await authService.signOut();
-      } catch (logoutError) {
-        debugPrint("⚠️ Logout error: $logoutError");
+        await authService.clearAuthData();
+      } catch (clearError) {
+        debugPrint('⚠️ [Splash] Error clearing auth data: $clearError');
       }
 
       if (mounted) context.go('/auth/login');
+    }
+  }
+
+  /// Fetch profile from server with retry logic
+  Future<void> _fetchAndNavigate(AuthService authService) async {
+    int maxRetries = 3;
+    int retryCount = 0;
+
+    while (retryCount < maxRetries) {
+      try {
+        debugPrint('📡 [Splash] Fetching profile (attempt ${retryCount + 1}/$maxRetries)...');
+
+        final user = await authService.fetchProfile();
+
+        debugPrint('✅ [Splash] Profile fetched successfully');
+        _navigateBasedOnRole(user);
+        return;
+
+      } on AuthException catch (e) {
+        if (e.message.contains('User not found') && retryCount < maxRetries - 1) {
+          // User might still be creating in backend, retry with exponential backoff
+          final delayMs = 500 * (retryCount + 1); // 500ms, 1000ms, 1500ms
+          debugPrint('⏳ [Splash] User not found, retrying in ${delayMs}ms...');
+          await Future.delayed(Duration(milliseconds: delayMs));
+          retryCount++;
+        } else {
+          // Max retries reached or different error
+          debugPrint('❌ [Splash] Auth error: ${e.message}');
+          throw e;
+        }
+      } catch (e) {
+        // Unexpected error
+        debugPrint('❌ [Splash] Unexpected error: $e');
+        throw e;
+      }
+    }
+
+    // If we get here, all retries failed
+    throw AuthException('Could not fetch user profile after $maxRetries attempts');
+  }
+
+  /// Navigate based on user role
+  void _navigateBasedOnRole(Map<String, dynamic> user) {
+    if (!mounted) return;
+
+    final role = user['role'] as String?;
+    final email = user['email'] as String?;
+
+    debugPrint('🧭 [Splash] Navigating user: $email (role: $role)');
+
+    // Navigate to main page - MainPage will handle role-based UI
+    switch (role) {
+      case 'jobseeker':
+      case 'employer':
+        context.go('/');
+        break;
+      default:
+        debugPrint('⚠️ [Splash] Unknown role: $role, going to onboarding');
+        context.go('/onboarding');
     }
   }
 
@@ -152,6 +212,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               const CircularProgressIndicator(
                 strokeWidth: 3,
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D47A1)),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Loading text
+              Text(
+                'Loading your profile...',
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),

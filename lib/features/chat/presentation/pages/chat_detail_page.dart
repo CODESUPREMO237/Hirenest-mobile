@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:collection/collection.dart';
 
 import '../../../../core/network/socket_client.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -12,7 +13,6 @@ import '../providers/typing_provider.dart';
 
 import '../widgets/chat_input.dart';
 import '../widgets/typing_indicator.dart';
-import '../widgets/message_bubble.dart' hide MessageBubble;
 
 import '../../data/models/message_model.dart';
 import '../../data/models/chat_model.dart';
@@ -29,9 +29,9 @@ class ChatDetailPage extends ConsumerStatefulWidget {
 class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
   final _scrollController = ScrollController();
   final _messageController = TextEditingController();
-  bool _isTyping = false;
   bool _showScrollToBottom = false;
   late SocketClient _socketClient;
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -39,8 +39,10 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     _socketClient = ref.read(socketClientProvider);
     _scrollController.addListener(_onScroll);
 
-    // Safely initialize data after the first frame
+    // Immediately start loading messages (no delay)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (_isDisposed) return;
+
       // Mark messages as read on entry
       ref.read(messagesProvider(widget.chatId).notifier).markAsRead(widget.chatId);
 
@@ -49,23 +51,32 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
       if (_socketClient.socket?.connected ?? false) {
         _joinChatRoom();
       } else {
-        _socketClient.socket?.once('connect', (_) => _joinChatRoom());
+        _socketClient.socket?.once('connect', (_) {
+          if (!_isDisposed && mounted) {
+            _joinChatRoom();
+          }
+        });
       }
     });
   }
 
   void _joinChatRoom() {
+    if (_isDisposed || !mounted) return;
+
     _socketClient.joinChat(widget.chatId, (response) {
-      if (response['success'] == true && response['messages'] != null) {
-        ref
-            .read(messagesProvider(widget.chatId).notifier)
-            .setMessagesFromSocket(response['messages']);
+      if (!_isDisposed && mounted) {
+        if (response['success'] == true && response['messages'] != null) {
+          ref
+              .read(messagesProvider(widget.chatId).notifier)
+              .setMessagesFromSocket(response['messages']);
+        }
       }
     });
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _socketClient.leaveChat(widget.chatId);
     _scrollController.dispose();
     _messageController.dispose();
@@ -73,15 +84,13 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
   }
 
   void _onScroll() {
-    if (!_scrollController.hasClients) return;
+    if (!_scrollController.hasClients || _isDisposed) return;
 
-    // Show jump-to-bottom button if scrolled up more than 400px
     final isScrolledUp = _scrollController.position.pixels > 400;
     if (isScrolledUp != _showScrollToBottom) {
       setState(() => _showScrollToBottom = isScrolledUp);
     }
 
-    // Pagination: Load more when reaching the top (end of list in reverse)
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       ref.read(messagesProvider(widget.chatId).notifier).loadMoreMessages(widget.chatId);
@@ -89,7 +98,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
+    if (_scrollController.hasClients && !_isDisposed) {
       _scrollController.animateTo(
         0,
         duration: const Duration(milliseconds: 300),
@@ -99,27 +108,37 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
   }
 
   void _handleTyping() {
-    final typingNotifier = ref.read(typingProvider(widget.chatId).notifier);
-    if (!_isTyping) {
-      _isTyping = true;
-      typingNotifier.startTyping();
-    }
+    if (_isDisposed) return;
+
+    // Emit typing event to OTHER users via socket
+    _socketClient.socket?.emit('typing', {
+      'chatId': widget.chatId,
+      'isTyping': true,
+    });
+
+    // Auto-stop typing after 2 seconds
     Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      if (_isTyping) {
-        _isTyping = false;
-        typingNotifier.stopTyping();
-      }
+      if (_isDisposed || !mounted) return;
+      _socketClient.socket?.emit('typing', {
+        'chatId': widget.chatId,
+        'isTyping': false,
+      });
     });
   }
 
   Future<void> _sendMessage() async {
+    if (_isDisposed) return;
+
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
 
     _messageController.clear();
-    _isTyping = false;
-    ref.read(typingProvider(widget.chatId).notifier).stopTyping();
+
+    // Stop typing indicator for others
+    _socketClient.socket?.emit('typing', {
+      'chatId': widget.chatId,
+      'isTyping': false,
+    });
 
     try {
       await ref
@@ -127,9 +146,12 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
           .sendMessage(widget.chatId, content);
       _scrollToBottom();
     } catch (e) {
-      if (!mounted) return;
+      if (_isDisposed || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send: $e')),
+        SnackBar(
+          content: Text('Failed to send: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -139,9 +161,17 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     final messagesAsync = ref.watch(messagesProvider(widget.chatId));
     final typingState = ref.watch(typingProvider(widget.chatId));
     final chatDetailAsync = ref.watch(chatDetailProvider(widget.chatId));
+    final myId = ref.watch(currentUserProvider).value?.id;
 
+    // FIXED: Only show typing if OTHER users (not me) are typing
     final isOthersTyping = typingState.when(
-      data: (map) => map.values.any((t) => t),
+      data: (map) {
+        // Filter out my own ID from typing users
+        final othersTyping = map.entries
+            .where((entry) => entry.key != myId && entry.value == true)
+            .isNotEmpty;
+        return othersTyping;
+      },
       loading: () => false,
       error: (_, __) => false,
     );
@@ -154,13 +184,19 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
             children: [
               const CircleAvatar(radius: 18, child: Icon(Icons.person)),
               const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Chat Support', style: TextStyle(fontSize: 16)),
-                  _buildOnlineStatus(chat),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Chat Support',
+                      style: TextStyle(fontSize: 16),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    _buildOnlineStatus(chat),
+                  ],
+                ),
               ),
             ],
           ),
@@ -183,7 +219,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
                 data: (chat) => chat.product != null
                     ? _buildProductHeader(chat.product!)
                     : const SizedBox.shrink(),
-                loading: () => const LinearProgressIndicator(minHeight: 2),
+                loading: () => const SizedBox.shrink(),
                 error: (_, __) => const SizedBox.shrink(),
               ),
 
@@ -195,7 +231,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
 
                     return ListView.builder(
                       controller: _scrollController,
-                      reverse: true, // Reverse for chat behavior
+                      reverse: true,
                       padding: const EdgeInsets.all(16),
                       itemCount: messages.length + (isOthersTyping ? 1 : 0),
                       itemBuilder: (context, index) {
@@ -245,10 +281,17 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
 
   Widget _buildOnlineStatus(ChatModel chat) {
     final myId = ref.read(currentUserProvider).value?.id;
-    final otherUser = chat.participants.firstWhere(
+    if (myId == null) {
+      return const SizedBox.shrink();
+    }
+
+    final otherUser = chat.participants.firstWhereOrNull(
           (p) => p.id != myId,
-      orElse: () => chat.participants.first,
-    );
+    ) ?? (chat.participants.isNotEmpty ? chat.participants.first : null);
+
+    if (otherUser == null) {
+      return const SizedBox.shrink();
+    }
 
     final isOnline = ref.watch(onlineUsersProvider).contains(otherUser.id);
     final lastSeenMap = ref.watch(lastSeenProvider);
@@ -271,11 +314,14 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
           ),
         ),
         const SizedBox(width: 6),
-        Text(
-          statusText,
-          style: TextStyle(
-            fontSize: 12,
-            color: isOnline ? Colors.white : Colors.white70,
+        Flexible(
+          child: Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 12,
+              color: isOnline ? Colors.white : Colors.white70,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -289,7 +335,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     if (diff.inMinutes < 1) return "Last seen just now";
     if (diff.inHours < 1) return "Last seen ${diff.inMinutes}m ago";
     if (diff.inDays < 1) return "Last seen at ${DateFormat('HH:mm').format(date)}";
-    if (diff.inDays < 7) return "Last seen ${DateFormat('EEEE').format(date)}"; // e.g. "Last seen Monday"
+    if (diff.inDays < 7) return "Last seen ${DateFormat('EEEE').format(date)}";
 
     return "Last seen ${DateFormat('MMM d').format(date)}";
   }
@@ -306,20 +352,55 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
           if (product.image != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: Image.network(product.image!, width: 45, height: 45, fit: BoxFit.cover),
+              child: Image.network(
+                product.image!,
+                width: 45,
+                height: 45,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 45,
+                    height: 45,
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.image_not_supported, size: 20),
+                  );
+                },
+              ),
             ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                Text("${product.currency} ${product.price}", style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 13)),
+                Text(
+                  product.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  "${product.currency} ${NumberFormat('#,###').format(product.price)}",
+                  style: TextStyle(
+                    color: Theme.of(context).primaryColor,
+                    fontSize: 13,
+                  ),
+                ),
               ],
             ),
           ),
           OutlinedButton(
-            onPressed: () => context.push('/marketplace/products/${product.id}'),
+            onPressed: () {
+              if (!_isDisposed && mounted) {
+                context.push('/marketplace/products/${product.id}');
+              }
+            },
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: const Size(60, 32),
+            ),
             child: const Text("View", style: TextStyle(fontSize: 12)),
           )
         ],
@@ -327,33 +408,91 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     );
   }
 
-  Widget _buildEmptyState() => const Center(child: Text("No messages yet."));
+  Widget _buildEmptyState() => Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
+        const SizedBox(height: 16),
+        Text(
+          "No messages yet",
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Start the conversation!",
+          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildErrorState() => Center(
-    child: TextButton(
-      onPressed: () => ref.refresh(messagesProvider(widget.chatId)),
-      child: const Text("Error loading messages. Retry?"),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+        const SizedBox(height: 16),
+        const Text(
+          "Error loading messages",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: () {
+            if (!_isDisposed && mounted) {
+              ref.refresh(messagesProvider(widget.chatId));
+            }
+          },
+          icon: const Icon(Icons.refresh),
+          label: const Text("Retry"),
+        ),
+      ],
     ),
   );
 
   void _showChatOptions() {
+    if (_isDisposed) return;
+
     showModalBottomSheet(
       context: context,
       builder: (_) => SafeArea(
-        child: ListTile(
-          leading: const Icon(Icons.archive_outlined),
-          title: const Text('Archive Chat'),
-          onTap: () async {
-            Navigator.pop(context);
-            await ref.read(chatsProvider.notifier).archiveChat(widget.chatId);
-            if (mounted) context.pop();
-          },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.archive_outlined),
+              title: const Text('Archive Chat'),
+              onTap: () async {
+                Navigator.pop(context);
+                if (_isDisposed || !mounted) return;
+
+                try {
+                  await ref.read(chatsProvider.notifier).archiveChat(widget.chatId);
+                  if (!_isDisposed && mounted) {
+                    context.pop();
+                  }
+                } catch (e) {
+                  if (!_isDisposed && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to archive: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
   void _showMessageOptions(MessageModel message) {
+    if (_isDisposed) return;
+
     showModalBottomSheet(
       context: context,
       builder: (_) => SafeArea(
@@ -366,15 +505,49 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
               onTap: () {
                 Clipboard.setData(ClipboardData(text: message.content));
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied')));
+                if (!_isDisposed && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Copied to clipboard'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
               },
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text('Delete Message', style: TextStyle(color: Colors.red)),
+              title: const Text(
+                'Delete Message',
+                style: TextStyle(color: Colors.red),
+              ),
               onTap: () async {
                 Navigator.pop(context);
-                await ref.read(messagesProvider(widget.chatId).notifier).deleteMessage(widget.chatId, message.id);
+                if (_isDisposed || !mounted) return;
+
+                try {
+                  await ref
+                      .read(messagesProvider(widget.chatId).notifier)
+                      .deleteMessage(widget.chatId, message.id);
+
+                  if (!_isDisposed && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Message deleted'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (!_isDisposed && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to delete: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               },
             ),
           ],
