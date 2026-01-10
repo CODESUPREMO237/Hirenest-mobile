@@ -16,15 +16,17 @@ import 'package:dio/dio.dart';
 import 'package:app_links/app_links.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../constants/storage_keys.dart';
-import '../utils/logger.dart';
-import '../network/dio_client.dart';
-import '../config/app_config.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:crypto/crypto.dart';
+
+import '../../../../core/config/app_config.dart';
+import '../../../../core/constants/storage_keys.dart';
+import '../../../../core/utils/logger.dart';
+import '../network/api_client.dart';
 
 // --------------------- Models ---------------------
 class AuthTokens {

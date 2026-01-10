@@ -63,11 +63,10 @@ class ApiEndpoints {
       '/marketplace/products/$id/report';
 
   // ==================== APPLICATIONS ====================
-  // Backend: app.use('/api/v1/applications', applicationRoutes)
-  // Routes inside application.routes.js:
-  //   - router.get('/my-applications', ...)
-  //   - router.post('/jobs/:jobId/apply', ...)
-  //   - router.get('/applications/:id', ...)
+
+  // ✅ OPTIMIZED EMPLOYER ENDPOINTS (ADD THESE)
+  static const String employerApplications = '/applications/employer-applications';
+  static const String employerApplicationStats = '/applications/employer-stats';
 
   // Job Seeker routes
   static const String myApplications = '/applications/my-applications';
@@ -80,6 +79,7 @@ class ApiEndpoints {
   static String application(String id) => '/applications/applications/$id';
 
   // Employer routes
+
   static String updateApplicationStatus(String id) =>
       '/applications/applications/$id/status';
   static String scheduleInterview(String id) =>
@@ -140,10 +140,15 @@ class ApiEndpoints {
   static const String adminReported = '/admin/reported';
 
 // ==================== REVIEWS ====================
-  // Backend: app.use('/api/v1/reviews', reviewRoutes)
+  // ==================== REVIEWS ====================
   static const String reviews = '/reviews';
   static String userReviews(String userId) => '/reviews/user/$userId';
-  static String jobReviews(String jobId) => '/reviews/job/$jobId'; // Added for completeness
+  static String jobReviews(String jobId) => '/reviews/job/$jobId';
+
+  // ✅ NEW: Check if user has reviewed a specific reviewee for a job
+  static String checkReview(String jobId, String revieweeId) =>
+      '/reviews/check/$jobId/$revieweeId';
+
 }
 
 // Helper extension for building full URLs

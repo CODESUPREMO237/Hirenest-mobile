@@ -80,6 +80,15 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     _socketClient.leaveChat(widget.chatId);
     _scrollController.dispose();
     _messageController.dispose();
+
+    // ✅ REFRESH CHAT LIST WHEN LEAVING
+    // This ensures the chat list shows the latest message
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(chatsProvider.notifier).loadChats(refresh: true);
+      }
+    });
+
     super.dispose();
   }
 
@@ -132,6 +141,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
 
+    // Clear input immediately for better UX
     _messageController.clear();
 
     // Stop typing indicator for others
@@ -141,12 +151,36 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     });
 
     try {
+      print('📤 Sending message: $content');
+
+      // Send the message
       await ref
           .read(messagesProvider(widget.chatId).notifier)
           .sendMessage(widget.chatId, content);
+
+      print('✅ Message sent successfully');
+
+      // Scroll to bottom to show new message
       _scrollToBottom();
+
+      // ✅ CRITICAL: Update chat list immediately after sending
+      // This ensures the chat list shows the new message preview
+      if (!_isDisposed && mounted) {
+        print('🔄 Refreshing chat list after sending message...');
+
+        // Use a microtask to avoid provider state conflicts
+        Future.microtask(() {
+          if (mounted && !_isDisposed) {
+            ref.read(chatsProvider.notifier).loadChats(refresh: false);
+          }
+        });
+      }
+
     } catch (e) {
+      print('❌ Error sending message: $e');
+
       if (_isDisposed || !mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to send: $e'),
@@ -179,6 +213,14 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // ✅ Refresh chat list when navigating back
+            ref.read(chatsProvider.notifier).loadChats(refresh: true);
+            context.pop();
+          },
+        ),
         title: chatDetailAsync.when(
           data: (chat) => Row(
             children: [

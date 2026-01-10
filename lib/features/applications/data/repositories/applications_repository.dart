@@ -18,19 +18,30 @@ class ApplicationsRepository {
     int limit = 20,
   }) async {
     try {
+      print('📋 [Repository] getMyApplications called');
+      print('   Status filter: ${status ?? "none"}');
+      print('   Page: $page, Limit: $limit');
+
       final queryParams = <String, dynamic>{
         'page': page,
         'limit': limit,
       };
       if (status != null) queryParams['status'] = status;
 
+      print('   Endpoint: ${ApiEndpoints.myApplications}');
+      print('   Full URL: ${ApiEndpoints.baseUrl}${ApiEndpoints.myApplications}');
+
       final response = await _dio.get(
         ApiEndpoints.myApplications,
         queryParameters: queryParams,
       );
 
+      print('✅ [Repository] Response received');
+      print('   Status code: ${response.statusCode}');
+
       return response.data['data'];
     } catch (e) {
+      print('❌ [Repository] Error in getMyApplications: $e');
       throw _handleError(e);
     }
   }
@@ -73,12 +84,7 @@ class ApplicationsRepository {
     }
   }
 
-  // Apply to job
-
-
-
-
-  /// Apply to a job with resume  upload
+  /// Apply to a job with resume upload
   Future<ApplicationModel> applyToJob({
     required String jobId,
     String? coverLetter,
@@ -102,7 +108,7 @@ class ApplicationsRepository {
       // Create multipart form data
       final formData = FormData();
 
-      // ✅ CRITICAL: Add cover letter if provided
+      // Add cover letter if provided
       if (coverLetter != null && coverLetter.trim().isNotEmpty) {
         formData.fields.add(MapEntry('coverLetter', coverLetter.trim()));
         print('✅ Added cover letter to form data');
@@ -121,7 +127,6 @@ class ApplicationsRepository {
 
       // Add screening answers (if any)
       if (screeningAnswers != null && screeningAnswers.isNotEmpty) {
-        // Convert to JSON string for proper backend parsing
         final jsonString = jsonEncode(screeningAnswers);
         formData.fields.add(MapEntry('screeningAnswers', jsonString));
         print('✅ Added ${screeningAnswers.length} screening answers');
@@ -177,7 +182,6 @@ class ApplicationsRepository {
       print('═══════════════════════════════════════════════════');
       print('');
 
-      // Parse and return
       return ApplicationModel.fromJson(response.data['data']['application']);
     } on DioException catch (e) {
       print('');
@@ -303,85 +307,51 @@ class ApplicationsRepository {
     }
   }
 
-  /// ✅ NEW: Get all applications for employer's jobs
-  /// For employers, we need to fetch applications across all their posted jobs
+  /// Get all applications for employer's jobs (OPTIMIZED - Single API call)
   Future<List<Map<String, dynamic>>> getEmployerApplications({
     int page = 1,
     String? status,
   }) async {
     try {
-      print('📋 [Repository] Fetching employer applications...');
+      print('📋 [Repository] Fetching employer applications (OPTIMIZED)...');
+      print('   Endpoint: ${ApiEndpoints.employerApplications}');
+      print('   Page: $page, Status: ${status ?? "all"}');
 
-      // First, get all jobs posted by this employer
-      final jobsResponse = await _dio.get(
-        '/jobs/my-jobs',
-        queryParameters: {'page': 1, 'limit': 100}, // Get all jobs
+      final startTime = DateTime.now();
+
+      // ✅ SINGLE API CALL using new optimized endpoint
+      final response = await _dio.get(
+        ApiEndpoints.employerApplications,
+        queryParameters: {
+          'page': page,
+          'limit': 100,
+          if (status != null) 'status': status,
+        },
       );
 
-      final jobs = (jobsResponse.data['data']['jobs'] as List)
-          .map((job) => job as Map<String, dynamic>)
+      final applications = (response.data['data']['applications'] as List)
+          .map((app) => app as Map<String, dynamic>)
           .toList();
 
-      print('📋 [Repository] Found ${jobs.length} jobs posted by employer');
+      final duration = DateTime.now().difference(startTime);
 
-      if (jobs.isEmpty) {
-        return [];
+      print('✅ [Repository] Fetched ${applications.length} applications in ${duration.inMilliseconds}ms');
+      if (applications.isNotEmpty) {
+        print('   ⚡ ${(duration.inMilliseconds / applications.length).toStringAsFixed(1)}ms per application');
       }
 
-      // Aggregate applications from all jobs
-      List<Map<String, dynamic>> allApplications = [];
-
-      for (final job in jobs) {
-        try {
-          final jobId = job['_id'];
-          print('📋 [Repository] Fetching applications for job: ${job['title']}');
-
-          // Call the employer endpoint for each job
-          final appResponse = await _dio.get(
-            '/applications/jobs/$jobId/applicants',
-            queryParameters: {
-              'page': 1,
-              'limit': 100,
-              if (status != null) 'status': status,
-            },
-          );
-
-          final jobApplications = (appResponse.data['data']['applications'] as List)
-              .map((app) => app as Map<String, dynamic>)
-              .toList();
-
-          print('📋 [Repository] Found ${jobApplications.length} applications for job: ${job['title']}');
-
-          allApplications.addAll(jobApplications);
-        } catch (e) {
-          print('⚠️ [Repository] Error fetching applications for job ${job['_id']}: $e');
-          // Continue with other jobs
-        }
-      }
-
-      print('📋 [Repository] Total applications: ${allApplications.length}');
-
-      // Sort by date (most recent first)
-      allApplications.sort((a, b) {
-        final aDate = DateTime.parse(a['createdAt'] ?? a['appliedAt']);
-        final bDate = DateTime.parse(b['createdAt'] ?? b['appliedAt']);
-        return bDate.compareTo(aDate);
-      });
-
-      return allApplications;
+      return applications;
     } catch (e) {
       AppLogger.error('Error fetching employer applications', error: e);
       rethrow;
     }
   }
 
-
-
-  /// ✅ NEW: Get application statistics for employer
+  /// Get application statistics for employer
   Future<Map<String, dynamic>> getEmployerApplicationStats() async {
     try {
-      // The backend already supports this - same endpoint, just returns employer stats
-      final response = await _dio.get('/applications/applications/stats');
+
+      final response = await _dio.get(ApiEndpoints.employerApplicationStats);
       return response.data['data']['stats'] as Map<String, dynamic>;
     } catch (e) {
       AppLogger.error('Error fetching employer stats', error: e);
@@ -389,14 +359,19 @@ class ApplicationsRepository {
     }
   }
 
-
   String _handleError(dynamic error) {
     if (error is DioException) {
       if (error.response != null) {
-        return error.response?.data['message'] ?? 'An error occurred';
+        final message = error.response?.data['message'] ?? 'An error occurred';
+        print('❌ [Repository] API Error: $message');
+        print('   Status: ${error.response?.statusCode}');
+        print('   Data: ${error.response?.data}');
+        return message;
       }
+      print('❌ [Repository] Network error');
       return 'Network error. Please check your connection.';
     }
+    print('❌ [Repository] Unknown error: $error');
     return error.toString();
   }
 }

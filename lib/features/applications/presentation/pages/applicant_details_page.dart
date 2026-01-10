@@ -23,6 +23,15 @@ class ApplicantDetailsPage extends ConsumerStatefulWidget {
 }
 
 class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
+  // ✅ NEW: Track current status locally for immediate UI updates
+  late String _currentStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentStatus = widget.application.status;
+  }
+
   @override
   Widget build(BuildContext context) {
     final applicantDetails = widget.application.applicantDetails;
@@ -162,8 +171,8 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
                 _buildInfoRow(
                   icon: Icons.badge_outlined,
                   label: 'Status',
-                  value: _getStatusLabel(widget.application.status),
-                  valueColor: _getStatusColor(widget.application.status),
+                  value: _getStatusLabel(_currentStatus), // ✅ Use local status
+                  valueColor: _getStatusColor(_currentStatus), // ✅ Use local status
                 ),
                 if (widget.application.coverLetter != null) ...[
                   const SizedBox(height: 16),
@@ -180,7 +189,7 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
               ],
             ),
 
-            // 4. Screening Questions & Answers (NEW SECTION)
+            // 4. Screening Questions & Answers
             if (widget.application.screeningAnswers != null &&
                 widget.application.screeningAnswers!.isNotEmpty)
               _buildSection(
@@ -193,7 +202,7 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
                     .toList(),
               ),
 
-            // 5. Resume Section (DOWNLOADABLE/VIEWABLE)
+            // 5. Resume Section
             if (widget.application.resume != null ||
                 jobSeekerProfile?.resume?.url != null)
               _buildSection(
@@ -267,7 +276,7 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
                 ],
               ),
 
-            const SizedBox(height: 140), // Extra space for bottom bar
+            const SizedBox(height: 140),
           ],
         ),
       ),
@@ -337,7 +346,6 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
     );
   }
 
-  // NEW: Screening Answer Card
   Widget _buildScreeningAnswerCard(int index, ScreeningAnswer answer) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -475,13 +483,50 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
     );
   }
 
-  // --- UPDATED ACTION BAR WITH IMPROVED FLOW ---
+  // ✅ UPDATED: Action bar uses local status
   Widget _buildActionBar(BuildContext context) {
-    final status = widget.application.status;
+    // ✅ Use local status for immediate UI updates
+    final status = _currentStatus;
 
     // Hide action bar for final states
     if (status == 'accepted' || status == 'rejected') {
-      return const SizedBox.shrink();
+      // ✅ Show confirmation message instead
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: status == 'accepted' ? Colors.green.shade50 : Colors.red.shade50,
+          border: Border(
+            top: BorderSide(
+              color: status == 'accepted' ? Colors.green : Colors.red,
+              width: 2,
+            ),
+          ),
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Icon(
+                status == 'accepted' ? Icons.check_circle : Icons.cancel,
+                color: status == 'accepted' ? Colors.green : Colors.red,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  status == 'accepted'
+                      ? 'Candidate Accepted ✓'
+                      : 'Application Rejected',
+                  style: TextStyle(
+                    color: status == 'accepted' ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Container(
@@ -591,7 +636,7 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
     );
   }
 
-  // --- LOGIC METHODS (Url Launcher & API Calls) ---
+  // --- LOGIC METHODS ---
 
   Future<void> _openResume(String url) async {
     final uri = Uri.parse(url);
@@ -619,7 +664,6 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
 
   String _formatDate(DateTime date) => DateFormat('MMM dd, yyyy').format(date);
 
-  // Updated status label with better descriptions
   String _getStatusLabel(String status) {
     switch (status) {
       case 'pending':
@@ -683,17 +727,25 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
     );
   }
 
+  // ✅ UPDATED: Accept with immediate UI update
   Future<void> _acceptApplicant() async {
     final confirmed = await _showConfirmDialog(
       'Accept Candidate',
       'The candidate will be notified of their acceptance. Continue?',
     );
+
     if (confirmed == true) {
       try {
+        // ✅ Update UI immediately (optimistic update)
+        setState(() {
+          _currentStatus = 'accepted';
+        });
+
         await ref.read(applicationsRepositoryProvider).updateApplicationStatus(
           id: widget.application.id,
           status: 'accepted',
         );
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -701,25 +753,39 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
               backgroundColor: Colors.green,
             ),
           );
+
+          // Return to previous page with refresh indicator
           Navigator.pop(context, true);
         }
       } catch (e) {
+        // ✅ Rollback on error
+        setState(() {
+          _currentStatus = widget.application.status;
+        });
         _showError(e);
       }
     }
   }
 
+  // ✅ UPDATED: Reject with immediate UI update
   Future<void> _rejectApplicant() async {
     final confirmed = await _showConfirmDialog(
       'Reject Candidate',
       'Are you sure you want to reject this application? This action cannot be undone.',
       isRed: true,
     );
+
     if (confirmed == true) {
       try {
+        // ✅ Update UI immediately (optimistic update)
+        setState(() {
+          _currentStatus = 'rejected';
+        });
+
         await ref
             .read(applicationsRepositoryProvider)
             .rejectApplication(id: widget.application.id);
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -727,23 +793,33 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
               backgroundColor: Colors.orange,
             ),
           );
+
+          // Return to previous page with refresh indicator
           Navigator.pop(context, true);
         }
       } catch (e) {
+        // ✅ Rollback on error
+        setState(() {
+          _currentStatus = widget.application.status;
+        });
         _showError(e);
       }
     }
   }
 
+  // ✅ UPDATED: Shortlist with immediate UI update
   Future<void> _addToShortlist() async {
     try {
+      // ✅ Update UI immediately (optimistic update)
+      setState(() {
+        _currentStatus = 'shortlisted';
+      });
+
       await ref
           .read(applicationsRepositoryProvider)
           .shortlistApplication(widget.application.id);
+
       if (mounted) {
-        setState(() {
-          // Force rebuild to update UI
-        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('⭐ Added to Shortlist'),
@@ -757,6 +833,10 @@ class _ApplicantDetailsPageState extends ConsumerState<ApplicantDetailsPage> {
         );
       }
     } catch (e) {
+      // ✅ Rollback on error
+      setState(() {
+        _currentStatus = widget.application.status;
+      });
       _showError(e);
     }
   }

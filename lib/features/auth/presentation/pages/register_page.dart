@@ -1,5 +1,5 @@
 // ============================================================================
-// REGISTER PAGE WITH CONNECTION TEST
+// FIXED REGISTER PAGE - NO MORE POP ERRORS
 // lib/features/auth/presentation/pages/register_page.dart
 // ============================================================================
 
@@ -35,10 +35,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   bool _agreedToTerms = false;
   String _selectedRole = 'jobseeker';
 
-  // Connection test state
-  bool _isTesting = false;
-  String? _testResult;
-
   // Social login loading states
   bool _isGoogleLoading = false;
   bool _isGithubLoading = false;
@@ -53,98 +49,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _confirmPasswordController.dispose();
     _phoneController.dispose();
     super.dispose();
-  }
-
-  // ============================================================================
-  // CONNECTION TEST
-  // ============================================================================
-
-  Future<void> _testConnection() async {
-    setState(() {
-      _isTesting = true;
-      _testResult = null;
-    });
-
-    try {
-      AppLogger.info('🔍 Testing connection to: ${AppConfig.apiBaseUrl}');
-
-      // Test GET
-      final getResponse = await http
-          .get(Uri.parse('${AppConfig.apiBaseUrl}/test'))
-          .timeout(const Duration(seconds: 10));
-
-      AppLogger.info('✅ GET test passed: ${getResponse.statusCode}');
-
-      // Test POST
-      final postResponse = await http
-          .post(
-        Uri.parse('${AppConfig.apiBaseUrl}/test'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'test': 'from Flutter'}),
-      )
-          .timeout(const Duration(seconds: 10));
-
-      AppLogger.info('✅ POST test passed: ${postResponse.statusCode}');
-
-      setState(() {
-        _isTesting = false;
-        _testResult = '✅ Connection OK!';
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Backend connection successful!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e, stackTrace) {
-      AppLogger.error('❌ Connection test failed', error: e, stackTrace: stackTrace);
-
-      setState(() {
-        _isTesting = false;
-        _testResult = '❌ Connection Failed';
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Connection failed: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Details',
-              textColor: Colors.white,
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Connection Error'),
-                    content: SingleChildScrollView(
-                      child: Text(
-                        'Error: $e\n\nTroubleshooting:\n\n'
-                            '1. Run: adb reverse tcp:5000 tcp:5000\n'
-                            '2. Update .env to use localhost\n'
-                            '3. Restart the Flutter app\n'
-                            '4. Make sure backend is running\n\n'
-                            'Current API: ${AppConfig.apiBaseUrl}',
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Close'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        );
-      }
-    }
   }
 
   // ============================================================================
@@ -226,7 +130,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       if (mounted) {
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
+          barrierDismissible: false, // Prevent dismissing by tapping outside
+          builder: (dialogContext) => AlertDialog(
             title: const Text('Success!'),
             content: const Text(
               'Your account has been created successfully. Please check your email to verify your account.',
@@ -234,8 +139,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context);
-                  context.go('/');
+                  // ✅ FIXED: Close dialog first, then navigate
+                  Navigator.of(dialogContext).pop(); // Close the dialog
+                  context.go('/'); // Navigate to home
                 },
                 child: const Text('Get Started'),
               ),
@@ -260,15 +166,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -290,65 +191,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // ============================================================================
-                // CONNECTION TEST BUTTON
-                // ============================================================================
-
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Having connection issues? Test your backend connection first',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue[900],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: _isTesting ? null : _testConnection,
-                        icon: _isTesting
-                            ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                            : const Icon(Icons.wifi_find, size: 18),
-                        label: Text(_isTesting ? 'Testing...' : 'Test Backend Connection'),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 40),
-                        ),
-                      ),
-                      if (_testResult != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          _testResult!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: _testResult!.contains('✅') ? Colors.green : Colors.red,
-                          ),
-                        ),
-                      ],
-                    ],
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -618,7 +460,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // Sign In Link
+                // ✅ FIX: Sign In Link - Use go() instead of pop()
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -627,7 +469,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                     TextButton(
-                      onPressed: () => context.go('/auth/login'),
+                      onPressed: () => context.go('/auth/login'), // ✅ FIXED!
                       child: const Text(
                         'Sign In',
                         style: TextStyle(fontWeight: FontWeight.bold),

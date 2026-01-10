@@ -1,7 +1,4 @@
-// ============================================================================
-// job_applicants_page.dart - WITH RATING FEATURE FOR EMPLOYERS
 // lib/features/jobs/presentation/pages/job_applicants_page.dart
-// ============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +7,7 @@ import '../../../applications/data/models/application_model.dart';
 import '../../../applications/data/repositories/applications_repository.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../reviews/presentation/widgets/rating_dialog.dart';
-
+import '../../../reviews/presentation/providers/reviews_provider.dart'; // ✅ Import reviews provider
 
 class JobApplicantsPage extends ConsumerStatefulWidget {
   final String jobId;
@@ -105,6 +102,7 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(jobApplicantsProvider(widget.jobId));
+              await ref.read(jobApplicantsProvider(widget.jobId).future);
             },
             child: Column(
               children: [
@@ -116,6 +114,7 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
                     itemBuilder: (context, index) {
                       return _ApplicantCard(
                         application: filteredApplicants[index],
+                        jobId: widget.jobId, // ✅ Pass jobId
                         onTap: () => _viewApplicantDetails(
                           context,
                           filteredApplicants[index],
@@ -126,7 +125,6 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
                         onReject: () => _rejectApplicant(
                           filteredApplicants[index],
                         ),
-                        // ✅ ADD RATING CALLBACK
                         onRate: () => _rateApplicant(
                           context,
                           filteredApplicants[index],
@@ -172,19 +170,38 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
     return applicants.where((app) => app.status == _selectedFilter).toList();
   }
 
-  // ✅ NEW: Rate applicant method
+  // ✅ UPDATED: Rate applicant with validation
   void _rateApplicant(BuildContext context, ApplicationModel application) {
+    print('🎯 === RATING APPLICANT ===');
+
     final applicantId = application.applicantDetails?.id ?? application.applicant;
-    final applicantName = application.applicantDetails?.profile?.firstName ?? 'Applicant';
+
+    // Build applicant name
+    String applicantName = 'Applicant';
+    final profile = application.applicantDetails?.profile;
+    if (profile != null) {
+      applicantName = '${profile.firstName ?? ""} ${profile.lastName ?? ""}'.trim();
+      if (applicantName.isEmpty) {
+        applicantName = 'Applicant';
+      }
+    }
+
+    print('   Job ID: ${widget.jobId}');
+    print('   Applicant ID: $applicantId');
+    print('   Applicant Name: $applicantName');
 
     if (applicantId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cannot submit rating: Missing applicant information'),
+          backgroundColor: Colors.red,
         ),
       );
+      print('❌ Missing applicant ID');
       return;
     }
+
+    print('✅ Showing rating dialog');
 
     showDialog(
       context: context,
@@ -195,7 +212,19 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
       ),
     ).then((success) {
       if (success == true && mounted) {
+        print('✅ Rating submitted successfully - refreshing list');
+
+        // ✅ Invalidate both the applicants list and the review check
         ref.invalidate(jobApplicantsProvider(widget.jobId));
+        ref.invalidate(
+          hasReviewedProvider(
+            ReviewCheckParams(
+              jobId: widget.jobId,
+              revieweeId: applicantId,
+            ),
+          ),
+        );
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Rating submitted successfully!'),
@@ -331,7 +360,12 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
     context.push(
       '/jobs/${widget.jobId}/applicants/${application.id}',
       extra: application,
-    );
+    ).then((result) {
+      // ✅ Refresh list when returning from details page
+      if (result == true) {
+        ref.invalidate(jobApplicantsProvider(widget.jobId));
+      }
+    });
   }
 
   Future<void> _shortlistApplicant(ApplicationModel application) async {
@@ -446,27 +480,32 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-// ✅ UPDATED: Applicant Card with Rating Button
-class _ApplicantCard extends StatelessWidget {
+// ✅ UPDATED: Applicant Card with Duplicate Check for Rating
+class _ApplicantCard extends ConsumerWidget {
   final ApplicationModel application;
+  final String jobId; // ✅ NEW
   final VoidCallback onTap;
   final VoidCallback onShortlist;
   final VoidCallback onReject;
-  final VoidCallback onRate; // ✅ NEW
+  final VoidCallback onRate;
 
   const _ApplicantCard({
     required this.application,
+    required this.jobId, // ✅ NEW
     required this.onTap,
     required this.onShortlist,
     required this.onReject,
-    required this.onRate, // ✅ NEW
+    required this.onRate,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final applicantDetails = application.applicantDetails;
     final profile = applicantDetails?.profile;
     final jobSeekerProfile = applicantDetails?.jobSeekerProfile;
+
+    // ✅ Get applicant ID for review check
+    final applicantId = applicantDetails?.id ?? application.applicant;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -546,7 +585,7 @@ class _ApplicantCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // Action Buttons
+              // Action Buttons - Pending
               if (application.status == 'pending')
                 Row(
                   children: [
@@ -574,23 +613,75 @@ class _ApplicantCard extends StatelessWidget {
                   ],
                 ),
 
-              // ✅ NEW: Show rating button if accepted
-              if (application.status == 'accepted')
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: onRate,
-                      icon: const Icon(Icons.star, size: 18),
-                      label: const Text('Rate Applicant'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.amber[700],
-                      ),
-                    ),
-                  ),
-                ),
+              // ✅ UPDATED: Show rating button with duplicate check for accepted/completed
+              if ((application.status == 'accepted' || application.status == 'completed') &&
+                  applicantId.isNotEmpty)
+                _buildRatingButton(context, ref, applicantId),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ NEW: Build rating button with duplicate check
+  Widget _buildRatingButton(BuildContext context, WidgetRef ref, String applicantId) {
+    final hasReviewedAsync = ref.watch(
+      hasReviewedProvider(
+        ReviewCheckParams(
+          jobId: jobId,
+          revieweeId: applicantId,
+        ),
+      ),
+    );
+
+    return hasReviewedAsync.when(
+      data: (hasReviewed) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: hasReviewed ? null : onRate,
+              icon: Icon(
+                hasReviewed ? Icons.check_circle : Icons.star,
+                size: 18,
+              ),
+              label: Text(hasReviewed ? 'Already Rated' : 'Rate Applicant'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: hasReviewed ? Colors.green : Colors.amber[700],
+                disabledForegroundColor: Colors.green.withOpacity(0.5),
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: null,
+            icon: const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            label: const Text('Checking...'),
+          ),
+        ),
+      ),
+      error: (_, __) => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: onRate,
+            icon: const Icon(Icons.star, size: 18),
+            label: const Text('Rate Applicant'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.amber[700],
+            ),
           ),
         ),
       ),

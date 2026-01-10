@@ -1,12 +1,6 @@
 // ============================================================================
-// applications_provider.dart - COMPLETE CONSOLIDATED FILE
+// applications_provider.dart - FIXED VERSION WITH PROPER ROLE HANDLING
 // lib/features/applications/presentation/providers/applications_provider.dart
-// ============================================================================
-// 
-// ⚠️ IMPORTANT: This is the ONLY applications provider file you should have.
-// Delete any other files with similar names like:
-// - application_actions_notifier.dart
-// - application_provider.dart (without 's')
 // ============================================================================
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,61 +23,105 @@ final applicationsRepositoryProvider = Provider<ApplicationsRepository>((ref) {
 });
 
 // =====================================================
-// USER ROLE PROVIDER
+// USER ROLE PROVIDER - ALWAYS FRESH FROM STORAGE
 // =====================================================
-/// Get current user's role (NOT auto-disposed - we want this to persist)
 final userRoleProvider = FutureProvider<String>((ref) async {
-  final authService = ref.read(authServiceProvider);
-  final user = authService.currentFirebaseUser;
+  print('');
+  print('═══════════════════════════════════════════════════');
+  print('👤 [UserRoleProvider] FETCHING USER ROLE');
+  print('═══════════════════════════════════════════════════');
 
-  if (user == null) {
-    throw Exception('User not authenticated');
-  }
+  const storage = FlutterSecureStorage();
 
-  // Get role from secure storage
-  final storage = const FlutterSecureStorage();
+  // ✅ Get role from storage (this is the source of truth)
   final role = await storage.read(key: StorageKeys.userRole);
 
-  return role ?? 'jobseeker'; // Default to jobseeker
+  print('   Stored Role: ${role ?? "NULL"}');
+
+  if (role == null || role.isEmpty) {
+    print('❌ [UserRoleProvider] No role found in storage!');
+    print('   This usually means:');
+    print('   1. User is not logged in');
+    print('   2. Logout didn\'t clear properly');
+    print('   3. Login didn\'t save role correctly');
+    print('═══════════════════════════════════════════════════');
+    throw Exception('User role not found. Please login again.');
+  }
+
+  print('✅ [UserRoleProvider] Role retrieved: $role');
+  print('═══════════════════════════════════════════════════');
+  print('');
+
+  return role;
 });
 
 // =====================================================
 // APPLICATIONS PROVIDER (ROLE-AWARE)
 // =====================================================
-/// ✅ Role-aware applications provider
-/// - Job Seekers: Get their own applications
-/// - Employers: Get applications for ALL their jobs
 final myApplicationsProvider = FutureProvider.autoDispose<List<ApplicationModel>>((ref) async {
+  print('');
+  print('═══════════════════════════════════════════════════');
+  print('📋 [Applications] Fetching applications...');
+
+  // ✅ Wait for role to be determined
   final role = await ref.watch(userRoleProvider.future);
+  print('📋 [Applications] User role: $role');
+
   final repository = ref.read(applicationsRepositoryProvider);
 
-  if (role == 'jobseeker') {
-    print('📋 [Applications] Fetching job seeker applications...');
-    final response = await repository.getMyApplications();
-    final applicationsList = response['applications'] as List;
-    return applicationsList
-        .map((json) => ApplicationModel.fromJson(json as Map<String, dynamic>))
-        .toList();
-  } else if (role == 'employer') {
-    print('📋 [Applications] Fetching employer applications...');
-    final rawList = await repository.getEmployerApplications();
-    return rawList
-        .map((json) => ApplicationModel.fromJson(json))
-        .toList();
-  } else {
-    throw Exception('Unknown role: $role');
+  try {
+    List<ApplicationModel> applications;
+
+    if (role == 'employer') {
+      print('📋 [Applications] Calling getEmployerApplications() for employer');
+      print('   This will fetch applications across all posted jobs');
+
+      final rawList = await repository.getEmployerApplications();
+      applications = rawList
+          .map((json) => ApplicationModel.fromJson(json))
+          .toList();
+
+    } else if (role == 'jobseeker') {
+      print('📋 [Applications] Calling getMyApplications() for jobseeker');
+      print('   Endpoint: /applications/my-applications');
+
+      final response = await repository.getMyApplications();
+      final applicationsList = response['applications'] as List;
+      applications = applicationsList
+          .map((json) => ApplicationModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      print('❌ [Applications] Unknown role: $role');
+      print('═══════════════════════════════════════════════════');
+      print('');
+      throw Exception('Unknown role: $role');
+    }
+
+    print('✅ [Applications] Successfully fetched ${applications.length} applications');
+    print('═══════════════════════════════════════════════════');
+    print('');
+
+    return applications;
+  } catch (e, stackTrace) {
+    print('❌ [Applications] Error fetching applications: $e');
+    print('   Stack trace: $stackTrace');
+    print('═══════════════════════════════════════════════════');
+    print('');
+    rethrow;
   }
 });
 
 // =====================================================
 // APPLICATION STATISTICS (ROLE-AWARE)
 // =====================================================
-/// Application statistics with safe type conversion
 final applicationStatsProvider = FutureProvider.autoDispose<Map<String, int>>((ref) async {
   final role = await ref.watch(userRoleProvider.future);
   final repository = ref.read(applicationsRepositoryProvider);
 
+  print('📊 [Stats] Fetching stats for role: $role');
+
   if (role == 'jobseeker') {
+    // For job seekers, calculate stats from their applications
     final applications = await ref.watch(myApplicationsProvider.future);
 
     int countByStatus(String targetStatus) {
@@ -93,29 +131,45 @@ final applicationStatsProvider = FutureProvider.autoDispose<Map<String, int>>((r
       }).length;
     }
 
-    return {
+    final stats = {
       'total': applications.length,
       'pending': countByStatus('pending'),
       'shortlisted': countByStatus('shortlisted'),
       'rejected': countByStatus('rejected'),
+      'reviewing': countByStatus('reviewing'),
+      'interviewing': countByStatus('interviewing'),
     };
-  } else if (role == 'employer') {
-    final stats = await repository.getEmployerApplicationStats();
 
-    // Safe conversion to int
-    return stats.map((key, value) {
-      int intValue;
-      if (value is int) {
-        intValue = value;
-      } else if (value is double) {
-        intValue = value.toInt();
-      } else if (value is String) {
-        intValue = int.tryParse(value) ?? 0;
-      } else {
-        intValue = 0;
-      }
-      return MapEntry(key, intValue);
-    });
+    print('✅ [Stats] Job seeker stats: $stats');
+    return stats;
+
+  } else if (role == 'employer') {
+    // For employers, get stats from API
+    try {
+      final stats = await repository.getEmployerApplicationStats();
+
+      // Safe conversion to int
+      final convertedStats = stats.map((key, value) {
+        int intValue;
+        if (value is int) {
+          intValue = value;
+        } else if (value is double) {
+          intValue = value.toInt();
+        } else if (value is String) {
+          intValue = int.tryParse(value) ?? 0;
+        } else {
+          intValue = 0;
+        }
+        return MapEntry(key, intValue);
+      });
+
+      print('✅ [Stats] Employer stats: $convertedStats');
+      return convertedStats;
+    } catch (e) {
+      print('❌ [Stats] Error fetching employer stats: $e');
+      rethrow;
+    }
+
   } else {
     throw Exception('Unknown role: $role');
   }
@@ -213,7 +267,22 @@ class ApplicationActionsNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-// Provider for the actions notifier
 final applicationActionsProvider = StateNotifierProvider<ApplicationActionsNotifier, AsyncValue<void>>((ref) {
   return ApplicationActionsNotifier(ref.read(applicationsRepositoryProvider));
+});
+
+// ============================================================================
+// DEBUGGING HELPER
+// ============================================================================
+
+/// ✅ Debug provider to check auth state
+final authDebugProvider = FutureProvider<Map<String, String?>>((ref) async {
+  const storage = FlutterSecureStorage();
+
+  return {
+    'userId': await storage.read(key: StorageKeys.userId),
+    'userEmail': await storage.read(key: StorageKeys.userEmail),
+    'userRole': await storage.read(key: StorageKeys.userRole),
+    'hasAuthToken': await storage.read(key: StorageKeys.authToken) != null ? 'YES' : 'NO',
+  };
 });

@@ -1,4 +1,3 @@
-
 // lib/features/reviews/presentation/widgets/rating_dialog.dart
 
 import 'package:flutter/material.dart';
@@ -6,8 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/review_model.dart';
 import '../../data/repositories/review_repository.dart';
-
-
+import '../../../profile/presentation/providers/profile_provider.dart'; // ✅ ADD THIS IMPORT
 
 class RatingDialog extends ConsumerStatefulWidget {
   final String jobId;
@@ -55,6 +53,9 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
       );
 
       await ref.read(reviewRepositoryProvider).submitReview(review);
+
+      // ✅ INVALIDATE PROFILE PROVIDER TO REFRESH RATINGS
+      ref.invalidate(profileProvider);
 
       if (mounted) {
         Navigator.pop(context, true); // Return true to indicate success

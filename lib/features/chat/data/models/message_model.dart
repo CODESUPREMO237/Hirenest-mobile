@@ -1,15 +1,16 @@
-// Message Model
+// Message Model - COMPLETE VERSION
 // ============================================================================
 // message_model.dart
 // lib/features/chat/data/models/message_model.dart
 // ============================================================================
+
 class MessageModel {
   final String id;
   final String chatId;
   final String senderId;
   final String content;
   final String type;
-  final DateTime timestamp;
+  final DateTime timestamp; // ✅ Using timestamp, not createdAt
   final bool read;
   final bool isMyMessage;
 
@@ -24,11 +25,8 @@ class MessageModel {
     required this.isMyMessage,
   });
 
-// lib/features/chat/data/models/message_model.dart
-
-// lib/features/chat/data/models/message_model.dart
-
   factory MessageModel.fromJson(Map<String, dynamic> json, [String? currentUserId]) {
+    // Extract sender ID (can be string or object)
     String sender = '';
     if (json['sender'] != null) {
       if (json['sender'] is String) {
@@ -46,10 +44,11 @@ class MessageModel {
       type: json['type']?.toString() ?? 'text',
       timestamp: json['timestamp'] != null
           ? DateTime.parse(json['timestamp'])
-          : DateTime.now(),
+          : (json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now()),
       read: json['read'] ?? false,
-      // FIX: Compare senderId to currentUserId.
-      // If currentUserId is null, fallback to the backend's 'isMyMessage' boolean
+      // Compare senderId to currentUserId
       isMyMessage: currentUserId != null
           ? (sender == currentUserId)
           : (json['isMyMessage'] ?? false),
@@ -72,4 +71,31 @@ class MessageModel {
       isMyMessage: isMyMessage ?? this.isMyMessage,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'chatId': chatId,
+      'sender': senderId,
+      'content': content,
+      'type': type,
+      'timestamp': timestamp.toIso8601String(),
+      'read': read,
+      'isMyMessage': isMyMessage,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'MessageModel(id: $id, content: ${content.length > 20 ? "${content.substring(0, 20)}..." : content}, timestamp: $timestamp, read: $read, isMyMessage: $isMyMessage)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is MessageModel && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

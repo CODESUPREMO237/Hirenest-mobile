@@ -4,6 +4,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
@@ -64,34 +65,80 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
   // ========================================================================
   // BIOMETRIC LOGIC WITH ERROR WIDGET INTEGRATION
   // ========================================================================
+// ============================================================================
+// FIXED BIOMETRIC TOGGLE METHOD
+// Replace the _toggleBiometrics method in your privacy_security_page.dart
+// ============================================================================
+
   Future<void> _toggleBiometrics(bool enabled) async {
+    // If disabling, just turn it off
     if (!enabled) {
       setState(() => _biometricEnabled = false);
       // Clear secure storage when disabling
       await _storage.delete(key: 'saved_email');
       await _storage.delete(key: 'saved_password');
       await _updatePrivacy(biometricLogin: false);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Biometric login disabled"),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
+    // Clear any previous errors
     setState(() => _pageError = null);
 
     try {
-      print("========== BIOMETRIC DEBUG ==========");
+      print("========== BIOMETRIC DEBUG START ==========");
 
-      final bool available = await auth.canCheckBiometrics;
-      final bool supported = await auth.isDeviceSupported();
-      final List<BiometricType> biometrics = await auth.getAvailableBiometrics();
+      // Step 1: Check if device supports biometrics
+      final bool isDeviceSupported = await auth.isDeviceSupported();
+      print("✅ Step 1 - Device Supported: $isDeviceSupported");
 
-      print("canCheckBiometrics: $available");
-      print("isDeviceSupported: $supported");
-      print("availableBiometrics: $biometrics");
-
-      if (!available || !supported || biometrics.isEmpty) {
-        throw Exception("Biometrics not supported or no types registered.");
+      if (!isDeviceSupported) {
+        throw Exception("DEVICE_NOT_SUPPORTED: Your device does not support biometric authentication");
       }
 
-      print("Running biometric authentication…");
+      // Step 2: Check if biometrics can be checked
+      final bool canCheckBiometrics = await auth.canCheckBiometrics;
+      print("✅ Step 2 - Can Check Biometrics: $canCheckBiometrics");
+
+      if (!canCheckBiometrics) {
+        throw Exception("BIOMETRICS_DISABLED: Biometric authentication is disabled on this device. Please enable it in your device settings.");
+      }
+
+      // Step 3: Get available biometric types
+      final List<BiometricType> availableBiometrics = await auth.getAvailableBiometrics();
+      print("✅ Step 3 - Available Biometrics: $availableBiometrics");
+
+      if (availableBiometrics.isEmpty) {
+        throw Exception("NO_BIOMETRICS_ENROLLED: No fingerprint or face data enrolled. Please add biometric data in your device settings.");
+      }
+
+      // Step 4: Show what types are available
+      String biometricTypes = availableBiometrics.map((type) {
+        switch (type) {
+          case BiometricType.face:
+            return "Face";
+          case BiometricType.fingerprint:
+            return "Fingerprint";
+          case BiometricType.iris:
+            return "Iris";
+          case BiometricType.strong:
+            return "Strong";
+          case BiometricType.weak:
+            return "Weak";
+        }
+      }).join(", ");
+
+      print("✅ Available types: $biometricTypes");
+
+      // Step 5: Attempt authentication
+      print("🔐 Attempting biometric authentication...");
 
       final authenticated = await auth.authenticate(
         localizedReason: "Please authenticate to enable biometric login",
@@ -99,34 +146,113 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
         sensitiveTransaction: true,
       );
 
-      print("Biometric result: $authenticated");
+      print("✅ Step 5 - Authentication Result: $authenticated");
+      print("========== BIOMETRIC DEBUG END ==========");
 
       if (!mounted) return;
-
-      setState(() => _biometricEnabled = authenticated);
 
       if (authenticated) {
         setState(() => _biometricEnabled = true);
-        // PERSIST THE DATA TO BACKEND
+
+        // Save to backend
         await _updatePrivacy(biometricLogin: true);
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Biometric login enabled")),
+          SnackBar(
+            content: Text("Biometric login enabled using $biometricTypes"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // User cancelled or authentication failed
+        setState(() => _biometricEnabled = false);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Authentication cancelled"),
+            backgroundColor: Colors.orange,
+          ),
         );
       }
 
-      print("=====================================");
-    } catch (e, s) {
-      print("❌ BIOMETRIC ERROR: $e");
-      print("❌ STACK TRACE: $s");
+    } on PlatformException catch (e) {
+      print("❌ PLATFORM EXCEPTION: ${e.code} - ${e.message}");
+      print("❌ Details: ${e.details}");
+      print("❌ Stack trace: ${e.stacktrace}");
 
       if (!mounted) return;
 
-      setState(() {
-        _biometricEnabled = false;
-        _pageError = e.toString().contains('NotAvailable')
-            ? "Biometric hardware not found."
-            : "Could not complete biometric setup.";
-      });
+      setState(() => _biometricEnabled = false);
+
+      // Handle specific error codes
+      String errorMessage;
+      switch (e.code) {
+        case 'NotAvailable':
+          errorMessage = "Biometric hardware not available on this device";
+          break;
+        case 'NotEnrolled':
+          errorMessage = "No biometric data enrolled. Please add fingerprint or face in your device settings";
+          break;
+        case 'LockedOut':
+          errorMessage = "Too many failed attempts. Please try again later or use your device PIN";
+          break;
+        case 'PermanentlyLockedOut':
+          errorMessage = "Biometric authentication is locked. Please unlock your device and try again";
+          break;
+        case 'PasscodeNotSet':
+          errorMessage = "Please set up a device PIN or password first";
+          break;
+        case 'BiometricOnlyNotSupported':
+          errorMessage = "Your device requires a PIN/password backup for biometric authentication";
+          break;
+        default:
+          errorMessage = "Biometric error: ${e.message ?? e.code}";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Settings',
+            textColor: Colors.white,
+            onPressed: () {
+              // Optionally open device settings
+              // You can use url_launcher or app_settings package
+            },
+          ),
+        ),
+      );
+
+    } catch (e, stackTrace) {
+      print("❌ GENERAL ERROR: $e");
+      print("❌ Stack trace: $stackTrace");
+
+      if (!mounted) return;
+
+      setState(() => _biometricEnabled = false);
+
+      // Parse the error message
+      String errorMessage = e.toString();
+
+      if (errorMessage.contains("DEVICE_NOT_SUPPORTED")) {
+        errorMessage = "Your device does not support biometric authentication";
+      } else if (errorMessage.contains("BIOMETRICS_DISABLED")) {
+        errorMessage = "Biometric authentication is disabled. Please enable it in Settings → Security";
+      } else if (errorMessage.contains("NO_BIOMETRICS_ENROLLED")) {
+        errorMessage = "No fingerprint or face data enrolled. Please add biometric data in Settings → Security";
+      } else {
+        errorMessage = "Could not complete biometric setup. Please ensure biometrics are enabled in your device settings";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
     }
   }
 

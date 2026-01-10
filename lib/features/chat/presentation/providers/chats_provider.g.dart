@@ -6,7 +6,7 @@ part of 'chats_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$chatDetailHash() => r'25645aeeb1c2e6d317165aa26ee8112a252f803b';
+String _$chatDetailHash() => r'3f99b6f50c578b50ae14717087e10a256b9aa77a';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -167,7 +167,163 @@ class _ChatDetailProviderElement
   String get chatId => (origin as ChatDetailProvider).chatId;
 }
 
-String _$chatsHash() => r'0c7f71d104df61740a2d927755f479d18682289d';
+String _$chatByIdHash() => r'c3a38131316768ad9c1a7f1289e9902b1153b234';
+
+/// Helper provider: Get chat by ID
+///
+/// Copied from [chatById].
+@ProviderFor(chatById)
+const chatByIdProvider = ChatByIdFamily();
+
+/// Helper provider: Get chat by ID
+///
+/// Copied from [chatById].
+class ChatByIdFamily extends Family<ChatModel?> {
+  /// Helper provider: Get chat by ID
+  ///
+  /// Copied from [chatById].
+  const ChatByIdFamily();
+
+  /// Helper provider: Get chat by ID
+  ///
+  /// Copied from [chatById].
+  ChatByIdProvider call(
+    String chatId,
+  ) {
+    return ChatByIdProvider(
+      chatId,
+    );
+  }
+
+  @override
+  ChatByIdProvider getProviderOverride(
+    covariant ChatByIdProvider provider,
+  ) {
+    return call(
+      provider.chatId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'chatByIdProvider';
+}
+
+/// Helper provider: Get chat by ID
+///
+/// Copied from [chatById].
+class ChatByIdProvider extends AutoDisposeProvider<ChatModel?> {
+  /// Helper provider: Get chat by ID
+  ///
+  /// Copied from [chatById].
+  ChatByIdProvider(
+    String chatId,
+  ) : this._internal(
+          (ref) => chatById(
+            ref as ChatByIdRef,
+            chatId,
+          ),
+          from: chatByIdProvider,
+          name: r'chatByIdProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$chatByIdHash,
+          dependencies: ChatByIdFamily._dependencies,
+          allTransitiveDependencies: ChatByIdFamily._allTransitiveDependencies,
+          chatId: chatId,
+        );
+
+  ChatByIdProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.chatId,
+  }) : super.internal();
+
+  final String chatId;
+
+  @override
+  Override overrideWith(
+    ChatModel? Function(ChatByIdRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: ChatByIdProvider._internal(
+        (ref) => create(ref as ChatByIdRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        chatId: chatId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeProviderElement<ChatModel?> createElement() {
+    return _ChatByIdProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ChatByIdProvider && other.chatId == chatId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, chatId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin ChatByIdRef on AutoDisposeProviderRef<ChatModel?> {
+  /// The parameter `chatId` of this provider.
+  String get chatId;
+}
+
+class _ChatByIdProviderElement extends AutoDisposeProviderElement<ChatModel?>
+    with ChatByIdRef {
+  _ChatByIdProviderElement(super.provider);
+
+  @override
+  String get chatId => (origin as ChatByIdProvider).chatId;
+}
+
+String _$totalUnreadCountHash() => r'33154fa47b00f35eeb224a01918c6a67a437dfc9';
+
+/// Helper provider: Total unread messages count
+///
+/// Copied from [totalUnreadCount].
+@ProviderFor(totalUnreadCount)
+final totalUnreadCountProvider = AutoDisposeProvider<int>.internal(
+  totalUnreadCount,
+  name: r'totalUnreadCountProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$totalUnreadCountHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef TotalUnreadCountRef = AutoDisposeProviderRef<int>;
+String _$chatsHash() => r'6cf39870f26886109c429db63cadcf384290b5b2';
 
 /// Chats list provider with auto-refresh on page return
 ///

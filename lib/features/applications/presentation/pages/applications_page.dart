@@ -1,12 +1,9 @@
-// ============================================================================
-// applications_page.dart - WITH DUPLICATE REVIEW PREVENTION
 // lib/features/applications/presentation/pages/applications_page.dart
-// ============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../reviews/presentation/widgets/rating_dialog.dart';
-import '../../../reviews/data/repositories/review_repository.dart'; // ✅ ADD THIS
+import '../../../reviews/presentation/providers/reviews_provider.dart'; // ✅ Import reviews provider
 import '../../data/models/application_model.dart';
 import '../providers/applications_provider.dart';
 import '../widgets/application_card.dart';
@@ -105,7 +102,7 @@ class ApplicationsPage extends ConsumerWidget {
                               isEmployerView: isEmployer,
                             ),
 
-                            // ✅ RATING BUTTON WITH DUPLICATE CHECK
+                            // ✅ RATING BUTTON WITH DUPLICATE CHECK (Job Seekers only)
                             if (!isEmployer && _canRateEmployer(application))
                               _buildRatingButton(context, ref, application),
                           ],
@@ -158,9 +155,27 @@ class ApplicationsPage extends ConsumerWidget {
       WidgetRef ref,
       ApplicationModel application,
       ) {
-    // Check if user has already reviewed this job
+    // Extract employer ID first
+    String employerId = '';
+    final jobDetails = application.jobDetails;
+
+    if (jobDetails != null) {
+      employerId = jobDetails.postedBy;
+    }
+
+    // If we can't get employer ID, don't show button
+    if (employerId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // ✅ FIX: Use hasReviewedProvider with ReviewCheckParams
     final hasReviewedAsync = ref.watch(
-      hasReviewedJobProvider(application.job),
+      hasReviewedProvider(
+        ReviewCheckParams(
+          jobId: application.job,
+          revieweeId: employerId,
+        ),
+      ),
     );
 
     return hasReviewedAsync.when(
@@ -345,9 +360,16 @@ class ApplicationsPage extends ConsumerWidget {
       ),
     ).then((success) {
       if (success == true) {
-        // Invalidate both applications and review check
+        // ✅ FIX: Invalidate the correct provider with params
         ref.invalidate(myApplicationsProvider);
-        ref.invalidate(hasReviewedJobProvider(jobId));
+        ref.invalidate(
+          hasReviewedProvider(
+            ReviewCheckParams(
+              jobId: jobId,
+              revieweeId: employerId,
+            ),
+          ),
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -1,5 +1,5 @@
 // ============================================================================
-// ENHANCED PROFILE PAGE WITH WORKING RATINGS & COMPLETION INDICATOR
+// ENHANCED PROFILE PAGE WITH LOGOUT HANDLER
 // lib/features/profile/presentation/pages/profile_page.dart
 // ============================================================================
 
@@ -7,12 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+
 import '../../../../core/services/payment_service.dart';
 import '../../../applications/presentation/providers/applications_provider.dart';
 import '../../../reviews/presentation/widgets/rating_display_widget.dart';
-import '../../../reviews/presentation/widgets/rating_summary_widget.dart';
 import '../providers/profile_provider.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../helpers/logout_handler.dart'; // ✅ Import logout handler
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -25,12 +25,12 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.settings_outlined),
-        //     onPressed: () => context.push('/profile/settings'),
-        //   ),
-        // ],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push('/profile/settings'),
+          ),
+        ],
       ),
       body: profileAsync.when(
         data: (profile) {
@@ -183,73 +183,64 @@ class ProfilePage extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
 
-
-
-
-
-
-// Job Performance Rating (for job seekers)
-                  if (profile.profile?.ratingsAverage != null &&
-                  profile.profile?.ratingsQuantity != null &&
-                  profile.profile!.ratingsQuantity! > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: RatingDisplayWidget(
-                      rating: profile.profile!.ratingsAverage,
-                      count: profile.profile!.ratingsQuantity,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                  ),
-
-// ⭐ Marketplace Rating (for sellers/employers)
-                  if (profile.marketplaceStats?.sellerRating != null &&
-                      profile.marketplaceStats!.sellerRating!.count > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.store,
-                                color: Colors.white,
-                                size: 16
+                        // Job Performance Rating (for job seekers)
+                        if (profile.ratingsAverage != null &&
+                            profile.ratingsQuantity != null &&
+                            profile.ratingsQuantity! > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
-                            const SizedBox(width: 6),
-                            RatingDisplayWidget(
-                              rating: profile.marketplaceStats!.sellerRating!.average,
-                              count: profile.marketplaceStats!.sellerRating!.count,
-                              size: 16,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: RatingDisplayWidget(
+                              rating: profile.ratingsAverage,   // ✅ Changed
+                              count: profile.ratingsQuantity,    // ✅ Changed
+                              size: 18,
                               color: Colors.white,
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
+                          ),
 
-
+                        // Marketplace Rating (for sellers/employers)
+                        if (profile.marketplaceStats?.sellerRating != null &&
+                            profile.marketplaceStats!.sellerRating!.count > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.store,
+                                      color: Colors.white, size: 16),
+                                  const SizedBox(width: 6),
+                                  RatingDisplayWidget(
+                                    rating: profile.marketplaceStats!
+                                        .sellerRating!.average,
+                                    count: profile
+                                        .marketplaceStats!.sellerRating!.count,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
 
-
-
-                  // 🎯 Profile Completion Alert
+                  // Profile Completion Alert
                   if (completionData['percentage'] < 100)
                     _buildCompletionAlert(context, completionData),
 
@@ -293,8 +284,8 @@ class ProfilePage extends ConsumerWidget {
                           child: _buildStatCard(
                             context,
                             Icons.star_outline,
-                            (profile.profile?.ratingsAverage ?? 0.0)
-                                .toStringAsFixed(1),
+                            (profile.ratingsAverage ?? 0.0).toStringAsFixed(1),  // ✅ Changed
+
                             'Job Rating',
                             Colors.orange,
                           ),
@@ -358,11 +349,11 @@ class ProfilePage extends ConsumerWidget {
                     ],
                   ),
 
-                  // Logout Button
+                  // ✅ UPDATED: Logout Button using handleLogout
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: OutlinedButton.icon(
-                      onPressed: () => _showLogoutDialog(context, ref),
+                      onPressed: () => handleLogout(context, ref),
                       icon: const Icon(Icons.logout, color: Colors.red),
                       label: const Text(
                         'Logout',
@@ -402,7 +393,7 @@ class ProfilePage extends ConsumerWidget {
   }
 
   // ============================================================================
-  // 🎯 PROFILE COMPLETION CALCULATOR
+  // PROFILE COMPLETION CALCULATOR
   // ============================================================================
   Map<String, dynamic> _calculateProfileCompletion(dynamic profile) {
     int completed = 0;
@@ -410,14 +401,16 @@ class ProfilePage extends ConsumerWidget {
     List<String> missing = [];
 
     // Basic profile fields (30%)
-    if (profile.profile?.firstName != null && profile.profile!.firstName!.isNotEmpty) {
+    if (profile.profile?.firstName != null &&
+        profile.profile!.firstName!.isNotEmpty) {
       completed += 10;
     } else {
       missing.add('First Name');
     }
     total += 10;
 
-    if (profile.profile?.lastName != null && profile.profile!.lastName!.isNotEmpty) {
+    if (profile.profile?.lastName != null &&
+        profile.profile!.lastName!.isNotEmpty) {
       completed += 10;
     } else {
       missing.add('Last Name');
@@ -503,7 +496,7 @@ class ProfilePage extends ConsumerWidget {
   }
 
   // ============================================================================
-  // 🎯 COMPLETION ALERT WIDGET
+  // COMPLETION ALERT WIDGET
   // ============================================================================
   Widget _buildCompletionAlert(
       BuildContext context,
@@ -550,7 +543,8 @@ class ProfilePage extends ConsumerWidget {
             runSpacing: 8,
             children: missing.take(3).map((item) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -597,42 +591,6 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  // ============================================================================
-  // ⭐ RATING DISPLAY WIDGET
-  // ============================================================================
-  Widget _buildRatingDisplay(double rating, int count) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.star, color: Colors.amber, size: 20),
-          const SizedBox(width: 6),
-          Text(
-            rating.toStringAsFixed(1),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            ' ($count ${count == 1 ? 'review' : 'reviews'})',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 13,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Rest of the widget methods remain the same...
   Widget _buildBalanceCard(BuildContext context, dynamic balance) {
     return InkWell(
       onTap: () => context.push('/profile/balance'),
@@ -799,50 +757,6 @@ class ProfilePage extends ConsumerWidget {
         return role;
     }
   }
-
-  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) =>
-                const Center(child: CircularProgressIndicator()),
-              );
-              try {
-                await ref.read(logoutControllerProvider).logout();
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  context.go('/auth/login');
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Logout error: $e'),
-                        backgroundColor: Colors.red),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _MenuItem {
@@ -852,8 +766,7 @@ class _MenuItem {
   _MenuItem(this.icon, this.title, this.onTap);
 }
 
-final balanceProvider =
-FutureProvider.autoDispose<BalanceResponse>((ref) async {
+final balanceProvider = FutureProvider.autoDispose<BalanceResponse>((ref) async {
   final paymentService = ref.read(paymentServiceProvider);
   return await paymentService.getBalance();
 });

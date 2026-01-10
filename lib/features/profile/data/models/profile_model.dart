@@ -233,10 +233,16 @@ class JobStatsModel {
   Map<String, dynamic> toJson() => {'totalApplications': totalApplications};
 }
 
+
 class ProfileModel {
   final String id;
   final String email;
   final String role;
+
+  // ✅ MOVED TO ROOT LEVEL (matches MongoDB structure)
+  final double? ratingsAverage;
+  final int? ratingsQuantity;
+
   final ProfileDetailsModel? profile;
   final JobSeekerProfileModel? jobSeekerProfile;
   final MarketplaceStatsModel? marketplaceStats;
@@ -250,6 +256,8 @@ class ProfileModel {
     required this.id,
     required this.email,
     required this.role,
+    this.ratingsAverage,      // ✅ Root level
+    this.ratingsQuantity,     // ✅ Root level
     this.profile,
     this.jobSeekerProfile,
     this.marketplaceStats,
@@ -265,6 +273,15 @@ class ProfileModel {
       id: json['_id'] ?? json['id'],
       email: json['email'],
       role: json['role'],
+
+      // ✅ PARSE FROM ROOT LEVEL (matches MongoDB)
+      ratingsAverage: json['ratingsAverage'] != null
+          ? (json['ratingsAverage'] is int
+          ? (json['ratingsAverage'] as int).toDouble()
+          : json['ratingsAverage'] as double?)
+          : null,
+      ratingsQuantity: json['ratingsQuantity'] as int?,
+
       profile: json['profile'] != null
           ? ProfileDetailsModel.fromJson(json['profile'])
           : null,
@@ -293,6 +310,8 @@ class ProfileModel {
       '_id': id,
       'email': email,
       'role': role,
+      'ratingsAverage': ratingsAverage,    // ✅ Root level
+      'ratingsQuantity': ratingsQuantity,  // ✅ Root level
       'profile': profile?.toJson(),
       'jobSeekerProfile': jobSeekerProfile?.toJson(),
       'marketplaceStats': marketplaceStats?.toJson(),
@@ -303,6 +322,9 @@ class ProfileModel {
     };
   }
 }
+
+
+
 
 // ============================================================================
 // SUPPORTING MODELS
@@ -354,6 +376,7 @@ class PrivacySettings {
   }
 }
 
+
 class ProfileDetailsModel {
   final String? firstName;
   final String? lastName;
@@ -361,9 +384,8 @@ class ProfileDetailsModel {
   final String? bio;
   final String? avatar;
   final ProfileLocationModel? location;
-  final double ratingsAverage;
-  final int ratingsQuantity;
 
+  // ❌ REMOVED FROM HERE - These belong at ProfileModel root level
 
   ProfileDetailsModel({
     this.firstName,
@@ -372,8 +394,6 @@ class ProfileDetailsModel {
     this.bio,
     this.avatar,
     this.location,
-    this.ratingsAverage = 0.0,
-    this.ratingsQuantity = 0,
   });
 
   String get displayName {
@@ -402,9 +422,7 @@ class ProfileDetailsModel {
       location: json['location'] != null
           ? ProfileLocationModel.fromJson(json['location'])
           : null,
-      // ✅ PARSE RATING FIELDS FROM JSON
-      ratingsAverage: (json['ratingsAverage'] ?? 0).toDouble(),
-      ratingsQuantity: (json['ratingsQuantity'] ?? 0).toInt(),
+      // ❌ DO NOT parse ratingsAverage/ratingsQuantity here
     );
   }
 
@@ -416,11 +434,11 @@ class ProfileDetailsModel {
       'bio': bio,
       'avatar': avatar,
       'location': location?.toJson(),
-      'ratingsAverage': ratingsAverage,
-      'ratingsQuantity': ratingsQuantity,
+      // ❌ DO NOT include ratingsAverage/ratingsQuantity here
     };
   }
 }
+
 
 class ProfileLocationModel {
   final String? city;

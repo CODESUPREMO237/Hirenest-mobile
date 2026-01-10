@@ -1,5 +1,5 @@
 // ============================================================================
-// rating_summary_widget.dart - FIXED VERSION
+// rating_summary_widget.dart - FIXED VERSION WITH PROFILE REFRESH
 // lib/features/reviews/presentation/widgets/rating_summary_widget.dart
 // ============================================================================
 
@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/review_model.dart';
 import '../../data/repositories/review_repository.dart';
+import '../../../profile/presentation/providers/profile_provider.dart'; // ✅ ADD THIS IMPORT
 
 class RatingSummaryWidget extends ConsumerStatefulWidget {
   final String userId;
@@ -23,7 +24,7 @@ class RatingSummaryWidget extends ConsumerStatefulWidget {
 }
 
 class _RatingSummaryWidgetState extends ConsumerState<RatingSummaryWidget> {
-  double _rating = 3.0; // ✅ FIX: Changed from int to double
+  double _rating = 3.0;
   final _commentController = TextEditingController();
   bool _isSubmitting = false;
 
@@ -49,7 +50,6 @@ class _RatingSummaryWidgetState extends ConsumerState<RatingSummaryWidget> {
     try {
       final repository = ref.read(reviewRepositoryProvider);
 
-      // ✅ FIX: Create ReviewRequest object
       final review = ReviewRequest(
         jobId: '', // Empty for direct user ratings
         revieweeId: widget.userId,
@@ -57,8 +57,10 @@ class _RatingSummaryWidgetState extends ConsumerState<RatingSummaryWidget> {
         comment: _commentController.text.trim(),
       );
 
-      // ✅ FIX: Use submitReview instead of createReview
       await repository.submitReview(review);
+
+      // ✅ INVALIDATE PROFILE PROVIDER TO REFRESH RATINGS
+      ref.invalidate(profileProvider);
 
       if (mounted) {
         Navigator.of(context).pop(true);
@@ -116,7 +118,7 @@ class _RatingSummaryWidgetState extends ConsumerState<RatingSummaryWidget> {
                   children: List.generate(5, (index) {
                     return IconButton(
                       iconSize: 40,
-                      onPressed: () => setState(() => _rating = index + 1.0), // ✅ FIX: Keep as double
+                      onPressed: () => setState(() => _rating = index + 1.0),
                       icon: Icon(
                         index < _rating ? Icons.star : Icons.star_border,
                         color: Colors.amber,
@@ -126,7 +128,7 @@ class _RatingSummaryWidgetState extends ConsumerState<RatingSummaryWidget> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _getRatingText(_rating), // ✅ FIX: Now accepts double
+                  _getRatingText(_rating),
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[700],
@@ -183,7 +185,6 @@ class _RatingSummaryWidgetState extends ConsumerState<RatingSummaryWidget> {
     );
   }
 
-  // ✅ FIX: Changed parameter type from int to double
   String _getRatingText(double rating) {
     if (rating <= 1) return 'Poor';
     if (rating <= 2) return 'Fair';

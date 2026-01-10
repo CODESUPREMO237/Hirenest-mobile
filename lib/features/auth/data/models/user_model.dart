@@ -6,10 +6,16 @@
 
 import '../../../../core/utils/logger.dart';
 
+
 class UserModel {
   final String id;
   final String email;
   final String role;
+
+  // ✅ MOVED TO ROOT LEVEL (matches MongoDB structure)
+  final double? ratingsAverage;
+  final int? ratingsQuantity;
+
   final ProfileData? profile;
   final JobSeekerProfileData? jobSeekerProfile;
   final EmployerProfileData? employerProfile;
@@ -17,11 +23,12 @@ class UserModel {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-
   UserModel({
     required this.id,
     required this.email,
     required this.role,
+    this.ratingsAverage,      // ✅ Root level
+    this.ratingsQuantity,     // ✅ Root level
     this.profile,
     this.jobSeekerProfile,
     this.employerProfile,
@@ -32,10 +39,8 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     try {
-      // 1. Extract IDs safely (handles both _id and id)
       final String id = json['_id']?.toString() ?? json['id']?.toString() ?? '';
 
-      // 2. Extract Dates safely (handles null or invalid date strings)
       DateTime parseDate(dynamic dateStr) {
         if (dateStr == null) return DateTime.now();
         try {
@@ -47,9 +52,16 @@ class UserModel {
 
       final model = UserModel(
         id: id,
-        // Use ?.toString() ?? '' to prevent "Null is not a subtype of String"
         email: json['email']?.toString() ?? '',
         role: json['role']?.toString() ?? 'user',
+
+        // ✅ PARSE FROM ROOT LEVEL (same as MongoDB)
+        ratingsAverage: json['ratingsAverage'] != null
+            ? (json['ratingsAverage'] is int
+            ? (json['ratingsAverage'] as int).toDouble()
+            : json['ratingsAverage'] as double?)
+            : null,
+        ratingsQuantity: json['ratingsQuantity'] as int?,
 
         profile: json['profile'] != null && json['profile'] is Map<String, dynamic>
             ? ProfileData.fromJson(json['profile'] as Map<String, dynamic>)
@@ -74,10 +86,10 @@ class UserModel {
       return model;
     } catch (e, stack) {
       AppLogger.error('Critical Error parsing UserModel', error: e, stackTrace: stack);
-      // Instead of rethrowing and crashing the UI, return a fallback model
       return UserModel.empty();
     }
   }
+
   factory UserModel.empty() {
     return UserModel(
       id: '',
@@ -93,6 +105,8 @@ class UserModel {
       'id': id,
       'email': email,
       'role': role,
+      'ratingsAverage': ratingsAverage,    // ✅ Root level
+      'ratingsQuantity': ratingsQuantity,  // ✅ Root level
       'profile': profile?.toJson(),
       'jobSeekerProfile': jobSeekerProfile?.toJson(),
       'employerProfile': employerProfile?.toJson(),
@@ -102,7 +116,6 @@ class UserModel {
     };
   }
 
-  // Computed property for full name
   String get fullName {
     if (profile?.firstName != null && profile?.lastName != null) {
       return '${profile!.firstName} ${profile!.lastName}';
@@ -110,7 +123,6 @@ class UserModel {
     return profile?.displayName ?? email.split('@')[0];
   }
 
-  // Computed property for display name
   String get displayName {
     if (profile?.displayName != null && profile!.displayName!.isNotEmpty) {
       return profile!.displayName!;
@@ -128,8 +140,8 @@ class ProfileData {
   final String? avatar;
   final String? headline;
   final LocationData? location;
-  final double ratingsAverage;
-  final int ratingsQuantity;
+
+  // ❌ REMOVED FROM HERE - These belong at UserModel root level
 
   ProfileData({
     this.firstName,
@@ -140,8 +152,6 @@ class ProfileData {
     this.avatar,
     this.headline,
     this.location,
-    this.ratingsAverage = 0.0,
-    this.ratingsQuantity = 0,
   });
 
   factory ProfileData.fromJson(Map<String, dynamic> json) {
@@ -150,7 +160,6 @@ class ProfileData {
       AppLogger.debug('Profile JSON: $json');
 
       return ProfileData(
-        // Using ?.toString() ensures we never pass 'null' to a String field
         firstName: json['firstName']?.toString(),
         lastName: json['lastName']?.toString(),
         displayName: json['displayName']?.toString(),
@@ -161,10 +170,7 @@ class ProfileData {
         location: json['location'] != null
             ? LocationData.fromJson(json['location'] as Map<String, dynamic>)
             : null,
-        // ✅ MAP FROM JSON (matches backend names)
-        ratingsAverage: (json['ratingsAverage'] ?? 0).toDouble(),
-        ratingsQuantity: (json['ratingsQuantity'] ?? 0).toInt(),
-
+        // ❌ DO NOT parse ratingsAverage/ratingsQuantity here
       );
     } catch (e, stack) {
       AppLogger.error('Error parsing ProfileData', error: e, stackTrace: stack);
@@ -182,11 +188,12 @@ class ProfileData {
       'avatar': avatar,
       'headline': headline,
       'location': location?.toJson(),
-      'ratingsAverage': ratingsAverage,
-      'ratingsQuantity': ratingsQuantity,
+      // ❌ DO NOT include ratingsAverage/ratingsQuantity here
     };
   }
 }
+
+// ... rest of the classes remain the same ...
 
 class LocationData {
   final String? city;

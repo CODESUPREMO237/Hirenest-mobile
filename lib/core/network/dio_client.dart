@@ -21,14 +21,28 @@ final dioProvider = Provider<Dio>((ref) {
   // Add interceptors in order
   dio.interceptors.add(AuthInterceptor(ref));
 
-  if (dotenv.env['ENVIRONMENT'] == 'development') {
+  // if (dotenv.env['FLUTTER_ENV'] == 'development') {
+  //   dio.interceptors.add(
+  //     PrettyDioLogger(
+  //       requestHeader: true,
+  //       requestBody: true,
+  //       responseHeader: true,
+  //       responseBody: true,
+  //       error: true,
+  //       compact: true,
+  //     ),
+  //   );
+  // }
+
+  // Change the check to match your .env key 'FLUTTER_ENV'
+  if (dotenv.env['FLUTTER_ENV'] == 'development') {
     dio.interceptors.add(
       PrettyDioLogger(
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: true,
-        responseBody: true,
-        error: true,
+        requestHeader: false,   // 1. Set to false to hide headers
+        requestBody: false,     // 2. Set to false to hide the sent data
+        responseHeader: false,  // 3. Set to false to hide response headers
+        responseBody: false,    // 4. CRITICAL: Set to false to stop the large JSON logs
+        error: true,            // Keep true so you can still see when things break
         compact: true,
       ),
     );
