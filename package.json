@@ -1,5 +1,15 @@
-{
-  "dependencies": {
-    "cloudinary": "^2.8.0"
-  }
+﻿{
+    "dependencies":  {
+                         "cloudinary":  "^2.8.0"
+                     },
+    "scripts":  {
+                    "lint":  "eslint . --ext .js,.jsx,.ts,.tsx",
+                    "test:unit":  "vitest run tests/unit",
+                    "test:integration":  "vitest run tests/integration",
+                    "test":  "npm run test:unit \u0026\u0026 npm run test:integration"
+                },
+    "devDependencies":  {
+                            "eslint":  "^9.0.0",
+                            "vitest":  "^2.0.0"
+                        }
 }
