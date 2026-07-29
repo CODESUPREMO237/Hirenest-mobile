@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 // ============================================================================
 // job_model.dart (IMPROVED - with employer details)
 // lib/features/jobs/data/models/job_model.dart
@@ -76,15 +77,15 @@ class JobModel {
       try {
         postedByUser = UserModel.fromJson(json['postedBy']);
         postedById = postedByUser.id;
-        print('✅ JobModel: postedBy is populated object (${postedByUser.email})');
+        debugPrint('✅ JobModel: postedBy is populated object (${postedByUser.email})');
       } catch (e) {
-        print('⚠️ JobModel: Error parsing postedBy object: $e');
+        debugPrint('⚠️ JobModel: Error parsing postedBy object: $e');
         postedById = extractId(json['postedBy']);
       }
     } else if (json['postedBy'] is String) {
       // postedBy is just an ID string
       postedById = json['postedBy'];
-      print('✅ JobModel: postedBy is ID string ($postedById)');
+      debugPrint('✅ JobModel: postedBy is ID string ($postedById)');
     }
 
     return JobModel(

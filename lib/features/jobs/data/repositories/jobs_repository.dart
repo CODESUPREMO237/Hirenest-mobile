@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 // ============================================================================
 // JOBS REPOSITORY (FIXED) - Data Layer
 // lib/features/jobs/data/repositories/jobs_repository.dart
@@ -228,9 +229,9 @@ class JobsRepository {
     );
 
     // 🔥 DEBUG PRINT: Copy this into your console to see the real structure
-    print('--- BACKEND RESPONSE DATA ---');
-    print(jsonEncode(response.data['data']));
-    print('-----------------------------');
+    debugPrint('--- BACKEND RESPONSE DATA ---');
+    debugPrint(jsonEncode(response.data['data']));
+    debugPrint('-----------------------------');
 
     return PaginatedResponse.fromJson(
       response.data['data'],

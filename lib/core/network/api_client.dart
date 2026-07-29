@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 // ============================================================================
 // api_client.dart (COMPLETE - Uses Backend JWT for REST API)
 // lib/core/network/api_client.dart
@@ -57,51 +58,51 @@ class AuthInterceptor extends Interceptor {
       RequestOptions options,
       RequestInterceptorHandler handler,
       ) async {
-    print('');
-    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    print('🔐 [AuthInterceptor] ${options.method} ${options.path}');
+    debugPrint('');
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    debugPrint('🔐 [AuthInterceptor] ${options.method} ${options.path}');
 
     try {
       final authService = ref.read(authServiceProvider);
-      print('   📱 AuthService obtained');
+      debugPrint('   📱 AuthService obtained');
 
       // ✅ Use getBackendToken() for REST API requests
       final token = await authService.getBackendToken();
 
       if (token != null) {
-        print('   ✅ Backend JWT found: ${token.substring(0, 30)}...');
+        debugPrint('   ✅ Backend JWT found: ${token.substring(0, 30)}...');
         options.headers['Authorization'] = 'Bearer $token';
-        print('   ✅ Authorization header added');
+        debugPrint('   ✅ Authorization header added');
       } else {
-        print('   ⚠️ No backend token - request will be unauthorized');
+        debugPrint('   ⚠️ No backend token - request will be unauthorized');
       }
-    } catch (e, stackTrace) {
-      print('   ❌ Error getting token: $e');
+    } catch (e) {
+      debugPrint('   ❌ Error getting token: $e');
       AppLogger.error('Error getting token in interceptor', error: e);
     }
 
-    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    print('');
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    debugPrint('');
 
     handler.next(options);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    print('');
-    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    print('🔥 [AuthInterceptor] Error ${err.response?.statusCode}');
+    debugPrint('');
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    debugPrint('🔥 [AuthInterceptor] Error ${err.response?.statusCode}');
 
     if (err.response?.statusCode == 401) {
-      print('   🔄 401 Unauthorized - attempting token refresh...');
+      debugPrint('   🔄 401 Unauthorized - attempting token refresh...');
       final authService = ref.read(authServiceProvider);
 
       // Try to get a fresh backend token (with auto-refresh)
       final newToken = await authService.getBackendToken(forceRefresh: true);
-      print('   🎫 Refresh: ${newToken != null ? "✅ Success" : "❌ Failed"}');
+      debugPrint('   🎫 Refresh: ${newToken != null ? "✅ Success" : "❌ Failed"}');
 
       if (newToken != null) {
-        print('   🔄 Retrying request with new token...');
+        debugPrint('   🔄 Retrying request with new token...');
 
         // Retry the original request with the new token
         final options = err.requestOptions;
@@ -111,22 +112,22 @@ class AuthInterceptor extends Interceptor {
           final dio = Dio();
           dio.options.baseUrl = options.baseUrl;
           final response = await dio.fetch(options);
-          print('   ✅ Retry successful');
-          print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          print('');
+          debugPrint('   ✅ Retry successful');
+          debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          debugPrint('');
           return handler.resolve(response);
         } catch (retryError) {
-          print('   ❌ Retry failed: $retryError');
+          debugPrint('   ❌ Retry failed: $retryError');
         }
       }
 
-      // If refresh fails, sign out the user
-      print('   ⚠️ Token refresh failed - signing out');
-      await authService.signOut();
+      // Don't auto-signout here — let the calling code handle it.
+      // Auto-signout was causing a destructive race during login flows.
+      debugPrint('   ⚠️ Token refresh failed - passing error through');
     }
 
-    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    print('');
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    debugPrint('');
     handler.next(err);
   }
 }

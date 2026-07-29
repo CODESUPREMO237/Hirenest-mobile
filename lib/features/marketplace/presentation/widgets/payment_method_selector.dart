@@ -31,14 +31,19 @@ class PaymentMethodSelector extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         ...methods.map((method) {
-          return RadioListTile<String>(
+          return RadioMenuButton<String>(
             value: method['id'] as String,
             groupValue: selectedMethod,
             onChanged: (value) => onSelected(value!),
-            title: Text(method['name'] as String),
-            secondary: Icon(method['icon'] as IconData),
+            child: Row(
+              children: [
+                Icon(method['icon'] as IconData),
+                const SizedBox(width: 12),
+                Text(method['name'] as String),
+              ],
+            ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

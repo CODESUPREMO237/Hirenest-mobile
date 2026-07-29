@@ -1,301 +1,255 @@
+// ============================================================================
+// app_theme.dart
+// lib/core/theme/app_theme.dart
+// ============================================================================
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
+
+import 'app_colors.dart';
+import 'app_spacing.dart';
+import 'app_text_styles.dart';
 
 class AppTheme {
-  AppTheme._();
-
-  /* --------------------------------------------------------------------------
-   * Colors
-   * -------------------------------------------------------------------------- */
-
-  static const Color primaryColor = Color(0xFF6366F1);
-  static const Color secondaryColor = Color(0xFF10B981);
-  static const Color accentColor = Color(0xFFF59E0B);
-  static const Color errorColor = Color(0xFFEF4444);
-
-  // Light
-  static const Color backgroundLight = Color(0xFFF9FAFB);
-  static const Color surfaceLight = Colors.white;
-  static const Color textPrimaryLight = Color(0xFF111827);
-  static const Color textSecondaryLight = Color(0xFF6B7280);
-  static const Color borderLight = Color(0xFFE5E7EB);
-
-  // Dark
-  static const Color backgroundDark = Color(0xFF111827);
-  static const Color surfaceDark = Color(0xFF1F2937);
-  static const Color textPrimaryDark = Color(0xFFF9FAFB);
-  static const Color textSecondaryDark = Color(0xFF9CA3AF);
-  static const Color borderDark = Color(0xFF374151);
-
-  /* --------------------------------------------------------------------------
-   * Design Tokens
-   * -------------------------------------------------------------------------- */
-
-  static const double radiusSm = 8;
-  static const double radiusMd = 12;
-  static const double radiusLg = 16;
-  static const double radiusXl = 24;
-
-  static const double elevationNone = 0;
-  static const double elevationSm = 1;
-  static const double elevationMd = 3;
-  static const double elevationLg = 8;
-
-  static const EdgeInsets buttonPadding =
-  EdgeInsets.symmetric(horizontal: 24, vertical: 16);
-
-  static const EdgeInsets inputPadding =
-  EdgeInsets.symmetric(horizontal: 16, vertical: 16);
-
-  /* --------------------------------------------------------------------------
-   * Typography
-   * -------------------------------------------------------------------------- */
-
-  static TextTheme _textTheme(Color primary, Color secondary) {
-    return GoogleFonts.interTextTheme().copyWith(
-      displayLarge: GoogleFonts.inter(
-        fontSize: 32,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.5,
-        color: primary,
-      ),
-      displayMedium: GoogleFonts.inter(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        color: primary,
-      ),
-      displaySmall: GoogleFonts.inter(
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
-        color: primary,
-      ),
-      headlineMedium: GoogleFonts.inter(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: primary,
-      ),
-      headlineSmall: GoogleFonts.inter(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: primary,
-      ),
-      bodyLarge: GoogleFonts.inter(
-        fontSize: 16,
-        height: 1.5,
-        color: primary,
-      ),
-      bodyMedium: GoogleFonts.inter(
-        fontSize: 14,
-        height: 1.45,
-        color: primary,
-      ),
-      bodySmall: GoogleFonts.inter(
-        fontSize: 12,
-        color: secondary,
-      ),
-      labelLarge: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.2,
-        color: primary,
-      ),
-      labelMedium: GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: secondary,
-      ),
+  /// Base light theme configuration
+  static ThemeData get lightTheme {
+    final colorScheme = const ColorScheme.light(
+      primary: AppColors.primary,
+      onPrimary: AppColors.onPrimary,
+      secondary: AppColors.secondary,
+      onSecondary: AppColors.onSecondary,
+      surface: AppColors.surfaceLight,
+      onSurface: AppColors.textPrimaryLight,
+      surfaceContainerHighest: AppColors.surfaceVariantLight,
+      error: AppColors.error,
+      onError: AppColors.white,
+      brightness: Brightness.light,
     );
+
+    return _buildTheme(colorScheme, AppColors.textPrimaryLight);
   }
 
-  /* --------------------------------------------------------------------------
-   * Base Theme Builder
-   * -------------------------------------------------------------------------- */
+  /// Base dark theme configuration
+  static ThemeData get darkTheme {
+    final colorScheme = const ColorScheme.dark(
+      primary: AppColors.primaryDark,
+      onPrimary: AppColors.onPrimary,
+      secondary: AppColors.secondaryDark,
+      onSecondary: AppColors.onSecondary,
+      surface: AppColors.surfaceDark,
+      onSurface: AppColors.textPrimaryDark,
+      surfaceContainerHighest: AppColors.surfaceVariantDark,
+      error: AppColors.errorDark,
+      onError: AppColors.white,
+      brightness: Brightness.dark,
+    );
 
-  static ThemeData _baseTheme({
-    required Brightness brightness,
-    required ColorScheme colorScheme,
-    required Color background,
-    required Color surface,
-    required Color textPrimary,
-    required Color textSecondary,
-    required Color border,
-  }) {
+    return _buildTheme(colorScheme, AppColors.textPrimaryDark);
+  }
+
+  /// Helper to build the theme with consistent component styling
+  static ThemeData _buildTheme(ColorScheme colorScheme, Color textBaseColor) {
+    final isDark = colorScheme.brightness == Brightness.dark;
+    
+    // Create text theme with appropriate base color
+    final textTheme = AppTextStyles.getThemeWithColor(
+      textBaseColor,
+      isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+    );
+
     return ThemeData(
       useMaterial3: true,
-      brightness: brightness,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: background,
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-
-      /* ---------------- AppBar ---------------- */
+      scaffoldBackgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      textTheme: textTheme,
+      
+      // ── App Bar Theme ──────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
-        backgroundColor: surface,
-        foregroundColor: textPrimary,
-        elevation: elevationNone,
-        centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
-          fontSize: 20,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        centerTitle: true,
+        systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
+        titleTextStyle: textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w600,
-          color: textPrimary,
         ),
-        iconTheme: IconThemeData(color: textPrimary),
       ),
 
-      /* ---------------- Cards ---------------- */
+      // ── Card Theme ─────────────────────────────────────────────────────
       cardTheme: CardThemeData(
-        color: surface,
-        elevation: elevationSm,
+        color: colorScheme.surface,
+        elevation: 0,
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusLg),
-          side: BorderSide(color: border),
-        ),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-
-      /* ---------------- Dialogs ---------------- */
-      dialogTheme: DialogThemeData(
-        backgroundColor: surface,
-        elevation: elevationLg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusXl),
+          borderRadius: AppSpacing.roundedMd,
+          side: BorderSide(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            width: 1,
+          ),
         ),
       ),
 
-      /* ---------------- Buttons ---------------- */
+      // ── Input Decoration (Text Fields) ─────────────────────────────────
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: AppSpacing.roundedMd,
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppSpacing.roundedMd,
+          borderSide: BorderSide(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppSpacing.roundedMd,
+          borderSide: BorderSide(
+            color: colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: AppSpacing.roundedMd,
+          borderSide: BorderSide(
+            color: colorScheme.error,
+          ),
+        ),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+        ),
+      ),
+
+      // ── Elevated Button Theme ──────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          elevation: elevationNone,
-          padding: buttonPadding,
           backgroundColor: colorScheme.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: colorScheme.onPrimary,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl,
+            vertical: AppSpacing.md,
+          ),
+          textStyle: textTheme.labelLarge,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMd),
+            borderRadius: AppSpacing.roundedMd,
           ),
-          textStyle: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+        ).copyWith(
+          elevation: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) return 0;
+            if (states.contains(WidgetState.hovered)) return 2;
+            return 0;
+          }),
         ),
       ),
 
+      // ── Outlined Button Theme ──────────────────────────────────────────
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          padding: buttonPadding,
-          foregroundColor: colorScheme.primary,
-          side: BorderSide(color: colorScheme.primary, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMd),
+          foregroundColor: colorScheme.onSurface,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl,
+            vertical: AppSpacing.md,
           ),
-          textStyle: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+          textStyle: textTheme.labelLarge,
+          side: BorderSide(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: AppSpacing.roundedMd,
           ),
         ),
       ),
 
+      // ── Text Button Theme ──────────────────────────────────────────────
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: colorScheme.primary,
-          textStyle: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          textStyle: textTheme.labelLarge,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppSpacing.roundedSm,
           ),
         ),
       ),
 
-      /* ---------------- Inputs ---------------- */
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: surface,
-        contentPadding: inputPadding,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
-          borderSide: BorderSide(color: border),
+      // ── Chip Theme ─────────────────────────────────────────────────────
+      chipTheme: ChipThemeData(
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        disabledColor: isDark ? AppColors.borderDark : AppColors.borderLight,
+        selectedColor: colorScheme.primary,
+        secondarySelectedColor: colorScheme.primary,
+        showCheckmark: false,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: 0,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
-          borderSide: BorderSide(color: border),
+        labelStyle: textTheme.labelMedium,
+        secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+          color: colorScheme.onPrimary,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
-          borderSide: const BorderSide(color: errorColor),
-        ),
-        labelStyle: GoogleFonts.inter(
-          fontSize: 14,
-          color: textSecondary,
-        ),
-        hintStyle: GoogleFonts.inter(
-          fontSize: 14,
-          color: textSecondary,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.roundedSm,
+          side: BorderSide(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
         ),
       ),
 
-      /* ---------------- Navigation ---------------- */
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: surface,
-        selectedItemColor: colorScheme.primary,
-        unselectedItemColor: textSecondary,
-        type: BottomNavigationBarType.fixed,
-        elevation: elevationNone,
-        selectedLabelStyle: GoogleFonts.inter(
-          fontSize: 12,
+      // ── Dialog Theme ───────────────────────────────────────────────────
+      dialogTheme: DialogThemeData(
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.roundedLg,
+          side: BorderSide(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+        ),
+        titleTextStyle: textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
+        contentTextStyle: textTheme.bodyMedium,
       ),
 
-      /* ---------------- Snackbar ---------------- */
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: textPrimary,
-        contentTextStyle: GoogleFonts.inter(color: Colors.white),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+      // ── Bottom Sheet Theme ─────────────────────────────────────────────
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppSpacing.radiusLg),
+          ),
         ),
+        clipBehavior: Clip.antiAlias,
       ),
 
-      textTheme: _textTheme(textPrimary, textSecondary),
+      // ── Bottom Navigation Bar Theme ────────────────────────────────────
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+        selectedLabelStyle: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+        unselectedLabelStyle: textTheme.labelSmall,
+        type: BottomNavigationBarType.fixed,
+      ),
+
+      // ── Divider Theme ──────────────────────────────────────────────────
+      dividerTheme: DividerThemeData(
+        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        space: AppSpacing.xl,
+        thickness: 1,
+      ),
     );
   }
-
-  /* --------------------------------------------------------------------------
-   * Public Themes
-   * -------------------------------------------------------------------------- */
-
-  static ThemeData get lightTheme => _baseTheme(
-    brightness: Brightness.light,
-    background: backgroundLight,
-    surface: surfaceLight,
-    border: borderLight,
-    textPrimary: textPrimaryLight,
-    textSecondary: textSecondaryLight,
-    colorScheme: const ColorScheme.light(
-      primary: primaryColor,
-      secondary: secondaryColor,
-      tertiary: accentColor,
-      error: errorColor,
-    ),
-  );
-
-  static ThemeData get darkTheme => _baseTheme(
-    brightness: Brightness.dark,
-    background: backgroundDark,
-    surface: surfaceDark,
-    border: borderDark,
-    textPrimary: textPrimaryDark,
-    textSecondary: textSecondaryDark,
-    colorScheme: const ColorScheme.dark(
-      primary: primaryColor,
-      secondary: secondaryColor,
-      tertiary: accentColor,
-      error: errorColor,
-    ),
-  );
 }

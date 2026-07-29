@@ -5,6 +5,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../../../../../core/theme/app_colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ImageViewer extends StatefulWidget {
@@ -41,14 +42,14 @@ class _ImageViewerState extends State<ImageViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.black,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: Text(
           '${_currentIndex + 1} / ${widget.imageUrls.length}',
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppColors.white),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: AppColors.white),
       ),
       body: Stack(
         children: [
@@ -69,7 +70,7 @@ class _ImageViewerState extends State<ImageViewer> {
                     ),
                     errorWidget: (context, url, error) => const Icon(
                       Icons.error_outline,
-                      color: Colors.white,
+                      color: AppColors.white,
                       size: 64,
                     ),
                   ),
@@ -92,8 +93,8 @@ class _ImageViewerState extends State<ImageViewer> {
                     height: 8,
                     decoration: BoxDecoration(
                       color: _currentIndex == index
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.5),
+                          ? AppColors.white
+                          : AppColors.white.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),

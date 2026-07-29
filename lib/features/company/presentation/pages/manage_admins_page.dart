@@ -2,9 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/error_widget.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../auth/data/models/user_model.dart';
 import '../providers/company_provider.dart';
 import '../providers/admin_provider.dart';
 import '../../../../core/utils/logger.dart';
@@ -33,49 +34,28 @@ class _ManageAdminsPageState extends ConsumerState<ManageAdminsPage> {
       AppLogger.warning('Search attempted with empty query');
       return;
     }
-
-    AppLogger.debug('Searching users with query: $query');
     setState(() => _isSearching = true);
-
     try {
       await ref.read(searchUsersProvider(query).future);
-      AppLogger.info('User search completed');
     } catch (e, stack) {
       AppLogger.error('User search failed', error: e, stackTrace: stack);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Search error: $e')),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Search error: $e')));
     } finally {
       if (mounted) setState(() => _isSearching = false);
     }
   }
 
   void _addAdmin(String userId, String companyId) async {
-    AppLogger.info('Adding admin: $userId to company: $companyId');
-
     try {
       await ref.read(adminActionsProvider.notifier).addAdmin(companyId, userId);
-
       if (mounted) {
-        AppLogger.info('Admin added successfully');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Admin added'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Admin added'), backgroundColor: AppColors.success));
         _searchController.clear();
         ref.invalidate(myCompanyProvider);
       }
     } catch (e, stack) {
       AppLogger.error('Failed to add admin', error: e, stackTrace: stack);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error));
     }
   }
 
@@ -83,29 +63,24 @@ class _ManageAdminsPageState extends ConsumerState<ManageAdminsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surfaceLight,
         title: const Text('Remove Admin'),
         content: const Text('Are you sure you want to remove this administrator?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondaryLight))),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+            child: const Text('Remove', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
     );
-
     if (confirmed != true) return;
-
     try {
       await ref.read(adminActionsProvider.notifier).removeAdmin(companyId, adminId);
       if (mounted) ref.invalidate(myCompanyProvider);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error));
     }
   }
 
@@ -116,34 +91,46 @@ class _ManageAdminsPageState extends ConsumerState<ManageAdminsPage> {
     final currentUser = ref.watch(currentUserProvider).value;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Admins'), elevation: 0),
+      backgroundColor: AppColors.backgroundLight,
+      appBar: AppBar(
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
+        title: Text(
+          'Manage Admins',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimaryLight,
+              ),
+        ),
+        iconTheme: const IconThemeData(color: AppColors.textPrimaryLight),
+      ),
       body: companyAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (error, stack) => CustomErrorWidget(
           message: 'Failed to load company admins',
           onRetry: () => ref.invalidate(myCompanyProvider),
         ),
         data: (company) {
-          if (company == null) return const Center(child: Text('Company not found'));
-
           final isCreator = currentUser?.id == company.createdBy;
 
           return RefreshIndicator(
+            color: AppColors.primary,
+            backgroundColor: AppColors.surfaceLight,
             onRefresh: () async => ref.invalidate(myCompanyProvider),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 children: [
-                  _buildHeader(company.name),
-                  const SizedBox(height: 24),
+                  _buildHeader(context, company.name),
+                  const SizedBox(height: AppSpacing.xl),
                   if (isCreator) ...[
-                    _buildAddAdminSection(company.id),
-                    const SizedBox(height: 24),
+                    _buildAddAdminSection(context, company.id),
+                    const SizedBox(height: AppSpacing.xl),
                   ],
-                  _buildAdminsList(company, isCreator, adminState),
-                  const SizedBox(height: 24),
-                  _buildInfoBox(isCreator),
+                  _buildAdminsList(context, company, isCreator, adminState),
+                  const SizedBox(height: AppSpacing.xl),
+                  _buildInfoBox(context, isCreator),
                 ],
               ),
             ),
@@ -153,21 +140,36 @@ class _ManageAdminsPageState extends ConsumerState<ManageAdminsPage> {
     );
   }
 
-  Widget _buildHeader(String companyName) {
+  Widget _buildHeader(BuildContext context, String companyName) {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
-          child: Icon(Icons.shield, color: Colors.blue.shade700, size: 32),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: AppSpacing.roundedLg,
+          ),
+          child: const Icon(Icons.shield_outlined, color: AppColors.primary, size: 32),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Admin Management', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              Text('Control access for $companyName', style: TextStyle(color: Colors.grey.shade600)),
+              Text(
+                'Admin Management',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimaryLight,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Control access for $companyName',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondaryLight,
+                    ),
+              ),
             ],
           ),
         ),
@@ -175,41 +177,58 @@ class _ManageAdminsPageState extends ConsumerState<ManageAdminsPage> {
     );
   }
 
-  Widget _buildAddAdminSection(String companyId) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Add New Admin', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                        hintText: 'User email...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                    onSubmitted: (_) => _searchUsers(),
+  Widget _buildAddAdminSection(BuildContext context, String companyId) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedXl,
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Add New Admin',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimaryLight,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'User email...',
+                    hintStyle: const TextStyle(color: AppColors.textMutedLight),
+                    filled: true,
+                    fillColor: AppColors.backgroundLight,
+                    border: OutlineInputBorder(borderRadius: AppSpacing.roundedMd, borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                   ),
+                  onSubmitted: (_) => _searchUsers(),
                 ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: _isSearching ? null : _searchUsers,
-                  icon: _isSearching
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Icon(Icons.search),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              FilledButton(
+                onPressed: _isSearching ? null : _searchUsers,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _buildSearchResults(companyId),
-          ],
-        ),
+                child: _isSearching
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
+                    : const Icon(Icons.search),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _buildSearchResults(companyId),
+        ],
       ),
     );
   }
@@ -221,82 +240,95 @@ class _ManageAdminsPageState extends ConsumerState<ManageAdminsPage> {
     return Consumer(builder: (context, ref, child) {
       return ref.watch(searchUsersProvider(query)).when(
         data: (users) {
-          if (users.isEmpty) return const Text('No users found', style: TextStyle(color: Colors.grey));
+          if (users.isEmpty) return const Padding(padding: EdgeInsets.only(top: 8.0), child: Text('No users found', style: TextStyle(color: AppColors.textMutedLight)));
           return Column(
             children: users.map((u) => ListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text(u.fullName),
-              subtitle: Text(u.email),
-              trailing: TextButton(onPressed: () => _addAdmin(u.id, companyId), child: const Text('Add')),
+              title: Text(u.fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(u.email, style: const TextStyle(color: AppColors.textSecondaryLight)),
+              trailing: TextButton(
+                onPressed: () => _addAdmin(u.id, companyId),
+                child: const Text('Add', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+              ),
             )).toList(),
           );
         },
-        loading: () => const LinearProgressIndicator(),
-        error: (e, _) => Text('Error searching users', style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
+        loading: () => const Padding(padding: EdgeInsets.only(top: 8.0), child: LinearProgressIndicator(color: AppColors.primary)),
+        error: (e, _) => Padding(padding: const EdgeInsets.only(top: 8.0), child: Text('Error searching users', style: TextStyle(color: AppColors.error.withValues(alpha: 0.8), fontSize: 12))),
       );
     });
   }
 
-  Widget _buildAdminsList(CompanyModel company, bool isCreator, AdminActionsState adminState) {
+  Widget _buildAdminsList(BuildContext context, CompanyModel company, bool isCreator, AdminActionsState adminState) {
     final admins = company.admins;
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Active Administrators (${admins.length})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const Divider(),
-            if (admins.isEmpty)
-              const Center(child: Padding(padding: EdgeInsets.all(16.0), child: Text('No admins found'))),
-            ...admins.map((user) {
-              final isOwner = user.id == company.createdBy;
-              final isRemoving = adminState.isLoading && adminState.currentAdminId == user.id;
-
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  backgroundColor: Colors.blue.shade100,
-                  backgroundImage: user.profile?.avatar != null ? NetworkImage(user.profile!.avatar!) : null,
-                  child: user.profile?.avatar == null ? Text(user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?') : null,
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedXl,
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Active Administrators (${admins.length})',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimaryLight,
                 ),
-                title: Text(isOwner ? '${user.fullName} (Owner)' : user.fullName),
-                subtitle: Text(user.email),
-                trailing: isOwner
-                    ? const Icon(Icons.verified, color: Colors.blue)
-                    : (isCreator
-                    ? (isRemoving
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _removeAdmin(user.id, company.id),
-                ))
-                    : null),
-              );
-            }),
-          ],
-        ),
+          ),
+          const Divider(height: AppSpacing.xl, color: AppColors.borderLight),
+          if (admins.isEmpty)
+            const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.lg), child: Text('No admins found', style: TextStyle(color: AppColors.textMutedLight)))),
+          ...admins.map((user) {
+            final isOwner = user.id == company.createdBy;
+            final isRemoving = adminState.isLoading && adminState.currentAdminId == user.id;
+
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                backgroundImage: user.profile?.avatar != null ? NetworkImage(user.profile!.avatar!) : null,
+                child: user.profile?.avatar == null ? Text(user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)) : null,
+              ),
+              title: Text(isOwner ? '${user.fullName} (Owner)' : user.fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(user.email, style: const TextStyle(color: AppColors.textSecondaryLight)),
+              trailing: isOwner
+                  ? const Icon(Icons.verified, color: AppColors.primary)
+                  : (isCreator
+                      ? (isRemoving
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.error))
+                          : IconButton(
+                              icon: const Icon(Icons.remove_circle_outline, color: AppColors.error),
+                              onPressed: () => _removeAdmin(user.id, company.id),
+                            ))
+                      : null),
+            );
+          }),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoBox(bool isCreator) {
+  Widget _buildInfoBox(BuildContext context, bool isCreator) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.05),
+        borderRadius: AppSpacing.roundedMd,
+      ),
       child: Row(
         children: [
-          Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
-          const SizedBox(width: 12),
+          const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               isCreator
                   ? 'As the company creator, you can add or remove administrators.'
                   : 'Only the company creator can add or remove administrators.',
-              style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.primary),
             ),
           ),
         ],

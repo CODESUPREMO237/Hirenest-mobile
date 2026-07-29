@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -9,7 +11,6 @@ import '../providers/transactions_provider.dart';
 import '../../data/models/transaction_model.dart';
 
 // Widgets
-import '../widgets/balance_card.dart';
 import '../../../../core/widgets/error_widget.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -22,11 +23,12 @@ class BalancePage extends ConsumerWidget {
     final transactionsAsync = ref.watch(transactionsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.backgroundLight,
       body: RefreshIndicator(
         onRefresh: () async {
-          await ref.refresh(balanceProvider.future);
-          await ref.refresh(transactionsProvider.future);
+          ref.invalidate(balanceProvider);
+          ref.invalidate(transactionsProvider);
+          await Future.delayed(const Duration(milliseconds: 500));
         },
         child: balanceAsync.when(
           data: (balance) {
@@ -35,12 +37,12 @@ class BalancePage extends ConsumerWidget {
             return CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                // Modern App Bar with Balance
                 SliverAppBar(
-                  expandedHeight: 280,
+                  expandedHeight: 260,
                   floating: false,
                   pinned: true,
-                  backgroundColor: Theme.of(context).primaryColor,
+                  backgroundColor: AppColors.primary,
+                  elevation: 0,
                   flexibleSpace: FlexibleSpaceBar(
                     background: Container(
                       decoration: BoxDecoration(
@@ -48,30 +50,29 @@ class BalancePage extends ConsumerWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Theme.of(context).primaryColor,
-                            Theme.of(context).primaryColor.withOpacity(0.7),
+                            AppColors.primary,
+                            AppColors.primaryDark,
                           ],
                         ),
                       ),
                       child: SafeArea(
                         child: Padding(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(AppSpacing.xl),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'My Balance',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 16,
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      color: AppColors.white.withValues(alpha: 0.9),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                                    icon: const Icon(Icons.refresh_rounded, color: AppColors.white),
                                     onPressed: () {
                                       AppLogger.info('Manual refresh triggered on BalancePage');
                                       ref.invalidate(balanceProvider);
@@ -80,37 +81,35 @@ class BalancePage extends ConsumerWidget {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: AppSpacing.sm),
                               Text(
                                 '${balance.availableForWithdrawal.toStringAsFixed(0)} XAF',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 40,
+                                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                  color: AppColors.white,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: -1,
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: AppSpacing.lg),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
+                                  color: AppColors.white.withValues(alpha: 0.15),
+                                  borderRadius: AppSpacing.roundedLg,
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     const Icon(
                                       Icons.pending_actions_rounded,
-                                      color: Colors.white70,
+                                      color: AppColors.white,
                                       size: 18,
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: AppSpacing.sm),
                                     Text(
                                       'Pending: ${balance.pendingEarnings.toStringAsFixed(0)} XAF',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
+                                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                        color: AppColors.white,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -125,10 +124,9 @@ class BalancePage extends ConsumerWidget {
                   ),
                 ),
 
-                // Quick Actions
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(AppSpacing.xl),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -137,31 +135,21 @@ class BalancePage extends ConsumerWidget {
                             Expanded(
                               child: _buildModernActionButton(
                                 context,
-                                'Top Up',
-                                Icons.add_circle_outline_rounded,
-                                Colors.blue,
-                                    () => _showTopUpDialog(context),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildModernActionButton(
-                                context,
                                 'Withdraw',
                                 Icons.arrow_circle_up_rounded,
-                                Colors.green,
-                                    () => context.push('/profile/payout'),
+                                AppColors.success,
+                                () => context.push('/profile/payout'),
                                 enabled: balance.availableForWithdrawal > 0,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.md),
                             Expanded(
                               child: _buildModernActionButton(
                                 context,
                                 'History',
                                 Icons.history_rounded,
-                                Colors.purple,
-                                    () => _showTransactionHistory(context, ref),
+                                AppColors.primary,
+                                () => _showTransactionHistory(context, ref),
                               ),
                             ),
                           ],
@@ -171,45 +159,48 @@ class BalancePage extends ConsumerWidget {
                   ),
                 ),
 
-                // Recent Transactions Section
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, AppSpacing.md),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Recent Activity',
-                          style: TextStyle(
-                            fontSize: 20,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: AppColors.textPrimaryLight,
                           ),
                         ),
                         if (transactionsAsync.hasValue && transactionsAsync.value!.isNotEmpty)
                           TextButton(
                             onPressed: () => _showTransactionHistory(context, ref),
-                            child: const Text('View All'),
+                            child: Text(
+                              'View All',
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                       ],
                     ),
                   ),
                 ),
 
-                // Transactions List
                 transactionsAsync.when(
                   data: (transactions) {
                     if (transactions.isEmpty) {
                       return SliverFillRemaining(
                         hasScrollBody: false,
-                        child: _buildEmptyState(),
+                        child: _buildEmptyState(context),
                       );
                     }
                     return SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
-                              (context, index) => _buildModernTransactionTile(transactions[index]),
+                          (context, index) => _buildModernTransactionTile(context, transactions[index]),
                           childCount: transactions.length > 5 ? 5 : transactions.length,
                         ),
                       ),
@@ -217,7 +208,7 @@ class BalancePage extends ConsumerWidget {
                   },
                   loading: () => const SliverFillRemaining(
                     child: Center(
-                      child: CircularProgressIndicator(),
+                      child: CircularProgressIndicator(color: AppColors.primary),
                     ),
                   ),
                   error: (err, stack) {
@@ -233,7 +224,7 @@ class BalancePage extends ConsumerWidget {
               ],
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
           error: (err, stack) {
             AppLogger.error('Balance Page Major Error', error: err, stackTrace: stack);
             return CustomErrorWidget(
@@ -246,40 +237,37 @@ class BalancePage extends ConsumerWidget {
     );
   }
 
-  // --- Modern Helper Widgets ---
-
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(AppSpacing.xxl),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: AppColors.surfaceLight,
               shape: BoxShape.circle,
+              boxShadow: AppSpacing.elevatedShadow,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.receipt_long_rounded,
               size: 64,
-              color: Colors.grey[400],
+              color: AppColors.textMutedLight,
             ),
           ),
-          const SizedBox(height: 24),
-          const Text(
+          const SizedBox(height: AppSpacing.xl),
+          Text(
             'No transactions yet',
-            style: TextStyle(
-              fontSize: 18,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: AppColors.textPrimaryLight,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'Your activity will appear here',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondaryLight,
             ),
           ),
         ],
@@ -288,53 +276,46 @@ class BalancePage extends ConsumerWidget {
   }
 
   Widget _buildModernActionButton(
-      BuildContext context,
-      String label,
-      IconData icon,
-      Color color,
-      VoidCallback onTap, {
-        bool enabled = true,
-      }) {
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap, {
+    bool enabled = true,
+  }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: enabled ? onTap : null,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppSpacing.roundedLg,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl, horizontal: AppSpacing.md),
             child: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: enabled ? color.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: enabled ? color.withValues(alpha: 0.1) : AppColors.textMutedLight.withValues(alpha: 0.1),
+                    borderRadius: AppSpacing.roundedMd,
                   ),
                   child: Icon(
                     icon,
                     size: 28,
-                    color: enabled ? color : Colors.grey,
+                    color: enabled ? color : AppColors.textMutedLight,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   label,
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    color: enabled ? Colors.black87 : Colors.grey,
+                    color: enabled ? AppColors.textPrimaryLight : AppColors.textMutedLight,
                   ),
                 ),
               ],
@@ -345,70 +326,60 @@ class BalancePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildModernTransactionTile(TransactionModel transaction) {
+  Widget _buildModernTransactionTile(BuildContext context, TransactionModel transaction) {
     final isWithdrawal = transaction.type.toLowerCase() == 'withdrawal';
-    final color = isWithdrawal ? Colors.orange[600]! : Colors.green[600]!;
+    final color = isWithdrawal ? AppColors.warning : AppColors.success;
     final icon = isWithdrawal ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            // TODO: Navigate to transaction details
-          },
+          borderRadius: AppSpacing.roundedLg,
+          onTap: () {},
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: AppSpacing.roundedMd,
                   ),
                   child: Icon(icon, color: color, size: 24),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         transaction.description ?? (isWithdrawal ? 'Withdrawal' : 'Payment Received'),
-                        style: const TextStyle(
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                          color: Colors.black87,
+                          color: AppColors.textPrimaryLight,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.access_time_rounded,
-                            size: 12,
-                            color: Colors.grey[400],
+                            size: 14,
+                            color: AppColors.textMutedLight,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             timeago.format(transaction.createdAt),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondaryLight,
                             ),
                           ),
                         ],
@@ -418,112 +389,15 @@ class BalancePage extends ConsumerWidget {
                 ),
                 Text(
                   '${isWithdrawal ? '-' : '+'}${transaction.amount.toStringAsFixed(0)} XAF',
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isWithdrawal ? Colors.red[600] : Colors.green[600],
-                    fontSize: 16,
+                    color: isWithdrawal ? AppColors.error : AppColors.success,
                   ),
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // --- Dialogs & Bottom Sheets ---
-
-  void _showTopUpDialog(BuildContext context) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Top Up Wallet',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Enter amount to add to your balance',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                suffixText: 'XAF',
-                hintText: 'e.g. 5000',
-                filled: true,
-                fillColor: Colors.grey[50],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final amount = controller.text;
-              Navigator.pop(context);
-              context.push('/profile/deposit?amount=$amount');
-            },
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showWithdrawalDialog(BuildContext context, double amount) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Confirm Withdrawal',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'You are about to withdraw ${amount.toStringAsFixed(0)} XAF to your registered account.',
-          style: TextStyle(color: Colors.grey[700]),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.push('/profile/payout');
-            },
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: const Text('Proceed'),
-          ),
-        ],
       ),
     );
   }
@@ -536,11 +410,11 @@ class BalancePage extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          color: AppColors.backgroundLight,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusXl)),
         ),
         child: DraggableScrollableSheet(
-          initialChildSize: 0.7,
+          initialChildSize: 0.8,
           maxChildSize: 0.95,
           minChildSize: 0.5,
           expand: false,
@@ -548,29 +422,29 @@ class BalancePage extends ConsumerWidget {
             final txAsync = ref.watch(transactionsProvider);
             return Column(
               children: [
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Container(
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: AppColors.borderLight,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(AppSpacing.xl),
                   child: Row(
                     children: [
-                      const Text(
+                      Text(
                         'All Transactions',
-                        style: TextStyle(
-                          fontSize: 20,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimaryLight,
                         ),
                       ),
                       const Spacer(),
                       IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close, color: AppColors.textPrimaryLight),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -579,14 +453,14 @@ class BalancePage extends ConsumerWidget {
                 Expanded(
                   child: txAsync.when(
                     data: (list) => list.isEmpty
-                        ? _buildEmptyState()
+                        ? _buildEmptyState(context)
                         : ListView.builder(
-                      controller: scrollController,
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                      itemCount: list.length,
-                      itemBuilder: (context, i) => _buildModernTransactionTile(list[i]),
-                    ),
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                            controller: scrollController,
+                            padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
+                            itemCount: list.length,
+                            itemBuilder: (context, i) => _buildModernTransactionTile(context, list[i]),
+                          ),
+                    loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
                     error: (e, s) => CustomErrorWidget(message: e.toString()),
                   ),
                 ),

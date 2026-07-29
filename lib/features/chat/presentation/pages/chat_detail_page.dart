@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +15,7 @@ import '../providers/typing_provider.dart';
 
 import '../widgets/chat_input.dart';
 import '../widgets/typing_indicator.dart';
+import '../widgets/message_bubble.dart';
 
 import '../../data/models/message_model.dart';
 import '../../data/models/chat_model.dart';
@@ -151,14 +154,14 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     });
 
     try {
-      print('📤 Sending message: $content');
+      debugPrint('📤 Sending message: $content');
 
       // Send the message
       await ref
           .read(messagesProvider(widget.chatId).notifier)
           .sendMessage(widget.chatId, content);
 
-      print('✅ Message sent successfully');
+      debugPrint('✅ Message sent successfully');
 
       // Scroll to bottom to show new message
       _scrollToBottom();
@@ -166,7 +169,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
       // ✅ CRITICAL: Update chat list immediately after sending
       // This ensures the chat list shows the new message preview
       if (!_isDisposed && mounted) {
-        print('🔄 Refreshing chat list after sending message...');
+        debugPrint('🔄 Refreshing chat list after sending message...');
 
         // Use a microtask to avoid provider state conflicts
         Future.microtask(() {
@@ -177,14 +180,14 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
       }
 
     } catch (e) {
-      print('❌ Error sending message: $e');
+      debugPrint('❌ Error sending message: $e');
 
       if (_isDisposed || !mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to send: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -207,14 +210,18 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
         return othersTyping;
       },
       loading: () => false,
-      error: (_, __) => false,
+      error: (err, stack) => false,
     );
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
+        scrolledUnderElevation: 1,
         titleSpacing: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimaryLight),
           onPressed: () {
             // ✅ Refresh chat list when navigating back
             ref.read(chatsProvider.notifier).loadChats(refresh: true);
@@ -222,32 +229,48 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
           },
         ),
         title: chatDetailAsync.when(
-          data: (chat) => Row(
-            children: [
-              const CircleAvatar(radius: 18, child: Icon(Icons.person)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Chat Support',
-                      style: TextStyle(fontSize: 16),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    _buildOnlineStatus(chat),
-                  ],
+          data: (chat) {
+            final otherUser = chat.participants.firstWhereOrNull((p) => p.id != myId) ?? 
+                              (chat.participants.isNotEmpty ? chat.participants.first : null);
+            final name = otherUser?.name ?? 'Unknown User';
+
+            return Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: AppColors.backgroundLight,
+                  backgroundImage: otherUser?.avatar != null ? NetworkImage(otherUser!.avatar!) : null,
+                  child: otherUser?.avatar == null
+                      ? Text(name.isNotEmpty ? name[0].toUpperCase() : 'U', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
+                      : null,
                 ),
-              ),
-            ],
-          ),
-          loading: () => const Text('Loading...'),
-          error: (_, __) => const Text('Chat'),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        name,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimaryLight,
+                            ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      _buildOnlineStatus(chat),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+          loading: () => const Text('Loading...', style: TextStyle(color: AppColors.textPrimaryLight)),
+          error: (err, stack) => const Text('Chat', style: TextStyle(color: AppColors.textPrimaryLight)),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert),
+            icon: const Icon(Icons.more_vert, color: AppColors.textPrimaryLight),
             onPressed: () => _showChatOptions(),
           ),
         ],
@@ -262,7 +285,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
                     ? _buildProductHeader(chat.product!)
                     : const SizedBox.shrink(),
                 loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (err, stack) => const SizedBox.shrink(),
               ),
 
               // Messages List
@@ -274,7 +297,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
                     return ListView.builder(
                       controller: _scrollController,
                       reverse: true,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       itemCount: messages.length + (isOthersTyping ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (isOthersTyping && index == 0) {
@@ -283,14 +306,40 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
 
                         final messageIndex = isOthersTyping ? index - 1 : index;
                         final message = messages[messageIndex];
-                        return MessageBubble(
+                        
+                        bool showDateHeader = false;
+                        if (messageIndex == messages.length - 1) {
+                          showDateHeader = true;
+                        } else {
+                          final prevMessage = messages[messageIndex + 1];
+                          final currentMsgDate = message.timestamp;
+                          final prevMsgDate = prevMessage.timestamp;
+                          if (currentMsgDate.day != prevMsgDate.day ||
+                              currentMsgDate.month != prevMsgDate.month ||
+                              currentMsgDate.year != prevMsgDate.year) {
+                            showDateHeader = true;
+                          }
+                        }
+
+                        final bubble = MessageBubble(
                           message: message,
                           onLongPress: () => _showMessageOptions(message),
                         );
+
+                        if (showDateHeader) {
+                          return Column(
+                            children: [
+                              _buildDateHeader(message.timestamp),
+                              bubble,
+                            ],
+                          );
+                        }
+
+                        return bubble;
                       },
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
                   error: (err, stack) => _buildErrorState(),
                 ),
               ),
@@ -309,14 +358,47 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
           if (_showScrollToBottom)
             Positioned(
               bottom: 100,
-              right: 16,
+              right: AppSpacing.lg,
               child: FloatingActionButton.small(
                 onPressed: _scrollToBottom,
-                backgroundColor: Theme.of(context).primaryColor,
-                child: const Icon(Icons.arrow_downward, color: Colors.white),
+                backgroundColor: AppColors.surfaceLight,
+                elevation: 2,
+                child: const Icon(Icons.arrow_downward, color: AppColors.primary),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDateHeader(DateTime date) {
+    String dateString;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final msgDate = DateTime(date.year, date.month, date.day);
+
+    if (msgDate == today) {
+      dateString = 'Today';
+    } else if (msgDate == yesterday) {
+      dateString = 'Yesterday';
+    } else {
+      dateString = DateFormat('MMM d, yyyy').format(date);
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+      decoration: BoxDecoration(
+        color: AppColors.borderLight,
+        borderRadius: AppSpacing.roundedFull,
+      ),
+      child: Text(
+        dateString,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.textSecondaryLight,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
@@ -351,18 +433,17 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isOnline ? Colors.green : Colors.grey,
+            color: isOnline ? AppColors.success : AppColors.textMutedLight,
             shape: BoxShape.circle,
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppSpacing.sm),
         Flexible(
           child: Text(
             statusText,
-            style: TextStyle(
-              fontSize: 12,
-              color: isOnline ? Colors.white : Colors.white70,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: isOnline ? AppColors.successDark : AppColors.textMutedLight,
+                ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -384,51 +465,51 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
 
   Widget _buildProductHeader(ProductInfoModel product) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+        color: AppColors.surfaceLight,
+        border: Border(bottom: BorderSide(color: AppColors.borderLight)),
       ),
       child: Row(
         children: [
           if (product.image != null)
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: AppSpacing.roundedSm,
               child: Image.network(
                 product.image!,
-                width: 45,
-                height: 45,
+                width: 48,
+                height: 48,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                    width: 45,
-                    height: 45,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image_not_supported, size: 20),
+                    width: 48,
+                    height: 48,
+                    color: AppColors.backgroundLight,
+                    child: const Icon(Icons.image_not_supported, size: 20, color: AppColors.textMutedLight),
                   );
                 },
               ),
             ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   product.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimaryLight,
+                      ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   "${product.currency} ${NumberFormat('#,###').format(product.price)}",
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontSize: 13,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ],
             ),
@@ -440,10 +521,12 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
               }
             },
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
               minimumSize: const Size(60, 32),
+              side: BorderSide(color: AppColors.borderLight),
+              shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
             ),
-            child: const Text("View", style: TextStyle(fontSize: 12)),
+            child: const Text("View", style: TextStyle(fontSize: 12, color: AppColors.textPrimaryLight)),
           )
         ],
       ),
@@ -454,16 +537,32 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
-        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          decoration: const BoxDecoration(
+            color: AppColors.surfaceLight,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.chat_bubble_outline,
+            size: 64,
+            color: AppColors.textMutedLight,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
         Text(
           "No messages yet",
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textSecondaryLight,
+                fontWeight: FontWeight.bold,
+              ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           "Start the conversation!",
-          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textMutedLight,
+              ),
         ),
       ],
     ),
@@ -473,19 +572,34 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-        const SizedBox(height: 16),
-        const Text(
-          "Error loading messages",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.error_outline, size: 48, color: AppColors.error),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          "Error loading messages",
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimaryLight,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
         ElevatedButton.icon(
           onPressed: () {
             if (!_isDisposed && mounted) {
-              ref.refresh(messagesProvider(widget.chatId));
+              ref.invalidate(messagesProvider(widget.chatId));
             }
           },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.white,
+            shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
+          ),
           icon: const Icon(Icons.refresh),
           label: const Text("Retry"),
         ),
@@ -498,13 +612,27 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppColors.surfaceLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusXl)),
+      ),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.borderLight,
+                borderRadius: AppSpacing.roundedFull,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
             ListTile(
-              leading: const Icon(Icons.archive_outlined),
-              title: const Text('Archive Chat'),
+              leading: const Icon(Icons.archive_outlined, color: AppColors.textPrimaryLight),
+              title: Text('Archive Chat', style: TextStyle(color: AppColors.textPrimaryLight)),
               onTap: () async {
                 Navigator.pop(context);
                 if (_isDisposed || !mounted) return;
@@ -519,7 +647,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Failed to archive: $e'),
-                        backgroundColor: Colors.red,
+                        backgroundColor: AppColors.error,
                       ),
                     );
                   }
@@ -537,13 +665,27 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppColors.surfaceLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusXl)),
+      ),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.borderLight,
+                borderRadius: AppSpacing.roundedFull,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
             ListTile(
-              leading: const Icon(Icons.copy_outlined),
-              title: const Text('Copy Text'),
+              leading: const Icon(Icons.copy_outlined, color: AppColors.textPrimaryLight),
+              title: Text('Copy Text', style: TextStyle(color: AppColors.textPrimaryLight)),
               onTap: () {
                 Clipboard.setData(ClipboardData(text: message.content));
                 Navigator.pop(context);
@@ -558,10 +700,10 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
+              leading: const Icon(Icons.delete_outline, color: AppColors.error),
               title: const Text(
                 'Delete Message',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: AppColors.error),
               ),
               onTap: () async {
                 Navigator.pop(context);
@@ -585,7 +727,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Failed to delete: $e'),
-                        backgroundColor: Colors.red,
+                        backgroundColor: AppColors.error,
                       ),
                     );
                   }

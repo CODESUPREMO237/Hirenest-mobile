@@ -4,6 +4,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../../../../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -32,7 +33,7 @@ Future<void> handleLogout(
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Logout'),
           ),
         ],
@@ -43,11 +44,11 @@ Future<void> handleLogout(
   }
 
   try {
-    print('');
-    print('╔════════════════════════════════════════════════════╗');
-    print('║         STARTING COMPLETE LOGOUT PROCESS          ║');
-    print('╚════════════════════════════════════════════════════╝');
-    print('');
+    debugPrint('');
+    debugPrint('╔════════════════════════════════════════════════════╗');
+    debugPrint('║         STARTING COMPLETE LOGOUT PROCESS          ║');
+    debugPrint('╚════════════════════════════════════════════════════╝');
+    debugPrint('');
 
     // Show loading indicator
     if (context.mounted) {
@@ -74,7 +75,7 @@ Future<void> handleLogout(
 
     // ✅ Step 1: Invalidate ALL providers BEFORE logout
     // This prevents the "Cannot use ref after disposal" error
-    print('🔄 Step 1: Invalidating all providers...');
+    debugPrint('🔄 Step 1: Invalidating all providers...');
 
     try {
       // Invalidate auth providers
@@ -93,21 +94,21 @@ Future<void> handleLogout(
       // ref.invalidate(marketplaceProvider);
       // Add more as needed
 
-      print('✅ Step 1: All providers invalidated');
+      debugPrint('✅ Step 1: All providers invalidated');
     } catch (e) {
-      print('⚠️ Step 1: Some providers failed to invalidate: $e');
+      debugPrint('⚠️ Step 1: Some providers failed to invalidate: $e');
       // Continue anyway - not critical
     }
 
     // ✅ Step 2: Call AuthService logout
-    print('🚪 Step 2: Calling AuthService.logout()...');
+    debugPrint('🚪 Step 2: Calling AuthService.logout()...');
     final authService = ref.read(authServiceProvider);
     await authService.logout();
-    print('✅ Step 2: AuthService logout complete');
+    debugPrint('✅ Step 2: AuthService logout complete');
 
     // ✅ Step 3: Wait for cleanup to propagate
     await Future.delayed(const Duration(milliseconds: 300));
-    print('✅ Step 3: Cleanup propagated');
+    debugPrint('✅ Step 3: Cleanup propagated');
 
     // ✅ Step 4: Close loading dialog if still mounted
     if (context.mounted) {
@@ -115,33 +116,33 @@ Future<void> handleLogout(
     }
 
     // ✅ Step 5: Navigate to login/welcome screen
-    print('🔀 Step 5: Navigating to login screen...');
+    debugPrint('🔀 Step 5: Navigating to login screen...');
     if (context.mounted) {
       // Clear all navigation stack and go to login
       context.go('/auth/login');
     }
-    print('✅ Step 5: Navigation complete');
+    debugPrint('✅ Step 5: Navigation complete');
 
     // ✅ Step 6: Show success message
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Logged out successfully'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           duration: Duration(seconds: 2),
         ),
       );
     }
 
-    print('');
-    print('╔════════════════════════════════════════════════════╗');
-    print('║           LOGOUT COMPLETED SUCCESSFULLY           ║');
-    print('╚════════════════════════════════════════════════════╝');
-    print('');
+    debugPrint('');
+    debugPrint('╔════════════════════════════════════════════════════╗');
+    debugPrint('║           LOGOUT COMPLETED SUCCESSFULLY           ║');
+    debugPrint('╚════════════════════════════════════════════════════╝');
+    debugPrint('');
 
   } catch (e, stackTrace) {
-    print('❌ Logout error: $e');
-    print('   Stack trace: $stackTrace');
+    debugPrint('❌ Logout error: $e');
+    debugPrint('   Stack trace: $stackTrace');
 
     // Close loading dialog
     if (context.mounted) {
@@ -153,11 +154,11 @@ Future<void> handleLogout(
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Logout failed: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
           duration: const Duration(seconds: 3),
           action: SnackBarAction(
             label: 'Retry',
-            textColor: Colors.white,
+            textColor: AppColors.white,
             onPressed: () => handleLogout(context, ref, showConfirmation: false),
           ),
         ),
@@ -175,14 +176,14 @@ Future<void> forceLogout(BuildContext context, WidgetRef ref) async {
 /// Use when normal logout fails or when you need immediate logout
 Future<void> emergencyLogout(BuildContext context, WidgetRef ref) async {
   try {
-    print('🚨 Emergency logout initiated');
+    debugPrint('🚨 Emergency logout initiated');
 
     // Try to logout from AuthService
     try {
       final authService = ref.read(authServiceProvider);
       await authService.logout();
     } catch (e) {
-      print('⚠️ AuthService logout failed during emergency: $e');
+      debugPrint('⚠️ AuthService logout failed during emergency: $e');
     }
 
     // Force navigation regardless of errors
@@ -190,9 +191,9 @@ Future<void> emergencyLogout(BuildContext context, WidgetRef ref) async {
       context.go('/auth/login');
     }
 
-    print('✅ Emergency logout complete');
+    debugPrint('✅ Emergency logout complete');
   } catch (e) {
-    print('❌ Emergency logout error: $e');
+    debugPrint('❌ Emergency logout error: $e');
     // Still try to navigate
     if (context.mounted) {
       context.go('/auth/login');

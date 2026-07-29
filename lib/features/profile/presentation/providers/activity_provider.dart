@@ -2,11 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../jobs/presentation/providers/jobs_provider.dart';
+import '../../../marketplace/presentation/providers/order_details_provider.dart';
 import './profile_provider.dart';
 
 final recentActivityProvider = Provider<List<Map<String, dynamic>>>((ref) {
   final jobs = ref.watch(jobsProvider).value ?? [];
   final profile = ref.watch(profileProvider).value;
+  // Get sales to check if any are paid and need shipping
+  final mySales = ref.watch(mySalesProvider).value ?? [];
 
   List<Map<String, dynamic>> activities = [];
 
@@ -42,9 +45,22 @@ final recentActivityProvider = Provider<List<Map<String, dynamic>>>((ref) {
       'type': 'sale',
       'title': 'Marketplace Active',
       'message': 'You have ${profile!.marketplaceStats!.activeProducts} products live for sale.',
-      'time': profile.updatedAt ?? DateTime.now(),
+      'time': profile.updatedAt,
       'icon': Icons.shopping_bag_outlined,
       'color': Colors.purple,
+    });
+  }
+
+  // 4. Add Shipment Notifications
+  final paidSales = mySales.where((o) => o.status == 'PAID_ESCROW').toList();
+  for (var sale in paidSales) {
+    activities.add({
+      'type': 'sale', // Links to my_sales page
+      'title': 'Item Sold! Ship Now',
+      'message': 'A buyer paid for ${sale.product?.name ?? 'an item'}. Please ship it!',
+      'time': sale.createdAt,
+      'icon': Icons.local_shipping_outlined,
+      'color': Colors.green,
     });
   }
 

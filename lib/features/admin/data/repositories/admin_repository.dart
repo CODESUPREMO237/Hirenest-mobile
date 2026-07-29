@@ -2,7 +2,6 @@
 // lib/features/admin/data/repositories/admin_repository.dart
 
 import 'package:dio/dio.dart';
-import '../../../../core/network/dio_client.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/services/auth_service.dart';
 
@@ -93,6 +92,31 @@ class AdminService {
     final token = await _authService.getBackendToken();
     final response = await _dio.get(
       ApiEndpoints.adminReported,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return response.data['data'];
+  }
+
+  // Get Disputed Orders
+  Future<Map<String, dynamic>> getDisputedOrders() async {
+    final token = await _authService.getBackendToken();
+    final response = await _dio.get(
+      ApiEndpoints.adminDisputes,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return response.data['data'];
+  }
+
+  // Resolve Dispute
+  Future<Map<String, dynamic>> resolveDispute(
+    String orderId, {
+    required String resolution,
+    String? reason,
+  }) async {
+    final token = await _authService.getBackendToken();
+    final response = await _dio.post(
+      ApiEndpoints.resolveAdminDispute(orderId),
+      data: {'resolution': resolution, 'reason': reason},
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
     return response.data['data'];

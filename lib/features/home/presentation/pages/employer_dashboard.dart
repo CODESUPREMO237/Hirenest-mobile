@@ -2,12 +2,18 @@
 // lib/features/home/presentation/pages/employer_dashboard_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../../../../../../../core/theme/app_colors.dart';
+import '../../../../../../../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../jobs/presentation/providers/jobs_provider.dart';
 import '../../../jobs/data/models/job_model.dart';
 import '../../../analytics/presentation/providers/analytics_provider.dart';
+import '../../../talent/presentation/providers/talent_provider.dart';
+import '../../../auth/data/models/user_model.dart';
+import '../../../../core/widgets/error_widget.dart';
+import '../../../../core/utils/logger.dart';
 
 class EmployerDashboardPage extends ConsumerWidget {
   const EmployerDashboardPage({super.key});
@@ -16,12 +22,17 @@ class EmployerDashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final myJobsAsync = ref.watch(myJobsProvider);
     final analyticsAsync = ref.watch(userAnalyticsProvider);
+    final talentAsync = ref.watch(talentListProvider);
+    final textTheme = Theme.of(context).textTheme;
+    final primaryColor = Theme.of(context).primaryColor;
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(myJobsProvider);
           ref.invalidate(userAnalyticsProvider);
+          ref.invalidate(talentListProvider);
         },
         child: CustomScrollView(
           slivers: [
@@ -31,9 +42,12 @@ class EmployerDashboardPage extends ConsumerWidget {
               floating: false,
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
-                title: const Text(
+                title: Text(
                   'Employer Dashboard',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.white,
+                  ),
                 ),
                 background: Container(
                   decoration: BoxDecoration(
@@ -41,8 +55,8 @@ class EmployerDashboardPage extends ConsumerWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Theme.of(context).primaryColor,
-                        Theme.of(context).primaryColor.withOpacity(0.7),
+                        primaryColor,
+                        primaryColor.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -50,7 +64,7 @@ class EmployerDashboardPage extends ConsumerWidget {
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.notifications_outlined),
+                  icon: const Icon(Icons.notifications_outlined, color: AppColors.white),
                   onPressed: () {
                     context.push('/profile/notifications');
                   },
@@ -61,7 +75,7 @@ class EmployerDashboardPage extends ConsumerWidget {
             // Quick Access Cards - Company & Analytics
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Row(
                   children: [
                     Expanded(
@@ -71,14 +85,14 @@ class EmployerDashboardPage extends ConsumerWidget {
                         subtitle: 'Manage Profile',
                         gradient: LinearGradient(
                           colors: [
-                            Colors.blue.shade600,
-                            Colors.blue.shade400,
+                            primaryColor,
+                            primaryColor.withValues(alpha: 0.8),
                           ],
                         ),
                         onTap: () => context.push('/company/dashboard'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: _QuickAccessCard(
                         icon: Icons.analytics,
@@ -86,8 +100,8 @@ class EmployerDashboardPage extends ConsumerWidget {
                         subtitle: 'View Insights',
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.shade600,
-                            Colors.purple.shade400,
+                            AppColors.accent,
+                            AppColors.accent.withValues(alpha: 0.8),
                           ],
                         ),
                         onTap: () => context.push('/analytics'),
@@ -101,7 +115,7 @@ class EmployerDashboardPage extends ConsumerWidget {
             // Quick Stats - Using Analytics Data
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: analyticsAsync.when(
                   data: (analytics) {
                     final activeJobs = analytics['activeJobs'] ?? 0;
@@ -124,21 +138,21 @@ class EmployerDashboardPage extends ConsumerWidget {
                                 icon: Icons.work_outline,
                                 title: 'Active Jobs',
                                 value: '$activeJobs',
-                                color: Colors.blue,
+                                color: primaryColor,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.md),
                             Expanded(
                               child: _StatCard(
                                 icon: Icons.people_outline,
                                 title: 'Applications',
                                 value: '$totalApplications',
-                                color: Colors.green,
+                                color: AppColors.success,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.md),
                         Row(
                           children: [
                             Expanded(
@@ -146,16 +160,16 @@ class EmployerDashboardPage extends ConsumerWidget {
                                 icon: Icons.check_circle_outline,
                                 title: 'Filled',
                                 value: '$filledJobs',
-                                color: Colors.purple,
+                                color: AppColors.accent,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.md),
                             Expanded(
                               child: _StatCard(
                                 icon: Icons.trending_up,
                                 title: 'Views',
                                 value: '$totalViews',
-                                color: Colors.orange,
+                                color: AppColors.warning,
                               ),
                             ),
                           ],
@@ -172,21 +186,21 @@ class EmployerDashboardPage extends ConsumerWidget {
                               icon: Icons.work_outline,
                               title: 'Active Jobs',
                               value: '...',
-                              color: Colors.blue,
+                              color: primaryColor,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: _StatCard(
                               icon: Icons.people_outline,
                               title: 'Applications',
                               value: '...',
-                              color: Colors.green,
+                              color: AppColors.success,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       Row(
                         children: [
                           Expanded(
@@ -194,16 +208,16 @@ class EmployerDashboardPage extends ConsumerWidget {
                               icon: Icons.check_circle_outline,
                               title: 'Filled',
                               value: '...',
-                              color: Colors.purple,
+                              color: AppColors.accent,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: _StatCard(
                               icon: Icons.trending_up,
                               title: 'Views',
                               value: '...',
-                              color: Colors.orange,
+                              color: AppColors.warning,
                             ),
                           ),
                         ],
@@ -212,19 +226,15 @@ class EmployerDashboardPage extends ConsumerWidget {
                   ),
                   error: (error, _) => Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                          const SizedBox(height: 8),
-                          Text('Error loading stats: $error'),
-                          const SizedBox(height: 8),
-                          TextButton.icon(
-                            onPressed: () => ref.invalidate(userAnalyticsProvider),
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Retry'),
-                          ),
-                        ],
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: CustomErrorWidget(
+                        error: error,
+                        onRetry: () {
+                          AppLogger.info('Retrying employer dashboard stats');
+                          ref.invalidate(userAnalyticsProvider);
+                          ref.invalidate(myJobsProvider);
+                          ref.invalidate(talentListProvider);
+                        },
                       ),
                     ),
                   ),
@@ -235,33 +245,34 @@ class EmployerDashboardPage extends ConsumerWidget {
             // Quick Actions
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Quick Actions',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimaryLight,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     Row(
                       children: [
                         Expanded(
                           child: _ActionCard(
                             icon: Icons.add_circle_outline,
                             title: 'Post New Job',
-                            color: Colors.green,
+                            color: AppColors.success,
                             onTap: () => context.push('/jobs/create'),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: _ActionCard(
                             icon: Icons.list_alt,
                             title: 'Manage Jobs',
-                            color: Colors.blue,
+                            color: primaryColor,
                             onTap: () => context.push('/jobs'),
                           ),
                         ),
@@ -272,17 +283,91 @@ class EmployerDashboardPage extends ConsumerWidget {
               ),
             ),
 
+            // Discover Talent Section
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Discover Talent',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 200,
+                child: talentAsync.when(
+                  data: (talents) {
+                    if (talents.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.xl),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.people_outline, size: 48, color: AppColors.textMutedLight),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text('No job seekers yet', style: textTheme.bodyMedium?.copyWith(color: AppColors.textMutedLight)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                      itemCount: talents.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.md),
+                          child: _TalentCard(
+                            user: talents[index],
+                            onTap: () => context.push('/talent/${talents[index].id}'),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                      child: CustomErrorWidget(
+                        error: error,
+                        onRetry: () {
+                          AppLogger.info('Retrying employer dashboard talent');
+                          ref.invalidate(userAnalyticsProvider);
+                          ref.invalidate(myJobsProvider);
+                          ref.invalidate(talentListProvider);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
             // Recent Jobs Section
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Your Posted Jobs',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimaryLight,
                       ),
                     ),
                     TextButton(
@@ -296,49 +381,50 @@ class EmployerDashboardPage extends ConsumerWidget {
 
             // Jobs List
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               sliver: myJobsAsync.when(
                 data: (jobs) {
                   if (jobs.isEmpty) {
                     return SliverToBoxAdapter(
                       child: Center(
                         child: Padding(
-                          padding: const EdgeInsets.all(48),
+                          padding: const EdgeInsets.all(AppSpacing.xxl),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.work_outline,
                                 size: 80,
-                                color: Colors.grey[300],
+                                color: AppColors.textMutedLight,
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: AppSpacing.lg),
                               Text(
                                 'No jobs posted yet',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey[600],
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: AppColors.textSecondaryLight,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: AppSpacing.xs),
                               Text(
                                 'Post your first job to start receiving applications',
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 14,
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textMutedLight,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: AppSpacing.xl),
                               ElevatedButton.icon(
                                 onPressed: () => context.push('/jobs/create'),
                                 icon: const Icon(Icons.add),
                                 label: const Text('Post Your First Job'),
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
+                                    horizontal: AppSpacing.xl,
+                                    vertical: AppSpacing.md,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: AppSpacing.roundedMd,
                                   ),
                                 ),
                               ),
@@ -364,27 +450,21 @@ class EmployerDashboardPage extends ConsumerWidget {
                 },
                 loading: () => const SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.all(32),
+                    padding: EdgeInsets.all(AppSpacing.xxl),
                     child: Center(child: CircularProgressIndicator()),
                   ),
                 ),
                 error: (error, stack) => SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                          const SizedBox(height: 16),
-                          Text('Error loading jobs: $error'),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: () => ref.invalidate(myJobsProvider),
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Retry'),
-                          ),
-                        ],
-                      ),
+                    padding: const EdgeInsets.all(AppSpacing.xxl),
+                    child: CustomErrorWidget(
+                      error: error,
+                      onRetry: () {
+                        AppLogger.info('Retrying employer dashboard jobs');
+                        ref.invalidate(userAnalyticsProvider);
+                        ref.invalidate(myJobsProvider);
+                        ref.invalidate(talentListProvider);
+                      },
                     ),
                   ),
                 ),
@@ -397,6 +477,8 @@ class EmployerDashboardPage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'employer_dashboard_fab',
+        backgroundColor: primaryColor,
+        foregroundColor: AppColors.white,
         onPressed: () => context.push('/jobs/create'),
         icon: const Icon(Icons.add),
         label: const Text('Post Job'),
@@ -423,59 +505,59 @@ class _QuickAccessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      elevation: 2,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(20),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppSpacing.roundedLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.white.withValues(alpha: 0.2),
+                    borderRadius: AppSpacing.roundedMd,
                   ),
                   child: Icon(
                     icon,
-                    color: Colors.white,
+                    color: AppColors.white,
                     size: 28,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: AppColors.white.withValues(alpha: 0.9),
                     fontSize: 13,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Icon(
                       Icons.arrow_forward,
-                      color: Colors.white.withOpacity(0.8),
+                      color: AppColors.white.withValues(alpha: 0.8),
                       size: 20,
                     ),
                   ],
@@ -505,24 +587,25 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: AppSpacing.roundedMd,
             ),
             child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Text(
             value,
             style: TextStyle(
@@ -531,12 +614,12 @@ class _StatCard extends StatelessWidget {
               color: color,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             title,
-            style: TextStyle(
-              color: Colors.grey[700],
-              fontSize: 12,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textMutedLight,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -560,32 +643,38 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color, color.withOpacity(0.7)],
-          ),
-          borderRadius: BorderRadius.circular(12),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color, color.withValues(alpha: 0.8)],
         ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 32),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppSpacing.roundedLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Row(
+              children: [
+                Icon(icon, color: AppColors.white, size: 32),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -599,55 +688,66 @@ class _JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => context.push('/jobs/${job.id}'),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      job.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.push('/jobs/${job.id}'),
+          borderRadius: AppSpacing.roundedLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        job.title,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimaryLight,
+                        ),
                       ),
                     ),
-                  ),
-                  _StatusBadge(status: job.status),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.people_outline, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${job.applicantsCount ?? 0} applicants',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
-                  const SizedBox(width: 16),
-                  Icon(Icons.visibility_outlined, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${job.views ?? 0} views',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Posted ${_getTimeAgo(job.createdAt)}',
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
-              ),
-            ],
+                    _StatusBadge(status: job.status),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    const Icon(Icons.people_outline, size: 16, color: AppColors.textMutedLight),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      '${job.applicantsCount} applicants',
+                      style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondaryLight),
+                    ),
+                    const SizedBox(width: AppSpacing.lg),
+                    const Icon(Icons.visibility_outlined, size: 16, color: AppColors.textMutedLight),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      '${job.views} views',
+                      style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondaryLight),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Posted ${_getTimeAgo(job.createdAt)}',
+                  style: textTheme.bodySmall?.copyWith(color: AppColors.textMutedLight),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -674,38 +774,139 @@ class _StatusBadge extends StatelessWidget {
 
     switch (status) {
       case 'active':
-        color = Colors.green;
+        color = AppColors.success;
         text = 'Active';
         break;
       case 'paused':
-        color = Colors.orange;
+        color = AppColors.warning;
         text = 'Paused';
         break;
       case 'closed':
-        color = Colors.red;
+        color = AppColors.error;
         text = 'Closed';
         break;
       case 'filled':
-        color = Colors.blue;
+        color = Theme.of(context).primaryColor;
         text = 'Filled';
         break;
       default:
-        color = Colors.grey;
+        color = AppColors.textMutedLight;
         text = status;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.roundedSm,
       ),
       child: Text(
         text,
         style: TextStyle(
           color: color,
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
+
+class _TalentCard extends StatelessWidget {
+  final UserModel user;
+  final VoidCallback onTap;
+
+  const _TalentCard({required this.user, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final skills = user.jobSeekerProfile?.skills?.take(3).toList() ?? [];
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      width: 160,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppSpacing.roundedLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: AppColors.backgroundLight,
+                  backgroundImage: user.profile?.avatar != null
+                      ? NetworkImage(user.profile!.avatar!)
+                      : null,
+                  child: user.profile?.avatar == null
+                      ? Text(
+                          user.displayName.isNotEmpty
+                              ? user.displayName[0].toUpperCase()
+                              : '?',
+                          style: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  user.displayName,
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimaryLight,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+                if (user.profile?.headline != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    user.profile!.headline!,
+                    style: textTheme.bodySmall?.copyWith(color: AppColors.textMutedLight),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                const Spacer(),
+                if (skills.isNotEmpty)
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    alignment: WrapAlignment.center,
+                    children: skills
+                        .map((s) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                                borderRadius: AppSpacing.roundedSm,
+                              ),
+                              child: Text(
+                                s.name ?? '',
+                                style: textTheme.labelSmall?.copyWith(
+                                  fontSize: 10,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );

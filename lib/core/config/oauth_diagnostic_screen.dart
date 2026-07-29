@@ -4,11 +4,12 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../../../../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import '../config/app_config.dart';
 
 class OAuthDiagnosticScreen extends StatelessWidget {
-  const OAuthDiagnosticScreen({Key? key}) : super(key: key);
+  const OAuthDiagnosticScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -66,17 +67,17 @@ class OAuthDiagnosticScreen extends StatelessWidget {
             [
               _InfoItem(
                 label: 'GitHub Redirect URI',
-                value: 'com.jobconnect://auth/github/callback',
+                value: 'com.HireNest://auth/github/callback',
                 description: 'Must match AndroidManifest.xml and GitHub OAuth app settings',
               ),
               _InfoItem(
                 label: 'Twitter Redirect URI',
-                value: 'com.jobconnect://auth/twitter/callback',
+                value: 'com.HireNest://auth/twitter/callback',
                 description: 'Must match AndroidManifest.xml and Twitter OAuth app settings',
               ),
               _InfoItem(
                 label: 'Callback Scheme',
-                value: 'com.jobconnect',
+                value: 'com.HireNest',
                 description: 'Used by FlutterWebAuth2.authenticate()',
               ),
             ],
@@ -115,7 +116,7 @@ class OAuthDiagnosticScreen extends StatelessWidget {
     final twitterValid = _validateTwitterConfig();
 
     return Card(
-      color: (githubValid && twitterValid) ? Colors.green[50] : Colors.red[50],
+      color: (githubValid && twitterValid) ? AppColors.success[50] : AppColors.error[50],
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -125,7 +126,7 @@ class OAuthDiagnosticScreen extends StatelessWidget {
               children: [
                 Icon(
                   (githubValid && twitterValid) ? Icons.check_circle : Icons.error,
-                  color: (githubValid && twitterValid) ? Colors.green : Colors.red,
+                  color: (githubValid && twitterValid) ? AppColors.success : AppColors.error,
                 ),
                 const SizedBox(width: 8),
                 const Text(
@@ -157,7 +158,7 @@ class OAuthDiagnosticScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange[100],
+                  color: AppColors.warning[100],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -241,7 +242,7 @@ class _ConfigItem extends StatelessWidget {
                 child: Text(
                   displayValue,
                   style: TextStyle(
-                    color: value.isEmpty ? Colors.red : Colors.blue[700],
+                    color: value.isEmpty ? AppColors.error : AppColors.primary[700],
                     fontFamily: 'monospace',
                     fontSize: 12,
                   ),
@@ -294,7 +295,7 @@ class _InfoItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.blue[50],
+              color: AppColors.primary[50],
               borderRadius: BorderRadius.circular(4),
             ),
             child: Column(
@@ -303,7 +304,7 @@ class _InfoItem extends StatelessWidget {
                 Text(
                   value,
                   style: TextStyle(
-                    color: Colors.blue[900],
+                    color: AppColors.primary[900],
                     fontFamily: 'monospace',
                     fontSize: 12,
                   ),
@@ -312,7 +313,7 @@ class _InfoItem extends StatelessWidget {
                 Text(
                   description,
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: AppColors.grey600,
                     fontSize: 11,
                   ),
                 ),
@@ -344,7 +345,7 @@ class _ValidationItem extends StatelessWidget {
         children: [
           Icon(
             isValid ? Icons.check_circle : Icons.cancel,
-            color: isValid ? Colors.green : Colors.red,
+            color: isValid ? AppColors.success : AppColors.error,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -360,7 +361,7 @@ class _ValidationItem extends StatelessWidget {
                   message,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: AppColors.grey600,
                   ),
                 ),
               ],

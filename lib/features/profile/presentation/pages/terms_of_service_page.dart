@@ -4,6 +4,8 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 class TermsOfServicePage extends StatelessWidget {
   const TermsOfServicePage({super.key});
@@ -11,7 +13,7 @@ class TermsOfServicePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.backgroundLight,
       body: CustomScrollView(
         slivers: [
           // Modern App Bar with Gradient
@@ -29,8 +31,8 @@ class TermsOfServicePage extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.deepPurple[700]!,
-                      Colors.deepPurple[400]!,
+                      AppColors.cta,
+                      AppColors.cta,
                     ],
                   ),
                 ),
@@ -38,7 +40,7 @@ class TermsOfServicePage extends StatelessWidget {
                   child: Icon(
                     Icons.gavel,
                     size: 80,
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.white.withValues(alpha: 0.3),
                   ),
                 ),
               ),
@@ -55,21 +57,21 @@ class TermsOfServicePage extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.amber[50],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.amber[200]!),
+                      color: AppColors.accent[50],
+                      borderRadius: AppSpacing.roundedXl,
+                      border: Border.all(color: AppColors.accent[200]),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.update, size: 16, color: Colors.amber[800]),
+                        Icon(Icons.update, size: 16, color: AppColors.accent[800]),
                         const SizedBox(width: 8),
                         Text(
                           'Last Updated: December 22, 2025',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Colors.amber[900],
+                            color: AppColors.accent[900],
                           ),
                         ),
                       ],
@@ -80,8 +82,8 @@ class TermsOfServicePage extends StatelessWidget {
                 // Agreement Notice
                 _buildNoticeCard(
                   context,
-                  'By using JobConnect, you agree to these terms. Please read carefully.',
-                  Colors.deepPurple,
+                  'By using HireNest, you agree to these terms. Please read carefully.',
+                  AppColors.cta,
                   Icons.verified_user,
                 ),
 
@@ -89,7 +91,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildModernSection(
                   context,
                   icon: Icons.how_to_reg_outlined,
-                  color: Colors.blue,
+                  color: AppColors.primary,
                   title: 'Eligibility',
                   items: [
                     _buildCheckItem('Be at least 16 years old'),
@@ -103,7 +105,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildExpandableCard(
                   context,
                   icon: Icons.account_circle_outlined,
-                  color: Colors.green,
+                  color: AppColors.success,
                   title: 'Your Account',
                   content: [
                     _buildSubSection(
@@ -113,7 +115,7 @@ class TermsOfServicePage extends StatelessWidget {
                           '• Report unauthorized access\n'
                           '• Keep profile information current',
                       Icons.shield_outlined,
-                      Colors.green,
+                      AppColors.success,
                     ),
                     const SizedBox(height: 12),
                     _buildAccountTypesCard(),
@@ -124,7 +126,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildExpandableCard(
                   context,
                   icon: Icons.policy_outlined,
-                  color: Colors.orange,
+                  color: AppColors.warning,
                   title: 'Acceptable Use',
                   content: [
                     _buildProhibitedList(),
@@ -135,7 +137,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildExpandableCard(
                   context,
                   icon: Icons.copyright_outlined,
-                  color: Colors.purple,
+                  color: AppColors.cta,
                   title: 'Content & Intellectual Property',
                   content: [
                     _buildIPCard(context),
@@ -146,7 +148,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildExpandableCard(
                   context,
                   icon: Icons.work_outline,
-                  color: Colors.teal,
+                  color: AppColors.secondary,
                   title: 'Job Postings & Applications',
                   content: [
                     _buildJobGuidelines(context),
@@ -157,7 +159,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildIconCard(
                   context,
                   Icons.payment_outlined,
-                  Colors.indigo,
+                  AppColors.primary,
                   'Payments & Subscriptions',
                   '• All fees in USD\n'
                       '• Auto-renewal unless cancelled\n'
@@ -170,7 +172,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildLinkCard(
                   context,
                   Icons.privacy_tip_outlined,
-                  Colors.blue,
+                  AppColors.primary,
                   'Privacy & Data Protection',
                   'Your privacy matters. See our Privacy Policy for details on data handling.',
                 ),
@@ -191,7 +193,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildIconCard(
                   context,
                   Icons.block_outlined,
-                  Colors.red,
+                  AppColors.error,
                   'Account Termination',
                   'We may suspend/terminate accounts for:\n\n'
                       '• Terms violations\n'
@@ -205,7 +207,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildExpandableCard(
                   context,
                   icon: Icons.gavel_outlined,
-                  color: Colors.brown,
+                  color: AppColors.textPrimaryLight,
                   title: 'Dispute Resolution',
                   content: [
                     _buildDisputeSteps(),
@@ -216,7 +218,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildIconCard(
                   context,
                   Icons.system_update_outlined,
-                  Colors.cyan,
+                  AppColors.primaryDark,
                   'Changes to Terms',
                   'We may update these terms. You\'ll be notified via:\n\n'
                       '📱 In-app notifications\n'
@@ -243,27 +245,21 @@ class TermsOfServicePage extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.8)],
+          colors: [color, color.withValues(alpha: 0.8)],
         ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white, size: 32),
+          Icon(icon, color: AppColors.white, size: 32),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               text,
               style: const TextStyle(
                 fontSize: 15,
-                color: Colors.white,
+                color: AppColors.white,
                 fontWeight: FontWeight.w500,
                 height: 1.5,
               ),
@@ -285,15 +281,9 @@ class TermsOfServicePage extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.white,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,8 +293,8 @@ class TermsOfServicePage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: AppSpacing.roundedMd,
                 ),
                 child: Icon(icon, color: color, size: 24),
               ),
@@ -333,16 +323,16 @@ class TermsOfServicePage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.green[100],
+              color: AppColors.success[100],
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check, color: Colors.green, size: 16),
+            child: const Icon(Icons.check, color: AppColors.success, size: 16),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+              style: TextStyle(fontSize: 15, color: AppColors.textPrimaryLight),
             ),
           ),
         ],
@@ -360,15 +350,9 @@ class TermsOfServicePage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.white,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -376,7 +360,7 @@ class TermsOfServicePage extends StatelessWidget {
           leading: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -396,9 +380,9 @@ class TermsOfServicePage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        color: color.withValues(alpha: 0.05),
+        borderRadius: AppSpacing.roundedMd,
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,7 +400,7 @@ class TermsOfServicePage extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   content,
-                  style: TextStyle(fontSize: 14, height: 1.5, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 14, height: 1.5, color: AppColors.textPrimaryLight),
                 ),
               ],
             ),
@@ -433,12 +417,12 @@ class TermsOfServicePage extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.primary[50],
+              borderRadius: AppSpacing.roundedMd,
             ),
             child: Column(
               children: [
-                Icon(Icons.person_search, color: Colors.blue[700], size: 28),
+                Icon(Icons.person_search, color: AppColors.primary[700], size: 28),
                 const SizedBox(height: 8),
                 const Text(
                   'Job Seekers',
@@ -448,7 +432,7 @@ class TermsOfServicePage extends StatelessWidget {
                 Text(
                   'Create profiles\nApply for jobs',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 12, color: AppColors.textPrimaryLight),
                 ),
               ],
             ),
@@ -459,12 +443,12 @@ class TermsOfServicePage extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.purple[50],
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.cta[50],
+              borderRadius: AppSpacing.roundedMd,
             ),
             child: Column(
               children: [
-                Icon(Icons.business_center, color: Colors.purple[700], size: 28),
+                Icon(Icons.business_center, color: AppColors.cta[700], size: 28),
                 const SizedBox(height: 8),
                 const Text(
                   'Employers',
@@ -474,7 +458,7 @@ class TermsOfServicePage extends StatelessWidget {
                 Text(
                   'Post jobs\nFind candidates',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 12, color: AppColors.textPrimaryLight),
                 ),
               ],
             ),
@@ -503,12 +487,12 @@ class TermsOfServicePage extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.cancel, color: Colors.red[400], size: 20),
+              Icon(Icons.cancel, color: AppColors.error[400], size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   item,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 14, color: AppColors.textPrimaryLight),
                 ),
               ),
             ],
@@ -524,14 +508,14 @@ class TermsOfServicePage extends StatelessWidget {
         _buildInfoBox(
           'Your Content',
           'You keep ownership. We get a license to display and distribute for service purposes.',
-          Colors.purple,
+          AppColors.cta,
           Icons.upload_file,
         ),
         const SizedBox(height: 12),
         _buildInfoBox(
           'Our Content',
-          'JobConnect branding and features are protected. No copying or derivative works without permission.',
-          Colors.deepPurple,
+          'HireNest branding and features are protected. No copying or derivative works without permission.',
+          AppColors.cta,
           Icons.copyright,
         ),
       ],
@@ -544,14 +528,14 @@ class TermsOfServicePage extends StatelessWidget {
         _buildInfoBox(
           'For Employers',
           'Post legitimate jobs only. Follow equal opportunity laws. No discriminatory language.',
-          Colors.teal,
+          AppColors.secondary,
           Icons.work,
         ),
         const SizedBox(height: 12),
         _buildInfoBox(
           'For Job Seekers',
           'Be truthful. Don\'t misrepresent qualifications. Report suspicious postings.',
-          Colors.cyan,
+          AppColors.primaryDark,
           Icons.person,
         ),
       ],
@@ -562,9 +546,9 @@ class TermsOfServicePage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.roundedMd,
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,7 +570,7 @@ class TermsOfServicePage extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   content,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 14, color: AppColors.textPrimaryLight),
                 ),
               ],
             ),
@@ -607,15 +591,9 @@ class TermsOfServicePage extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.white,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -623,8 +601,8 @@ class TermsOfServicePage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: AppSpacing.roundedMd,
             ),
             child: Icon(icon, color: color, size: 24),
           ),
@@ -640,7 +618,7 @@ class TermsOfServicePage extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   content,
-                  style: TextStyle(fontSize: 15, height: 1.6, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 15, height: 1.6, color: AppColors.textPrimaryLight),
                 ),
               ],
             ),
@@ -661,24 +639,18 @@ class TermsOfServicePage extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.white,
+        borderRadius: AppSpacing.roundedLg,
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: AppSpacing.roundedMd,
             ),
             child: Icon(icon, color: color, size: 24),
           ),
@@ -694,7 +666,7 @@ class TermsOfServicePage extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   content,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 14, color: AppColors.textSecondaryLight),
                 ),
               ],
             ),
@@ -710,16 +682,16 @@ class TermsOfServicePage extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.amber[50],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.amber[200]!),
+        color: AppColors.accent[50],
+        borderRadius: AppSpacing.roundedLg,
+        border: Border.all(color: AppColors.accent[200]),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber, color: Colors.amber[800], size: 28),
+              Icon(Icons.warning_amber, color: AppColors.accent[800], size: 28),
               const SizedBox(width: 12),
               Text(
                 title,
@@ -733,11 +705,11 @@ class TermsOfServicePage extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('• ', style: TextStyle(fontSize: 16, color: Colors.amber[900])),
+                Text('• ', style: TextStyle(fontSize: 16, color: AppColors.accent[900])),
                 Expanded(
                   child: Text(
                     item,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[800]),
+                    style: TextStyle(fontSize: 14, color: AppColors.textPrimaryLight),
                   ),
                 ),
               ],
@@ -751,11 +723,11 @@ class TermsOfServicePage extends StatelessWidget {
   Widget _buildDisputeSteps() {
     return Column(
       children: [
-        _buildStepCard(1, 'Contact Us First', 'Reach out to resolve informally', Colors.blue),
+        _buildStepCard(1, 'Contact Us First', 'Reach out to resolve informally', AppColors.primary),
         const SizedBox(height: 12),
-        _buildStepCard(2, 'Arbitration', 'Binding arbitration in San Francisco, CA', Colors.orange),
+        _buildStepCard(2, 'Arbitration', 'Binding arbitration in San Francisco, CA', AppColors.warning),
         const SizedBox(height: 12),
-        _buildStepCard(3, 'Waiver', 'No class action participation', Colors.red),
+        _buildStepCard(3, 'Waiver', 'No class action participation', AppColors.error),
       ],
     );
   }
@@ -764,8 +736,8 @@ class TermsOfServicePage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.roundedMd,
       ),
       child: Row(
         children: [
@@ -780,7 +752,7 @@ class TermsOfServicePage extends StatelessWidget {
               child: Text(
                 '$step',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -798,7 +770,7 @@ class TermsOfServicePage extends StatelessWidget {
                 ),
                 Text(
                   description,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 13, color: AppColors.textPrimaryLight),
                 ),
               ],
             ),
@@ -814,53 +786,47 @@ class TermsOfServicePage extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.deepPurple[700]!, Colors.deepPurple[500]!],
+          colors: [AppColors.cta, AppColors.cta],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.deepPurple.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        borderRadius: AppSpacing.roundedXl,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Column(
         children: [
-          const Icon(Icons.contact_support, color: Colors.white, size: 48),
+          const Icon(Icons.contact_support, color: AppColors.white, size: 48),
           const SizedBox(height: 16),
           const Text(
             'Need Help?',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.white,
             ),
           ),
           const SizedBox(height: 8),
           const Text(
             'We\'re here to answer your questions',
-            style: TextStyle(fontSize: 15, color: Colors.white70),
+            style: TextStyle(fontSize: 15, color: AppColors.textSecondaryLight),
           ),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.white.withValues(alpha: 0.2),
+              borderRadius: AppSpacing.roundedMd,
             ),
             child: const Column(
               children: [
                 Row(
                   children: [
-                    Icon(Icons.email, color: Colors.white, size: 20),
+                    Icon(Icons.email, color: AppColors.white, size: 20),
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'legal@jobconnect.com',
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        'legal@HireNest.com',
+                        style: TextStyle(color: AppColors.white, fontSize: 15),
                       ),
                     ),
                   ],
@@ -868,12 +834,12 @@ class TermsOfServicePage extends StatelessWidget {
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(Icons.support_agent, color: Colors.white, size: 20),
+                    Icon(Icons.support_agent, color: AppColors.white, size: 20),
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'support@jobconnect.com',
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        'support@HireNest.com',
+                        style: TextStyle(color: AppColors.white, fontSize: 15),
                       ),
                     ),
                   ],

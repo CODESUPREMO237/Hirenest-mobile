@@ -4,6 +4,8 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
@@ -11,7 +13,7 @@ class PrivacyPolicyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.backgroundLight,
       body: CustomScrollView(
         slivers: [
           // Modern App Bar
@@ -30,7 +32,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [
                       Theme.of(context).primaryColor,
-                      Theme.of(context).primaryColor.withOpacity(0.7),
+                      Theme.of(context).primaryColor.withValues(alpha: 0.7),
                     ],
                   ),
                 ),
@@ -38,7 +40,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                   child: Icon(
                     Icons.shield_outlined,
                     size: 80,
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.white.withValues(alpha: 0.3),
                   ),
                 ),
               ),
@@ -55,21 +57,21 @@ class PrivacyPolicyPage extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.blue[100]!),
+                      color: AppColors.primary[50],
+                      borderRadius: AppSpacing.roundedXl,
+                      border: Border.all(color: AppColors.primary[100]),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.update, size: 16, color: Colors.blue[700]),
+                        Icon(Icons.update, size: 16, color: AppColors.primary[700]),
                         const SizedBox(width: 8),
                         Text(
                           'Last Updated: December 22, 2025',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Colors.blue[900],
+                            color: AppColors.primary[900],
                           ),
                         ),
                       ],
@@ -81,10 +83,10 @@ class PrivacyPolicyPage extends StatelessWidget {
                 _buildModernCard(
                   context,
                   icon: Icons.handshake_outlined,
-                  color: Colors.purple,
+                  color: AppColors.cta,
                   title: 'Our Commitment',
                   content:
-                  'Welcome to JobConnect. We respect your privacy and are committed to protecting your personal data. '
+                  'Welcome to HireNest. We respect your privacy and are committed to protecting your personal data. '
                       'This policy explains how we collect, use, and safeguard your information.',
                 ),
 
@@ -92,7 +94,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 _buildExpandableSection(
                   context,
                   icon: Icons.collections_bookmark_outlined,
-                  color: Colors.blue,
+                  color: AppColors.primary,
                   title: 'Information We Collect',
                   items: [
                     _buildInfoItem(
@@ -102,7 +104,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                           '• Professional details (job title, company)\n'
                           '• Profile photo and documents',
                       Icons.person_outline,
-                      Colors.blue,
+                      AppColors.primary,
                     ),
                     _buildInfoItem(
                       'Automatic Data',
@@ -111,7 +113,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                           '• Location data (with permission)\n'
                           '• Log data and access times',
                       Icons.phone_android_outlined,
-                      Colors.blue,
+                      AppColors.primary,
                     ),
                   ],
                 ),
@@ -120,7 +122,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 _buildExpandableSection(
                   context,
                   icon: Icons.settings_suggest_outlined,
-                  color: Colors.green,
+                  color: AppColors.success,
                   title: 'How We Use Your Data',
                   items: [
                     _buildBulletList([
@@ -138,7 +140,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 _buildExpandableSection(
                   context,
                   icon: Icons.share_outlined,
-                  color: Colors.orange,
+                  color: AppColors.warning,
                   title: 'Information Sharing',
                   items: [
                     _buildInfoItem(
@@ -147,12 +149,12 @@ class PrivacyPolicyPage extends StatelessWidget {
                           '• Service providers (to operate)\n'
                           '• Legal authorities (when required)',
                       Icons.groups_outlined,
-                      Colors.orange,
+                      AppColors.warning,
                     ),
                     _buildHighlightBox(
                       'We Never Sell Your Data',
                       'Your personal information is not for sale to third parties.',
-                      Colors.green,
+                      AppColors.success,
                     ),
                   ],
                 ),
@@ -161,7 +163,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 _buildModernCard(
                   context,
                   icon: Icons.security_outlined,
-                  color: Colors.red,
+                  color: AppColors.error,
                   title: 'Data Security',
                   content:
                   'We implement industry-standard security measures:\n\n'
@@ -175,7 +177,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 _buildExpandableSection(
                   context,
                   icon: Icons.verified_user_outlined,
-                  color: Colors.indigo,
+                  color: AppColors.primary,
                   title: 'Your Privacy Rights',
                   items: [
                     _buildRightsGrid(context),
@@ -186,7 +188,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 _buildInfoCard(
                   context,
                   Icons.timer_outlined,
-                  Colors.teal,
+                  AppColors.secondary,
                   'Data Retention',
                   'We keep your data while your account is active. After deletion, '
                       'data is removed within 30 days, except where legally required.',
@@ -196,7 +198,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 _buildInfoCard(
                   context,
                   Icons.cookie_outlined,
-                  Colors.brown,
+                  AppColors.textPrimaryLight,
                   'Cookies & Tracking',
                   'We use cookies to remember preferences, analyze usage, and improve performance. '
                       'Control these through your device settings.',
@@ -206,9 +208,9 @@ class PrivacyPolicyPage extends StatelessWidget {
                 _buildInfoCard(
                   context,
                   Icons.child_care_outlined,
-                  Colors.pink,
+                  AppColors.error,
                   'Children\'s Privacy',
-                  'JobConnect is for users 16+. We don\'t knowingly collect data from children. '
+                  'HireNest is for users 16+. We don\'t knowingly collect data from children. '
                       'Contact us if you believe we have.',
                 ),
 
@@ -235,15 +237,9 @@ class PrivacyPolicyPage extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.white,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,8 +249,8 @@ class PrivacyPolicyPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: AppSpacing.roundedMd,
                 ),
                 child: Icon(icon, color: color, size: 24),
               ),
@@ -276,7 +272,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               height: 1.6,
-              color: Colors.grey[700],
+              color: AppColors.textPrimaryLight,
             ),
           ),
         ],
@@ -294,15 +290,9 @@ class PrivacyPolicyPage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.white,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -310,7 +300,7 @@ class PrivacyPolicyPage extends StatelessWidget {
           leading: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -351,7 +341,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   content,
-                  style: TextStyle(fontSize: 14, height: 1.5, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 14, height: 1.5, color: AppColors.textPrimaryLight),
                 ),
               ],
             ),
@@ -374,7 +364,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               Expanded(
                 child: Text(
                   item,
-                  style: TextStyle(fontSize: 15, height: 1.5, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 15, height: 1.5, color: AppColors.textPrimaryLight),
                 ),
               ),
             ],
@@ -389,9 +379,9 @@ class PrivacyPolicyPage extends StatelessWidget {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.roundedMd,
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -412,7 +402,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   content,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 14, color: AppColors.textPrimaryLight),
                 ),
               ],
             ),
@@ -447,12 +437,12 @@ class PrivacyPolicyPage extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.indigo.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: AppSpacing.roundedMd,
           ),
           child: Row(
             children: [
-              Icon(right['icon'] as IconData, color: Colors.indigo, size: 20),
+              Icon(right['icon'] as IconData, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -478,15 +468,9 @@ class PrivacyPolicyPage extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.white,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -494,8 +478,8 @@ class PrivacyPolicyPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: AppSpacing.roundedMd,
             ),
             child: Icon(icon, color: color, size: 24),
           ),
@@ -517,7 +501,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     height: 1.6,
-                    color: Colors.grey[700],
+                    color: AppColors.textPrimaryLight,
                   ),
                 ),
               ],
@@ -534,63 +518,57 @@ class PrivacyPolicyPage extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.blue[700]!, Colors.blue[500]!],
+          colors: [AppColors.primary[700], AppColors.primary[500]],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        borderRadius: AppSpacing.roundedXl,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Column(
         children: [
-          const Icon(Icons.support_agent, color: Colors.white, size: 48),
+          const Icon(Icons.support_agent, color: AppColors.white, size: 48),
           const SizedBox(height: 16),
           const Text(
             'Questions About Privacy?',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.white,
             ),
           ),
           const SizedBox(height: 8),
           const Text(
             'We\'re here to help',
-            style: TextStyle(fontSize: 15, color: Colors.white70),
+            style: TextStyle(fontSize: 15, color: AppColors.textSecondaryLight),
           ),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.white.withValues(alpha: 0.2),
+              borderRadius: AppSpacing.roundedMd,
             ),
             child: const Column(
               children: [
                 Row(
                   children: [
-                    Icon(Icons.email, color: Colors.white, size: 18),
+                    Icon(Icons.email, color: AppColors.white, size: 18),
                     SizedBox(width: 12),
                     Text(
-                      'privacy@jobconnect.com',
-                      style: TextStyle(color: Colors.white, fontSize: 15),
+                      'privacy@HireNest.com',
+                      style: TextStyle(color: AppColors.white, fontSize: 15),
                     ),
                   ],
                 ),
                 SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.support, color: Colors.white, size: 18),
+                    Icon(Icons.support, color: AppColors.white, size: 18),
                     SizedBox(width: 12),
                     Text(
                       'In-app support available',
-                      style: TextStyle(color: Colors.white, fontSize: 15),
+                      style: TextStyle(color: AppColors.white, fontSize: 15),
                     ),
                   ],
                 ),

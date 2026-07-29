@@ -29,7 +29,8 @@ class PaginatedResponse<T> {
     final pagination = json['pagination'] as Map<String, dynamic>? ?? {};
 
     // ADDED: json['applications'] to the lookup list
-    final dynamic rawList = json['applications'] ??  // <--- Add this line
+    final dynamic rawList = json['messages'] ??  // <--- Messages for chat
+        json['applications'] ??
         json['products'] ??
         json['jobs'] ??
         json['items'] ??

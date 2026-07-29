@@ -11,6 +11,7 @@ class UserModel {
   final String id;
   final String email;
   final String role;
+  final bool isAdmin;
 
   // ✅ MOVED TO ROOT LEVEL (matches MongoDB structure)
   final double? ratingsAverage;
@@ -27,6 +28,7 @@ class UserModel {
     required this.id,
     required this.email,
     required this.role,
+    this.isAdmin = false,
     this.ratingsAverage,      // ✅ Root level
     this.ratingsQuantity,     // ✅ Root level
     this.profile,
@@ -62,6 +64,7 @@ class UserModel {
             : json['ratingsAverage'] as double?)
             : null,
         ratingsQuantity: json['ratingsQuantity'] as int?,
+        isAdmin: json['isAdmin'] == true,
 
         profile: json['profile'] != null && json['profile'] is Map<String, dynamic>
             ? ProfileData.fromJson(json['profile'] as Map<String, dynamic>)
@@ -528,8 +531,8 @@ class EducationData {
   });
 
   // --- FIX: ADD THESE GETTERS ---
-  String? get startYear => startDate != null ? startDate!.year.toString() : null;
-  String? get endYear => endDate != null ? endDate!.year.toString() : null;
+  String? get startYear => startDate?.year.toString();
+  String? get endYear => endDate?.year.toString();
   // ------------------------------
 
   factory EducationData.fromJson(Map<String, dynamic> json) {

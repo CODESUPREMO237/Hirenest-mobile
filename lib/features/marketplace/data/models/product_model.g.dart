@@ -140,16 +140,6 @@ Map<String, dynamic> _$StockModelToJson(StockModel instance) =>
       'quantity': instance.quantity,
     };
 
-SellerModel _$SellerModelFromJson(Map<String, dynamic> json) => SellerModel(
-      id: json['_id'] as String,
-      name: json['name'] as String?,
-      email: json['email'] as String?,
-      role: json['role'] as String?,
-      avatar: json['avatar'] as String?,
-      rating: SellerModel._toDouble(json['rating']),
-      reviewCount: (json['reviewCount'] as num?)?.toInt(),
-    );
-
 Map<String, dynamic> _$SellerModelToJson(SellerModel instance) =>
     <String, dynamic>{
       '_id': instance.id,

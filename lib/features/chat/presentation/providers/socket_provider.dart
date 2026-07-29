@@ -4,14 +4,13 @@
 // lib/features/chat/presentation/providers/socket_provider.dart
 // =====================================================
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../../../../core/config/app_config.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 
-final socketProvider = Provider<IO.Socket>((ref) {
-  final socket = IO.io(
+final socketProvider = Provider<io.Socket>((ref) {
+  final socket = io.io(
     AppConfig.socketUrl,
-    IO.OptionBuilder()
+    io.OptionBuilder()
         .setTransports(['websocket'])
         .disableAutoConnect()
         .setExtraHeaders({'authorization': 'Bearer TOKEN'}) // Get from auth

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 // lib/features/reviews/data/repositories/review_repository.dart
 
 import 'package:dio/dio.dart';
@@ -14,19 +15,19 @@ class ReviewRepository {
   /// Submit a review
   Future<void> submitReview(ReviewRequest review) async {
     try {
-      print('📝 [ReviewRepository] Submitting review...');
-      print('   Job ID: ${review.jobId}');
-      print('   Reviewee ID: ${review.revieweeId}');
-      print('   Rating: ${review.rating}');
+      debugPrint('📝 [ReviewRepository] Submitting review...');
+      debugPrint('   Job ID: ${review.jobId}');
+      debugPrint('   Reviewee ID: ${review.revieweeId}');
+      debugPrint('   Rating: ${review.rating}');
 
       final response = await _dio.post(
         ApiEndpoints.reviews,
         data: review.toJson(),
       );
 
-      print('✅ [ReviewRepository] Review submitted: ${response.data}');
+      debugPrint('✅ [ReviewRepository] Review submitted: ${response.data}');
     } on DioException catch (e) {
-      print('❌ [ReviewRepository] DioException: ${e.response?.data}');
+      debugPrint('❌ [ReviewRepository] DioException: ${e.response?.data}');
 
       if (e.response?.statusCode == 400) {
         final message = e.response?.data['message'] ?? 'Bad request';
@@ -35,7 +36,7 @@ class ReviewRepository {
 
       rethrow;
     } catch (e) {
-      print('❌ [ReviewRepository] Error: $e');
+      debugPrint('❌ [ReviewRepository] Error: $e');
       rethrow;
     }
   }
@@ -43,7 +44,7 @@ class ReviewRepository {
   /// Get reviews for a specific job
   Future<List<Review>> getJobReviews(String jobId) async {
     try {
-      print('🔍 [ReviewRepository] Fetching reviews for job: $jobId');
+      debugPrint('🔍 [ReviewRepository] Fetching reviews for job: $jobId');
 
       final response = await _dio.get(
         ApiEndpoints.jobReviews(jobId),
@@ -54,10 +55,10 @@ class ReviewRepository {
           .map((json) => Review.fromJson(json as Map<String, dynamic>))
           .toList();
 
-      print('✅ [ReviewRepository] Found ${reviews.length} reviews');
+      debugPrint('✅ [ReviewRepository] Found ${reviews.length} reviews');
       return reviews;
     } catch (e) {
-      print('❌ [ReviewRepository] Error fetching job reviews: $e');
+      debugPrint('❌ [ReviewRepository] Error fetching job reviews: $e');
       rethrow;
     }
   }
@@ -65,7 +66,7 @@ class ReviewRepository {
   /// Get reviews for a specific user
   Future<List<Review>> getUserReviews(String userId) async {
     try {
-      print('🔍 [ReviewRepository] Fetching reviews for user: $userId');
+      debugPrint('🔍 [ReviewRepository] Fetching reviews for user: $userId');
 
       final response = await _dio.get(
         ApiEndpoints.userReviews(userId),
@@ -76,10 +77,10 @@ class ReviewRepository {
           .map((json) => Review.fromJson(json as Map<String, dynamic>))
           .toList();
 
-      print('✅ [ReviewRepository] Found ${reviews.length} reviews');
+      debugPrint('✅ [ReviewRepository] Found ${reviews.length} reviews');
       return reviews;
     } catch (e) {
-      print('❌ [ReviewRepository] Error fetching user reviews: $e');
+      debugPrint('❌ [ReviewRepository] Error fetching user reviews: $e');
       rethrow;
     }
   }
@@ -90,9 +91,9 @@ class ReviewRepository {
     required String revieweeId,
   }) async {
     try {
-      print('🔍 [ReviewRepository] Checking review status...');
-      print('   Job ID: $jobId');
-      print('   Reviewee ID: $revieweeId');
+      debugPrint('🔍 [ReviewRepository] Checking review status...');
+      debugPrint('   Job ID: $jobId');
+      debugPrint('   Reviewee ID: $revieweeId');
 
       final response = await _dio.get(
         '/reviews/check/$jobId/$revieweeId',
@@ -100,11 +101,11 @@ class ReviewRepository {
 
       final hasReviewed = response.data['hasReviewed'] as bool? ?? false;
 
-      print('   Result: ${hasReviewed ? "Already reviewed ✅" : "Not reviewed yet ❌"}');
+      debugPrint('   Result: ${hasReviewed ? "Already reviewed ✅" : "Not reviewed yet ❌"}');
 
       return hasReviewed;
     } catch (e) {
-      print('❌ [ReviewRepository] Error checking review: $e');
+      debugPrint('❌ [ReviewRepository] Error checking review: $e');
       // On error, assume not reviewed (allow user to try)
       return false;
     }

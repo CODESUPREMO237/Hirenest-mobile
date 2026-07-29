@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 // lib/features/applications/data/models/application_model.dart
 
 import 'dart:convert';
@@ -59,15 +60,15 @@ class ApplicationModel {
 
   factory ApplicationModel.fromJson(Map<String, dynamic> json) {
     // 🔥 DEBUG: Print what we're receiving
-    print('');
-    print('═══════════════════════════════════════════════════');
-    print('🔍 APPLICATION MODEL PARSING STARTED');
-    print('═══════════════════════════════════════════════════');
-    print('Application ID: ${json['_id'] ?? json['id']}');
-    print('Job field type: ${json['job'].runtimeType}');
-    print('Job field is Map?: ${json['job'] is Map}');
-    print('Job field value: ${json['job']}');
-    print('');
+    debugPrint('');
+    debugPrint('═══════════════════════════════════════════════════');
+    debugPrint('🔍 APPLICATION MODEL PARSING STARTED');
+    debugPrint('═══════════════════════════════════════════════════');
+    debugPrint('Application ID: ${json['_id'] ?? json['id']}');
+    debugPrint('Job field type: ${json['job'].runtimeType}');
+    debugPrint('Job field is Map?: ${json['job'] is Map}');
+    debugPrint('Job field value: ${json['job']}');
+    debugPrint('');
 
     int? tryParseInt(dynamic value) {
       if (value == null) return null;
@@ -81,37 +82,37 @@ class ApplicationModel {
     String extractedJobId = '';
 
     if (json['job'] is Map<String, dynamic>) {
-      print('✅ Job is a Map - attempting to parse JobModel...');
+      debugPrint('✅ Job is a Map - attempting to parse JobModel...');
       extractedJobId = json['job']['_id']?.toString() ?? json['job']['id']?.toString() ?? '';
-      print('   Extracted Job ID: $extractedJobId');
+      debugPrint('   Extracted Job ID: $extractedJobId');
 
       try {
         parsedJobDetails = JobModel.fromJson(json['job']);
-        print('✅ JobModel parsed successfully!');
-        print('   Job Title: "${parsedJobDetails.title}"');
-        print('   Job ID: ${parsedJobDetails.id}');
-        print('   Company: ${parsedJobDetails.company.name}');
+        debugPrint('✅ JobModel parsed successfully!');
+        debugPrint('   Job Title: "${parsedJobDetails.title}"');
+        debugPrint('   Job ID: ${parsedJobDetails.id}');
+        debugPrint('   Company: ${parsedJobDetails.company.name}');
       } catch (e, stackTrace) {
-        print('❌ ERROR parsing JobModel:');
-        print('   Error: $e');
-        print('   Stack trace: $stackTrace');
+        debugPrint('❌ ERROR parsing JobModel:');
+        debugPrint('   Error: $e');
+        debugPrint('   Stack trace: $stackTrace');
       }
     } else if (json['job'] is String) {
       extractedJobId = json['job'];
-      print('⚠️  Job is a String (just ID): $extractedJobId');
-      print('   JobDetails will be NULL');
+      debugPrint('⚠️  Job is a String (just ID): $extractedJobId');
+      debugPrint('   JobDetails will be NULL');
     } else {
-      print('❌ Job is neither Map nor String - it\'s: ${json['job'].runtimeType}');
+      debugPrint('❌ Job is neither Map nor String - it\'s: ${json['job'].runtimeType}');
     }
 
-    print('');
-    print('📋 Other Application Fields:');
-    print('   Status: ${json['status']}');
-    print('   Applied At: ${json['appliedAt']}');
-    print('   Cover Letter: ${json['coverLetter'] != null ? "Present" : "NULL"}');
-    print('   Resume: ${json['resume'] != null ? "Present" : "NULL"}');
-    print('═══════════════════════════════════════════════════');
-    print('');
+    debugPrint('');
+    debugPrint('📋 Other Application Fields:');
+    debugPrint('   Status: ${json['status']}');
+    debugPrint('   Applied At: ${json['appliedAt']}');
+    debugPrint('   Cover Letter: ${json['coverLetter'] != null ? "Present" : "NULL"}');
+    debugPrint('   Resume: ${json['resume'] != null ? "Present" : "NULL"}');
+    debugPrint('═══════════════════════════════════════════════════');
+    debugPrint('');
 
     return ApplicationModel(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',

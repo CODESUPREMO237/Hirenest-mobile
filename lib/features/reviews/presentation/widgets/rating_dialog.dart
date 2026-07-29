@@ -1,11 +1,13 @@
 // lib/features/reviews/presentation/widgets/rating_dialog.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/review_model.dart';
 import '../../data/repositories/review_repository.dart';
-import '../../../profile/presentation/providers/profile_provider.dart'; // ✅ ADD THIS IMPORT
+import '../../../profile/presentation/providers/profile_provider.dart'; 
 
 class RatingDialog extends ConsumerStatefulWidget {
   final String jobId;
@@ -62,7 +64,7 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Review submitted successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -79,88 +81,144 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.surfaceLight,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedXl),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.75,
         ),
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Title
                 Text(
                   'Rate ${widget.revieweeName}',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: textTheme.titleLarge?.copyWith(
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.bold,
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xl),
 
                 // Star Rating
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(5, (index) {
-                    return IconButton(
-                      iconSize: 40,
-                      onPressed: () => setState(() => _rating = index + 1.0),
-                      icon: Icon(
-                        index < _rating ? Icons.star : Icons.star_border,
-                        color: Colors.amber,
+                    return GestureDetector(
+                      onTap: () => setState(() => _rating = index + 1.0),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                        child: Icon(
+                          index < _rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: AppColors.warning,
+                          size: 44,
+                        ),
                       ),
                     );
                   }),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _getRatingText(_rating),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w500,
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.1),
+                    borderRadius: AppSpacing.roundedFull,
+                  ),
+                  child: Text(
+                    _getRatingText(_rating),
+                    style: textTheme.labelLarge?.copyWith(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xl),
 
                 // Comment TextField
                 TextField(
                   controller: _commentController,
                   maxLines: 4,
                   maxLength: 500,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textPrimaryLight,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Share your experience (optional)',
+                    hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textMutedLight),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppSpacing.roundedMd,
+                      borderSide: const BorderSide(color: AppColors.borderLight),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: AppSpacing.roundedMd,
+                      borderSide: const BorderSide(color: AppColors.borderLight),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: AppSpacing.roundedMd,
+                      borderSide: BorderSide(color: primaryColor, width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.grey[50],
+                    fillColor: AppColors.backgroundLight,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.xl),
 
                 // Action Buttons
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
+                      child: TextButton(
                         onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-                        child: const Text('Cancel'),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppSpacing.roundedMd,
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: AppColors.textSecondaryLight,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: _isSubmitting ? null : _submitReview,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          foregroundColor: AppColors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppSpacing.roundedMd,
+                          ),
+                        ),
                         child: _isSubmitting
                             ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                            : const Text('Submit'),
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                                ),
+                              )
+                            : const Text(
+                                'Submit',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
                       ),
                     ),
                   ],

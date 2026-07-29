@@ -5,6 +5,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../../../../../../../core/theme/app_colors.dart';
 
 class Helpers {
   /* --------------------------------------------------------------------------
@@ -63,17 +64,17 @@ class Helpers {
    * -------------------------------------------------------------------------- */
 
   static Color getAvatarColor(String text) {
-    if (text.isEmpty) return Colors.grey;
+    if (text.isEmpty) return AppColors.grey400;
 
     final palette = <Color>[
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.red,
-      Colors.teal,
-      Colors.pink,
-      Colors.indigo,
+      AppColors.primary,
+      AppColors.success,
+      AppColors.warning,
+      AppColors.cta,
+      AppColors.error,
+      AppColors.secondary,
+      AppColors.error,
+      AppColors.primary,
     ];
 
     final index = text.codeUnitAt(0) % palette.length;

@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../../../../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // Auth
 import '../../features/analytics/presentation/pages/analytics_page.dart';
@@ -35,13 +38,16 @@ import '../../features/marketplace/presentation/pages/product_detail_page.dart';
 import '../../features/marketplace/presentation/pages/create_product_page.dart';
 import '../../features/marketplace/presentation/pages/edit_product_page.dart';
 import '../../features/marketplace/presentation/pages/my_products_page.dart';
+import '../../features/marketplace/presentation/pages/my_orders_page.dart';
+import '../../features/marketplace/presentation/pages/my_sales_page.dart';
+import '../../features/marketplace/presentation/pages/order_details_page.dart';
+import '../../features/marketplace/presentation/pages/payment_page.dart';
 
 // Chat
 import '../../features/chat/presentation/pages/chat_list_page.dart';
 import '../../features/chat/presentation/pages/chat_detail_page.dart';
 
 // Profile
-import '../../features/profile/presentation/pages/deposit_page.dart';
 import '../../features/profile/presentation/pages/licenses_page.dart';
 import '../../features/profile/presentation/pages/privacy_policy_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
@@ -56,38 +62,94 @@ import '../../features/profile/presentation/pages/privacy_security_page.dart';
 import '../../features/profile/presentation/pages/help_support_page.dart';
 import '../../features/profile/presentation/pages/about_page.dart';
 import '../../features/profile/presentation/pages/user_profile_page.dart';
+import '../../features/talent/presentation/pages/talent_profile_page.dart';
 
+// Admin
+import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
+import '../../features/admin/presentation/pages/admin_disputes_page.dart';
+import '../../core/router/admin_guard.dart';
+
+// Phase 6-12
+import '../../features/profile/presentation/pages/gdpr_page.dart';
+import '../../features/profile/presentation/pages/verification_page.dart';
+import '../../features/profile/presentation/pages/saved_searches_page.dart';
+import '../../features/profile/presentation/pages/subscription_page.dart';
+import '../../features/jobs/presentation/pages/recommended_jobs_page.dart';
+import '../../features/auth/presentation/pages/legal_acceptance_page.dart';
+
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
+/// Notifier that tells GoRouter to re-evaluate its redirect WITHOUT
+/// recreating the entire GoRouter instance. This preserves the current
+/// navigation location.
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier(Ref ref) {
+    ref.listen(authStateProvider, (_, _) => notifyListeners());
+    ref.listen(isAuthenticatedProvider, (_, _) => notifyListeners());
+  }
+}
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final authNotifier = _AuthChangeNotifier(ref);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
+    refreshListenable: authNotifier,
 
     // ========================
     // REDIRECT LOGIC
     // ========================
-    redirect: (context, state) {
+    redirect: (context, state) async {
       final isAuthRoute = state.matchedLocation.startsWith('/auth');
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isSplash = state.matchedLocation == '/splash';
 
+      // Use ref.read (not watch!) so we get current state without
+      // triggering a GoRouter rebuild.
+      final authState = ref.read(authStateProvider);
+      final isAuthenticated = ref.read(isAuthenticatedProvider);
+
       return authState.when(
-        data: (user) {
+        data: (firebaseUser) {
           if (isSplash) return null;
 
-          if (user == null && !isAuthRoute && !isOnboarding) {
+          final loggedIn = isAuthenticated;
+
+          if (!loggedIn && !isAuthRoute && !isOnboarding) {
             return '/auth/login';
           }
 
-          if (user != null && (isAuthRoute || isOnboarding)) {
-            return '/';
+          if (loggedIn) {
+            return () async {
+              // Admin Redirect check
+              const storage = FlutterSecureStorage();
+              final userDataStr = await storage.read(key: 'user_data');
+              if (userDataStr != null) {
+                try {
+                  final userData = jsonDecode(userDataStr);
+                  if (userData['isAdmin'] == true) {
+                    if (!state.matchedLocation.startsWith('/admin')) {
+                      return '/admin/dashboard';
+                    }
+                    return null; // They are already on an admin route
+                  }
+                } catch (e) {
+                  // ignore parsing errors
+                }
+              }
+              
+              if (isAuthRoute || isOnboarding) {
+                return '/';
+              }
+              return null;
+            }();
           }
 
           return null;
         },
-        loading: () => isSplash ? null : '/splash',
-        error: (_, __) => '/auth/login',
+        loading: () => (isSplash || isAuthRoute) ? null : '/splash',
+        error: (err, stack) => '/auth/login',
       );
     },
 
@@ -105,6 +167,32 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingPage(),
+      ),
+
+      // ========================
+      // ADMIN
+      // ========================
+      GoRoute(
+        path: '/admin',
+        redirect: (context, state) => '/admin/dashboard',
+      ),
+      GoRoute(
+        path: '/admin/dashboard',
+        builder: (context, state) => const AdminGuard(
+          child: AdminDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/users',
+        builder: (context, state) => const AdminGuard(
+          child: AdminUsersPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/disputes',
+        builder: (context, state) => const AdminGuard(
+          child: AdminDisputesPage(),
+        ),
       ),
 
       // Auth
@@ -219,10 +307,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile/payout',
         builder: (context, state) => const PayoutPage(),
       ),
-      GoRoute(
-        path: '/profile/deposit',
-        builder: (context, state) => const DepositPage(),
-      ),
+
       GoRoute(
         path: '/profile/transactions',
         builder: (context, state) => const TransactionsPage(),
@@ -262,6 +347,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           return UserProfilePage(userId: userId);
         },
       ),
+      GoRoute(
+        path: '/talent/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return TalentProfilePage(userId: id);
+        },
+      ),
 
       // ========================
       // MARKETPLACE
@@ -279,6 +371,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MyProductsPage(),
       ),
       GoRoute(
+        path: '/marketplace/my-orders',
+        builder: (context, state) => const MyOrdersPage(),
+      ),
+      GoRoute(
+        path: '/marketplace/my-sales',
+        builder: (context, state) => const MySalesPage(),
+      ),
+      GoRoute(
+        path: '/marketplace/orders/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return OrderDetailsPage(orderId: id);
+        },
+      ),
+      GoRoute(
         path: '/marketplace/:id/edit',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
@@ -290,6 +397,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return ProductDetailPage(productId: id);
+        },
+      ),
+      GoRoute(
+        path: '/marketplace/payment/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return PaymentPage(productId: id);
         },
       ),
 
@@ -343,6 +457,34 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/analytics',
         builder: (context, state) => const AnalyticsPage(),
       ),
+
+      // ========================
+      // PHASE 6-12 ROUTES
+      // ========================
+      GoRoute(
+        path: '/gdpr',
+        builder: (context, state) => const GdprPage(),
+      ),
+      GoRoute(
+        path: '/verification',
+        builder: (context, state) => const VerificationPage(),
+      ),
+      GoRoute(
+        path: '/saved-searches',
+        builder: (context, state) => const SavedSearchesPage(),
+      ),
+      GoRoute(
+        path: '/subscription',
+        builder: (context, state) => const SubscriptionPage(),
+      ),
+      GoRoute(
+        path: '/recommended-jobs',
+        builder: (context, state) => const RecommendedJobsPage(),
+      ),
+      GoRoute(
+        path: '/legal-acceptance',
+        builder: (context, state) => const LegalAcceptancePage(),
+      ),
     ],
 
     // ========================
@@ -353,7 +495,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text('Page not found: ${state.matchedLocation}'),
             const SizedBox(height: 16),

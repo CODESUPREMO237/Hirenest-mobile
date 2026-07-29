@@ -219,7 +219,7 @@ class StockModel {
   Map<String, dynamic> toJson() => _$StockModelToJson(this);
 }
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, createFactory: false)
 class SellerModel {
   @JsonKey(name: '_id')
   final String id;

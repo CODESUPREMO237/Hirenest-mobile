@@ -1,6 +1,8 @@
 // lib/features/marketplace/presentation/pages/my_products_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/api_endpoints.dart';
@@ -17,7 +19,7 @@ class MyProductsPage extends ConsumerWidget {
     final stats = ref.watch(myProductsStatsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
         title: const Text('My Inventory'),
         actions: [
@@ -49,7 +51,7 @@ class MyProductsPage extends ConsumerWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+                          Icon(Icons.inventory_2_outlined, size: 64, color: AppColors.textMutedLight),
                           SizedBox(height: 16),
                           Text('You haven\'t listed any products yet.'),
                         ],
@@ -104,7 +106,7 @@ class MyProductsPage extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                      const Icon(Icons.error_outline, color: AppColors.error, size: 48),
                       const SizedBox(height: 16),
                       Text('Error: $err'),
                     ],
@@ -123,10 +125,10 @@ class MyProductsPage extends ConsumerWidget {
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.redAccent,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.error,
+        borderRadius: AppSpacing.roundedMd,
       ),
-      child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+      child: const Icon(Icons.delete_outline, color: AppColors.white, size: 28),
     );
   }
 
@@ -143,8 +145,8 @@ class MyProductsPage extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('DELETE', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('DELETE', style: TextStyle(color: AppColors.white)),
           ),
         ],
       ),
@@ -162,22 +164,16 @@ class _DashboardStatsGrid extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.white,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _stat('Total', stats['total'] ?? 0, Colors.blue),
-          _stat('Active', stats['active'] ?? 0, Colors.green),
-          _stat('Sold', stats['sold'] ?? 0, Colors.orange),
+          _stat('Total', stats['total'] ?? 0, AppColors.primary),
+          _stat('Active', stats['active'] ?? 0, AppColors.success),
+          _stat('Sold', stats['sold'] ?? 0, AppColors.warning),
         ],
       ),
     );
@@ -190,7 +186,7 @@ class _DashboardStatsGrid extends StatelessWidget {
           value.toString(),
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color),
         ),
-        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+        Text(label, style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12)),
       ],
     );
   }

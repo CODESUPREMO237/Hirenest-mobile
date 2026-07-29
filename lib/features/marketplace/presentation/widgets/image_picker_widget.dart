@@ -3,6 +3,8 @@
 // lib/features/marketplace/presentation/widgets/image_picker_widget.dart
 // =====================================================
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io'; // <-- Add this import
 
@@ -34,9 +36,9 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
   }
 
   Future<void> _pickImages() async {
-    final List<XFile>? pickedFiles = await _picker.pickMultiImage();
+    final List<XFile> pickedFiles = await _picker.pickMultiImage();
 
-    if (pickedFiles != null && pickedFiles.isNotEmpty) {
+    if (pickedFiles.isNotEmpty) {
       setState(() {
         _images.addAll(
           pickedFiles.take(widget.maxImages - _images.length),
@@ -71,8 +73,8 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                   child: Container(
                     width: 120,
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.textMutedLight),
+                      borderRadius: AppSpacing.roundedSm,
                     ),
                     child: const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -91,7 +93,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                       width: 120,
                       margin: const EdgeInsets.only(left: 8),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppSpacing.roundedSm,
                         image: DecorationImage(
                           image: Image.file(
                             File(entry.value.path),
@@ -108,12 +110,12 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: const BoxDecoration(
-                            color: Colors.red,
+                            color: AppColors.error,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.close,
-                            color: Colors.white,
+                            color: AppColors.white,
                             size: 16,
                           ),
                         ),
@@ -121,7 +123,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                     ),
                   ],
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),

@@ -1,9 +1,5 @@
-// Online Status
-
-// =====================================================
-// lib/features/chat/presentation/widgets/online_status.dart
-// =====================================================
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class OnlineStatus extends StatelessWidget {
   final bool isOnline;
@@ -21,9 +17,9 @@ class OnlineStatus extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: isOnline ? Colors.green : Colors.grey,
+        color: isOnline ? AppColors.success : AppColors.textMutedLight,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(color: AppColors.surfaceLight, width: 2),
       ),
     );
   }

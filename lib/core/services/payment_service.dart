@@ -1,10 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/profile/presentation/pages/transactions_page.dart';
-import '../config/app_config.dart';
 import '../network/api_client.dart';
 import '../constants/api_endpoints.dart';
-import '../../features/profile/data/models/transaction_model.dart';
 
 final paymentServiceProvider = Provider<PaymentService>((ref) {
   return PaymentService(ref.read(dioProvider));
@@ -19,6 +17,7 @@ class PaymentService {
     required String productId,
     required String phoneNumber,
     required String paymentMethod, // 'mesomb_mtn' or 'mesomb_orange'
+    required String idempotencyKey,
   }) async {
     try {
       final response = await dio.post(
@@ -27,6 +26,7 @@ class PaymentService {
           'productId': productId,
           'phoneNumber': phoneNumber,
           'paymentMethod': paymentMethod,
+          'idempotencyKey': idempotencyKey,
         },
       );
 

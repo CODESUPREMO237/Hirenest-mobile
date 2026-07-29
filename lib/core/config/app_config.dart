@@ -10,7 +10,7 @@ class AppConfig {
       dotenv.env['SOCKET_URL'] ?? 'http://localhost:5000';
 
   static String get appName =>
-      dotenv.env['APP_NAME'] ?? 'JobConnect';
+      dotenv.env['APP_NAME'] ?? 'HireNest';
 
   static String get appVersion =>
       dotenv.env['APP_VERSION'] ?? '1.0.0';

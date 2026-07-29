@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,8 +11,7 @@ class CompleteProfilePage extends ConsumerStatefulWidget {
   const CompleteProfilePage({super.key});
 
   @override
-  ConsumerState<CompleteProfilePage> createState() =>
-      _CompleteProfilePageState();
+  ConsumerState<CompleteProfilePage> createState() => _CompleteProfilePageState();
 }
 
 class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
@@ -43,12 +44,10 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
     final authService = ref.read(authServiceProvider);
 
     try {
-      // Upload profile picture if selected
       if (_profileImage != null) {
         await authService.updateProfilePicture(_profileImage!.path);
       }
 
-      // Update backend profile
       await authService.updateProfile({
         'profile.phone': _phoneController.text,
         'profile.bio': _bioController.text,
@@ -57,14 +56,20 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile completed successfully!')),
+          const SnackBar(
+            content: Text('Profile completed successfully!'),
+            backgroundColor: AppColors.success,
+          ),
         );
         context.go('/');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile: $e')),
+          SnackBar(
+            content: Text('Failed to update profile: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -72,12 +77,46 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
     }
   }
 
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: AppColors.textMutedLight),
+      filled: true,
+      fillColor: AppColors.surfaceLight,
+      border: OutlineInputBorder(
+        borderRadius: AppSpacing.roundedMd,
+        borderSide: const BorderSide(color: AppColors.borderLight),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: AppSpacing.roundedMd,
+        borderSide: const BorderSide(color: AppColors.borderLight),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppSpacing.roundedMd,
+        borderSide: const BorderSide(color: AppColors.primary),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Complete Your Profile')),
+      backgroundColor: AppColors.backgroundLight,
+      appBar: AppBar(
+        title: Text(
+          'Complete Your Profile',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimaryLight,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.textPrimaryLight),
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Form(
           key: _formKey,
           child: Column(
@@ -87,62 +126,87 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
               Center(
                 child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 60,
-                      backgroundColor: Colors.grey[200],
-                      backgroundImage: _profileImage != null
-                          ? FileImage(File(_profileImage!.path))
-                          : null,
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: AppColors.borderLight,
+                        shape: BoxShape.circle,
+                        image: _profileImage != null
+                            ? DecorationImage(
+                                image: FileImage(File(_profileImage!.path)),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
                       child: _profileImage == null
-                          ? Icon(Icons.person, size: 60, color: Colors.grey[400])
+                          ? const Icon(Icons.person, size: 60, color: AppColors.textMutedLight)
                           : null,
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
-                      child: IconButton(
-                        icon: const Icon(Icons.camera_alt, color: Colors.white),
-                        onPressed: _pickProfileImage,
-                        color: Theme.of(context).primaryColor,
+                      child: InkWell(
+                        onTap: _pickProfileImage,
+                        borderRadius: AppSpacing.roundedFull,
+                        child: Container(
+                          padding: const EdgeInsets.all(AppSpacing.sm),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.surfaceLight, width: 3),
+                          ),
+                          child: const Icon(Icons.camera_alt, color: AppColors.white, size: 20),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
 
-              // Phone
               TextFormField(
                 controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number'),
+                decoration: _inputDecoration('Phone Number'),
+                keyboardType: TextInputType.phone,
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
 
-              // City
               TextFormField(
                 controller: _cityController,
-                decoration: const InputDecoration(labelText: 'City'),
+                decoration: _inputDecoration('City'),
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
 
-              // Bio
               TextFormField(
                 controller: _bioController,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Bio',
-                  alignLabelWithHint: true,
-                ),
+                decoration: _inputDecoration('Bio').copyWith(alignLabelWithHint: true),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xxl),
 
-              // Complete Button
               ElevatedButton(
                 onPressed: _isLoading ? null : _completeProfile,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.white,
+                  minimumSize: const Size(double.infinity, 54),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppSpacing.roundedMd,
+                  ),
+                  textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  elevation: 0,
+                ),
                 child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2),
+                      )
                     : const Text('Complete Profile'),
               ),
             ],

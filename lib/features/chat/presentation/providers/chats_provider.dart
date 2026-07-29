@@ -1,6 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ ADD THIS for Ref type
+// ✅ ADD THIS for Ref type
 import '../../data/models/chat_model.dart';
 import '../../data/repositories/chat_repository.dart';
 
@@ -25,13 +26,13 @@ class Chats extends _$Chats {
 
     // Set up auto-refresh every 30 seconds
     _autoRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      print('🔄 Auto-refresh: Loading chats in background...');
+      debugPrint('🔄 Auto-refresh: Loading chats in background...');
       loadChats(refresh: false); // Silent refresh
     });
 
     // Clean up timer when provider is disposed
     ref.onDispose(() {
-      print('🛑 Disposing chats provider - stopping auto-refresh');
+      debugPrint('🛑 Disposing chats provider - stopping auto-refresh');
       _autoRefreshTimer?.cancel();
     });
 
@@ -40,7 +41,7 @@ class Chats extends _$Chats {
 
   /// Load chats from API or database
   Future<List<ChatModel>> loadChats({bool refresh = false}) async {
-    print('📋 [Chats] loadChats called (refresh: $refresh)');
+    debugPrint('📋 [Chats] loadChats called (refresh: $refresh)');
 
     if (refresh) {
       state = const AsyncLoading();
@@ -57,11 +58,11 @@ class Chats extends _$Chats {
         return bTime.compareTo(aTime);
       });
 
-      print('✅ [Chats] Loaded ${fetchedChats.length} chats');
+      debugPrint('✅ [Chats] Loaded ${fetchedChats.length} chats');
       state = AsyncData(fetchedChats);
       return fetchedChats;
     } catch (e, st) {
-      print('❌ [Chats] Error loading chats: $e');
+      debugPrint('❌ [Chats] Error loading chats: $e');
       state = AsyncError(e, st);
       return [];
     }
@@ -84,10 +85,10 @@ class Chats extends _$Chats {
         });
 
         state = AsyncData(updatedChats);
-        print('✅ [Chats] Updated chat: ${updatedChat.id}');
+        debugPrint('✅ [Chats] Updated chat: ${updatedChat.id}');
       } else {
         // Chat not in list, refresh to get it
-        print('⚠️ [Chats] Chat ${updatedChat.id} not found, refreshing list');
+        debugPrint('⚠️ [Chats] Chat ${updatedChat.id} not found, refreshing list');
         loadChats(refresh: false);
       }
     });
@@ -95,7 +96,7 @@ class Chats extends _$Chats {
 
   /// Archive a chat
   Future<void> archiveChat(String chatId) async {
-    print('📦 [Chats] Archiving chat: $chatId');
+    debugPrint('📦 [Chats] Archiving chat: $chatId');
 
     try {
       await _repository.archiveChat(chatId);
@@ -105,9 +106,9 @@ class Chats extends _$Chats {
       final updated = current.where((chat) => chat.id != chatId).toList();
 
       state = AsyncData(updated);
-      print('✅ [Chats] Chat archived successfully');
+      debugPrint('✅ [Chats] Chat archived successfully');
     } catch (e, st) {
-      print('❌ [Chats] Error archiving chat: $e');
+      debugPrint('❌ [Chats] Error archiving chat: $e');
       state = AsyncError(e, st);
     }
   }
@@ -130,9 +131,9 @@ class Chats extends _$Chats {
         state = AsyncData(updatedChats);
       });
 
-      print('✅ [Chats] Marked chat as read: $chatId');
+      debugPrint('✅ [Chats] Marked chat as read: $chatId');
     } catch (e) {
-      print('❌ [Chats] Error marking chat as read: $e');
+      debugPrint('❌ [Chats] Error marking chat as read: $e');
     }
   }
 

@@ -2,6 +2,7 @@
 // OPTIONAL: Use this screen to test notifications
 
 import 'package:flutter/material.dart';
+import '../../../../../../../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/notification_service.dart';
@@ -30,7 +31,7 @@ class NotificationTestScreen extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Test notification sent!'),
-                      backgroundColor: Colors.green,
+                      backgroundColor: AppColors.success,
                     ),
                   );
                 }
@@ -54,17 +55,17 @@ class NotificationTestScreen extends ConsumerWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('FCM Token copied to clipboard!'),
-                        backgroundColor: Colors.blue,
+                        backgroundColor: AppColors.primary,
                       ),
                     );
                   }
-                  print('FCM Token: $token');
+                  debugPrint('FCM Token: $token');
                 } else {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Failed to get FCM token'),
-                        backgroundColor: Colors.red,
+                        backgroundColor: AppColors.error,
                       ),
                     );
                   }
@@ -87,7 +88,7 @@ class NotificationTestScreen extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Subscribed to "test" topic'),
-                      backgroundColor: Colors.green,
+                      backgroundColor: AppColors.success,
                     ),
                   );
                 }

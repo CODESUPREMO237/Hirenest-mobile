@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/job_model.dart';
@@ -6,7 +8,7 @@ import '../providers/jobs_provider.dart';
 import './screening_questions.dart';
 
 class EditJobScreen extends ConsumerStatefulWidget {
-  final String jobId; // Changed from JobModel to String ID
+  final String jobId;
   const EditJobScreen({super.key, required this.jobId});
 
   @override
@@ -16,14 +18,13 @@ class EditJobScreen extends ConsumerStatefulWidget {
 class _EditJobScreenState extends ConsumerState<EditJobScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
   late TextEditingController _titleController;
   late TextEditingController _salaryMinController;
   late TextEditingController _salaryMaxController;
 
   String _jobType = 'full-time';
   List<Map<String, dynamic>> _screeningQuestions = [];
-  bool _isInitialized = false; // To prevent controllers from resetting on every build
+  bool _isInitialized = false;
 
   @override
   void initState() {
@@ -33,15 +34,12 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
     _salaryMaxController = TextEditingController();
   }
 
-  // Initialize data once the provider loads
   void _initializeData(JobModel job) {
     if (_isInitialized) return;
     _titleController.text = job.title;
     _salaryMinController.text = job.salary?.min?.toString() ?? '';
     _salaryMaxController.text = job.salary?.max?.toString() ?? '';
-    _jobType = job.jobType ?? 'full-time';
-    // Convert backend list to dynamic map for the builder
-    // FIX: Convert the Model objects into the Maps the UI builder expects
+    _jobType = job.jobType;
     _screeningQuestions = (job.screeningQuestions ?? []).map((q) {
       return {
         'question': q.question,
@@ -64,7 +62,7 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
         'max': int.tryParse(_salaryMaxController.text),
         'currency': 'XAF',
       },
-      'screeningQuestions': _screeningQuestions, // Now includes the new questions
+      'screeningQuestions': _screeningQuestions,
     };
 
     final success = await ref
@@ -74,35 +72,50 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
     if (success && mounted) {
       context.pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Job updated successfully! 🎉'), behavior: SnackBarBehavior.floating),
+        const SnackBar(
+          content: Text('Job updated successfully! 🎉'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.success,
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Watch the job details
     final jobAsync = ref.watch(jobDetailProvider(widget.jobId));
     final updateState = ref.watch(jobUpdateControllerProvider);
 
-    return jobAsync.when(
-      data: (job) {
-        _initializeData(job); // Populate controllers
+    return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
+      appBar: AppBar(
+        title: const Text('Edit Job Posting'),
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
+        actions: [
+          if (updateState.isLoading)
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.md), 
+              child: SizedBox(
+                width: 24, height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2)
+              )
+            )
+          else
+            IconButton(
+              onPressed: _submitUpdate,
+              icon: const Icon(Icons.check, color: AppColors.success, size: 28)
+            )
+        ],
+      ),
+      body: jobAsync.when(
+        data: (job) {
+          _initializeData(job);
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Edit Job Posting'),
-            actions: [
-              if (updateState.isLoading)
-                const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))
-              else
-                IconButton(onPressed: _submitUpdate, icon: const Icon(Icons.check, color: Colors.green, size: 28))
-            ],
-          ),
-          body: Form(
+          return Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
                 _buildFieldLabel('Job Title'),
                 TextFormField(
@@ -110,18 +123,20 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
                   decoration: _inputDecoration('e.g. Senior Flutter Developer'),
                   validator: (v) => v!.isEmpty ? 'Title is required' : null,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.lg),
+                
                 _buildFieldLabel('Employment Type'),
                 DropdownButtonFormField<String>(
-                  value: _jobType,
+                  initialValue: _jobType,
                   items: ['full-time', 'part-time', 'contract', 'internship']
                       .map((t) => DropdownMenuItem(value: t, child: Text(t.toUpperCase())))
                       .toList(),
                   onChanged: (val) => setState(() => _jobType = val!),
-                  decoration: _inputDecoration(''),
+                  decoration: _inputDecoration('Select Job Type'),
                 ),
-                const SizedBox(height: 20),
-                _buildFieldLabel('Salary Range (Monthly)'),
+                const SizedBox(height: AppSpacing.lg),
+                
+                _buildFieldLabel('Salary Range (Monthly in XAF)'),
                 Row(
                   children: [
                     Expanded(
@@ -131,7 +146,10 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
                         decoration: _inputDecoration('Min'),
                       ),
                     ),
-                    const Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('to')),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      child: Text('to', style: TextStyle(color: AppColors.textSecondaryLight)),
+                    ),
                     Expanded(
                       child: TextFormField(
                         controller: _salaryMaxController,
@@ -141,7 +159,8 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xl),
+                
                 ScreeningQuestionsBuilder(
                   initialQuestions: _screeningQuestions,
                   onChanged: (newList) {
@@ -150,26 +169,42 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
                 ),
               ],
             ),
-          ),
-        );
-      },
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, s) => Scaffold(body: Center(child: Text('Error: $e'))),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, s) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.error))),
+      ),
     );
   }
-
-
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
     hintText: hint,
     filled: true,
-    fillColor: Colors.grey[100],
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    fillColor: AppColors.surfaceLight,
+    border: OutlineInputBorder(
+      borderRadius: AppSpacing.roundedMd,
+      borderSide: const BorderSide(color: AppColors.borderLight),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: AppSpacing.roundedMd,
+      borderSide: const BorderSide(color: AppColors.borderLight),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: AppSpacing.roundedMd,
+      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
   );
 
   Widget _buildFieldLabel(String label) => Padding(
-    padding: const EdgeInsets.only(bottom: 8, left: 4),
-    child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+    padding: const EdgeInsets.only(bottom: AppSpacing.sm, left: AppSpacing.xs),
+    child: Text(
+      label,
+      style: const TextStyle(
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimaryLight,
+        fontSize: 14,
+      )
+    ),
   );
 }

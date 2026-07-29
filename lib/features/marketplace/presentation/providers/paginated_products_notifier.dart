@@ -214,8 +214,6 @@ class PaginatedProductsNotifier extends AsyncNotifier<ProductsState> {
       state = const AsyncLoading();
     }
 
-    state = const AsyncLoading();
-
     final repo = ref.read(marketplaceRepositoryProvider);
 
     try {

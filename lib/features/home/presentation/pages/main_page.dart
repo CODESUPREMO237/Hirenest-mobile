@@ -3,6 +3,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_animations.dart';
 import '../../../marketplace/presentation/pages/marketplace_page.dart';
 import '../../../jobs/presentation/pages/jobs_page.dart';
 import '../../../chat/presentation/pages/chat_list_page.dart';
@@ -20,6 +24,8 @@ class MainPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(selectedIndexProvider);
     final userAsync = ref.watch(currentUserProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return userAsync.when(
       data: (user) {
@@ -29,82 +35,41 @@ class MainPage extends ConsumerWidget {
           );
         }
 
-        final userRole = user.role ?? 'guest';
+        final userRole = user.role;
         final isEmployer = userRole == 'employer';
+        final isAdmin = user.isAdmin == true;
+
+        if (isAdmin) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              GoRouter.of(context).go('/admin/dashboard');
+            }
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
         // Different pages based on user role
         final pages = isEmployer
             ? [
-          const EmployerDashboardPage(),
-          const MarketplacePage(),
-          const JobsPage(),
-          const ChatListPage(),
-          const ProfilePage(),
-        ]
+                const EmployerDashboardPage(),
+                const MarketplacePage(),
+                const JobsPage(),
+                const ChatListPage(),
+                const ProfilePage(),
+              ]
             : [
-          const HomePageSimple(),
-          const MarketplacePage(),
-          const JobsPage(),
-          const ChatListPage(),
-          const ProfilePage(),
-        ];
+                const HomePageSimple(),
+                const MarketplacePage(),
+                const JobsPage(),
+                const ChatListPage(),
+                const ProfilePage(),
+              ];
 
-        // Different nav items based on user role
-        final navigationDestinations = isEmployer
-            ? const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.shopping_bag_outlined),
-            selectedIcon: Icon(Icons.shopping_bag),
-            label: 'Marketplace',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.work_outline),
-            selectedIcon: Icon(Icons.work),
-            label: 'My Jobs',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Chats',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ]
-            : const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.shopping_bag_outlined),
-            selectedIcon: Icon(Icons.shopping_bag),
-            label: 'Marketplace',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.work_outline),
-            selectedIcon: Icon(Icons.work),
-            label: 'Jobs',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Chats',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ];
+        void handleTabTap(int index) {
+          ref.read(selectedIndexProvider.notifier).state = index;
+        }
 
         return Scaffold(
           body: IndexedStack(
@@ -113,21 +78,49 @@ class MainPage extends ConsumerWidget {
           ),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 0.5,
+              color: theme.colorScheme.surface,
+              boxShadow: isDark ? null : AppSpacing.bottomNavShadow,
+              border: isDark ? const Border(top: BorderSide(color: AppColors.borderDark)) : null,
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _NavItem(
+                      icon: isEmployer ? Icons.dashboard_rounded : Icons.home_rounded,
+                      label: isEmployer ? 'Dashboard' : 'Home',
+                      isSelected: selectedIndex == 0,
+                      onTap: () => handleTabTap(0),
+                    ),
+                    _NavItem(
+                      icon: Icons.storefront_rounded,
+                      label: 'Market',
+                      isSelected: selectedIndex == 1,
+                      onTap: () => handleTabTap(1),
+                    ),
+                    _NavItem(
+                      icon: Icons.work_rounded,
+                      label: isEmployer ? 'My Jobs' : 'Jobs',
+                      isSelected: selectedIndex == 2,
+                      onTap: () => handleTabTap(2),
+                    ),
+                    _NavItem(
+                      icon: Icons.chat_bubble_rounded,
+                      label: 'Chats',
+                      isSelected: selectedIndex == 3,
+                      onTap: () => handleTabTap(3),
+                    ),
+                    _NavItem(
+                      icon: Icons.person_rounded,
+                      label: 'Profile',
+                      isSelected: selectedIndex == 4,
+                      onTap: () => handleTabTap(4),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            child: NavigationBar(
-              selectedIndex: selectedIndex,
-              onDestinationSelected: (index) {
-                ref.read(selectedIndexProvider.notifier).state = index;
-              },
-              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-              height: 70,
-              destinations: navigationDestinations,
             ),
           ),
         );
@@ -140,11 +133,70 @@ class MainPage extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
+              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: AppSpacing.md),
               Text('Error loading user: $error'),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: AppAnimations.medium,
+        curve: AppAnimations.standard,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? theme.colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: AppSpacing.roundedFull,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? theme.colorScheme.primary : theme.bottomNavigationBarTheme.unselectedItemColor,
+              size: 24,
+            ),
+            AnimatedSize(
+              duration: AppAnimations.medium,
+              curve: AppAnimations.standard,
+              child: isSelected
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Text(
+                        label,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
         ),
       ),
     );

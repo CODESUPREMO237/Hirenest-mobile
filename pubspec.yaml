@@ -1,5 +1,5 @@
-name: jobconnect
-description: A modern job search and marketplace platform for Cameroon
+name: hirenest
+description: A modern global job search and marketplace platform — HireNest
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -111,6 +111,9 @@ dependencies:
 
 
 
+  http: any
+  google_nav_bar: ^5.0.7
+  sentry_flutter: ^8.14.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -125,13 +128,18 @@ dev_dependencies:
   build_runner: ^2.4.13
 
 flutter_launcher_icons:
-  android: "launcher_icon"
+  android: "ic_launcher"
   ios: true
-  image_path: "assets/images/app_icon.png" # Path to your source icon
-  min_sdk_android: 21 # android min sdk min:16, default 21
-  #Android Adaptive Icon Settings
-  adaptive_icon_background: "#FFFFFF" # Your brand's background color
-  adaptive_icon_foreground: "assets/images/app_icon_foreground.png" # Logo with transparent background
+  image_path: "assets/images/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/app_icon.png"
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/images/app_icon.png"
+    background_color: "#FFFFFF"
+    theme_color: "#2563EB"
 
   # NOTE: Don't add analyzer here - it causes version conflicts
   # Let the code generators manage their own analyzer dependencies
@@ -141,7 +149,7 @@ flutter:
 
   assets:
     - .env
-    - assets/images/app_icon.png
+    - assets/images/
     - assets/icons/
     - assets/lottie/
     - assets/fonts/

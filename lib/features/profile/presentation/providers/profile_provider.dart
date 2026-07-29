@@ -81,7 +81,7 @@ final hasCVProvider = Provider<bool>((ref) {
   return profileState.maybeWhen(
     data: (profile) {
       // Check if jobSeekerProfile exists and if it contains a resume
-      return profile?.jobSeekerProfile?.resume != null;
+      return profile.jobSeekerProfile?.resume != null;
     },
     orElse: () => false,
   );

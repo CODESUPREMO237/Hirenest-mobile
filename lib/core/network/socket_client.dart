@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 // ============================================================================
 // socket_client.dart (Uses Firebase ID Token for Socket.IO)
 // lib/core/network/socket_client.dart
@@ -34,22 +35,22 @@ class SocketClient {
     }
 
     try {
-      print('');
-      print('🔌 [SocketClient] Initiating connection...');
+      debugPrint('');
+      debugPrint('🔌 [SocketClient] Initiating connection...');
 
       final authService = ref.read(authServiceProvider);
 
       // ✅ Use getIdToken() for Firebase ID Token (for Socket.IO auth)
       final token = await authService.getIdToken();
-      print('   🎫 Firebase token: ${token != null ? "✅ Found" : "❌ Not found"}');
+      debugPrint('   🎫 Firebase token: ${token != null ? "✅ Found" : "❌ Not found"}');
 
       if (token == null) {
-        print('   ❌ No Firebase token - cannot connect to socket');
+        debugPrint('   ❌ No Firebase token - cannot connect to socket');
         AppLogger.error('Socket connection failed: No Firebase token found');
         return;
       }
 
-      print('   🔗 Connecting to: ${AppConfig.socketUrl}');
+      debugPrint('   🔗 Connecting to: ${AppConfig.socketUrl}');
 
       _socket = io.io(
         AppConfig.socketUrl,
@@ -66,10 +67,10 @@ class SocketClient {
       _setupListeners();
       _socket?.connect();
 
-      print('   ✅ Socket connection initiated');
-      print('');
+      debugPrint('   ✅ Socket connection initiated');
+      debugPrint('');
     } catch (e, stackTrace) {
-      print('   ❌ Socket connection error: $e');
+      debugPrint('   ❌ Socket connection error: $e');
       AppLogger.error('Socket connection error', error: e, stackTrace: stackTrace);
     }
   }
@@ -77,23 +78,23 @@ class SocketClient {
   void _setupListeners() {
     _socket?.onConnect((_) {
       _isConnected = true;
-      print('✅ [SocketClient] Connected to server');
+      debugPrint('✅ [SocketClient] Connected to server');
       AppLogger.info('✅ Socket.IO Connected');
     });
 
     _socket?.onDisconnect((data) {
       _isConnected = false;
-      print('❌ [SocketClient] Disconnected from server');
+      debugPrint('❌ [SocketClient] Disconnected from server');
       AppLogger.warning('❌ Socket.IO Disconnected');
     });
 
     _socket?.onConnectError((error) {
-      print('🔥 [SocketClient] Connection error: $error');
+      debugPrint('🔥 [SocketClient] Connection error: $error');
       AppLogger.error('Socket connection error', error: error);
     });
 
     _socket?.onError((error) {
-      print('🔥 [SocketClient] Error: $error');
+      debugPrint('🔥 [SocketClient] Error: $error');
       AppLogger.error('Socket error', error: error);
     });
 
@@ -101,14 +102,14 @@ class SocketClient {
 
     _socket?.on('user:online', (data) {
       final userId = data['userId'] as String;
-      print('👥 [SocketClient] User online: $userId');
+      debugPrint('👥 [SocketClient] User online: $userId');
       ref.read(onlineUsersProvider.notifier).update((state) => {...state, userId});
     });
 
     _socket?.on('user:offline', (data) {
       final userId = data['userId'] as String;
       final lastSeenStr = data['lastSeen'] as String?;
-      print('👥 [SocketClient] User offline: $userId');
+      debugPrint('👥 [SocketClient] User offline: $userId');
 
       ref.read(onlineUsersProvider.notifier).update(
               (state) => state.where((id) => id != userId).toSet()
@@ -126,13 +127,13 @@ class SocketClient {
 
   void joinChat(String chatId, Function(dynamic) callback) {
     if (_socket == null || !_socket!.connected) {
-      print('⚠️ [SocketClient] Cannot join chat - not connected');
+      debugPrint('⚠️ [SocketClient] Cannot join chat - not connected');
       return;
     }
 
-    print('💬 [SocketClient] Joining chat: $chatId');
+    debugPrint('💬 [SocketClient] Joining chat: $chatId');
     _socket?.emitWithAck('chat:join', {'chatId': chatId}, ack: (response) {
-      print('✅ [SocketClient] Joined chat: $chatId');
+      debugPrint('✅ [SocketClient] Joined chat: $chatId');
       callback(response);
     });
   }
@@ -140,7 +141,7 @@ class SocketClient {
   void leaveChat(String chatId) {
     if (_socket == null || !_socket!.connected) return;
 
-    print('👋 [SocketClient] Leaving chat: $chatId');
+    debugPrint('👋 [SocketClient] Leaving chat: $chatId');
     _socket?.emit('chat:leave', {'chatId': chatId});
   }
 
@@ -156,17 +157,17 @@ class SocketClient {
 
   void sendMessage(String chatId, String content, String type, Function(dynamic) callback) {
     if (_socket == null || !_socket!.connected) {
-      print('⚠️ [SocketClient] Cannot send message - not connected');
+      debugPrint('⚠️ [SocketClient] Cannot send message - not connected');
       return;
     }
 
-    print('📤 [SocketClient] Sending message to chat: $chatId');
+    debugPrint('📤 [SocketClient] Sending message to chat: $chatId');
     _socket?.emitWithAck('message:send', {
       'chatId': chatId,
       'content': content,
       'type': type,
     }, ack: (response) {
-      print('✅ [SocketClient] Message sent');
+      debugPrint('✅ [SocketClient] Message sent');
       callback(response);
     });
   }
@@ -174,9 +175,9 @@ class SocketClient {
   // ==================== PUBLIC LISTENERS ====================
 
   void onNewMessage(Function(dynamic) callback) {
-    print('👂 [SocketClient] Listening for new messages');
+    debugPrint('👂 [SocketClient] Listening for new messages');
     _socket?.on('message:new', (data) {
-      print('📨 [SocketClient] New message received');
+      debugPrint('📨 [SocketClient] New message received');
       callback(data);
     });
   }
@@ -201,12 +202,12 @@ class SocketClient {
 
   void disconnect() {
     if (_socket != null) {
-      print('🔌 [SocketClient] Disconnecting...');
+      debugPrint('🔌 [SocketClient] Disconnecting...');
       _socket?.disconnect();
       _socket?.dispose();
       _socket = null;
       _isConnected = false;
-      print('✅ [SocketClient] Disconnected and disposed');
+      debugPrint('✅ [SocketClient] Disconnected and disposed');
     }
   }
 }
@@ -222,7 +223,7 @@ await socketClient.connect();
 
 // 2. Join a chat room
 socketClient.joinChat(chatId, (response) {
-  print('Joined chat: $response');
+  debugPrint('Joined chat: $response');
 });
 
 // 3. Listen for new messages
@@ -233,7 +234,7 @@ socketClient.onNewMessage((data) {
 
 // 4. Send a message
 socketClient.sendMessage(chatId, 'Hello!', 'text', (response) {
-  print('Message sent: $response');
+  debugPrint('Message sent: $response');
 });
 
 // 5. Disconnect when done

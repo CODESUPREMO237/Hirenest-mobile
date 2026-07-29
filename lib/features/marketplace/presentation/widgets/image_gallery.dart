@@ -3,6 +3,7 @@
 // lib/features/marketplace/presentation/widgets/image_gallery.dart
 // ============================================================================
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 
@@ -32,9 +33,9 @@ class _ImageGalleryState extends State<ImageGallery> {
   Widget build(BuildContext context) {
     if (widget.images.isEmpty) {
       return Container(
-        color: Colors.grey[200],
+        color: AppColors.borderLight,
         child: const Center(
-          child: Icon(Icons.image, size: 64, color: Colors.grey),
+          child: Icon(Icons.image, size: 64, color: AppColors.textMutedLight),
         ),
       );
     }
@@ -76,8 +77,8 @@ class _ImageGalleryState extends State<ImageGallery> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _currentPage == index
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.5),
+                        ? AppColors.white
+                        : AppColors.white.withValues(alpha: 0.5),
                   ),
                 ),
               ),

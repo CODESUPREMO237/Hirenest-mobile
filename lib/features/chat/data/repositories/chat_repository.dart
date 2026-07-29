@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 // Chat Repository
 // ============================================================================
 // chat_repository.dart
@@ -81,7 +82,7 @@ class ChatRepository {
       // Hits DELETE /api/v1/chats/:id/read (matching your ApiEndpoints)
       await dio.put(ApiEndpoints.markAsRead(chatId));
     } catch (e) {
-      print('Error in markAsRead: $e');
+      debugPrint('Error in markAsRead: $e');
       rethrow;
     }
   }
@@ -124,11 +125,12 @@ class ChatRepository {
       }
       throw Exception(response.data['message'] ?? 'Failed to start chat');
     } catch (e) {
-      print('Chat Repo Error: $e');
+      debugPrint('Chat Repo Error: $e');
       rethrow;
     }
   }
 
 
 }
+
 

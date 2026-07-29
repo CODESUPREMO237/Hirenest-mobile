@@ -13,7 +13,7 @@ class AppLogger {
         lineLength: 120,
         colors: true,
         printEmojis: true,
-        printTime: true,
+        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
       ),
       level: AppConfig.isDevelopment ? Level.debug : Level.warning,
     );

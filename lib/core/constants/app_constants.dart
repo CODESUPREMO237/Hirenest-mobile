@@ -5,7 +5,7 @@
 
 class AppConstants {
   // App Info
-  static const String appName = 'JobConnect';
+  static const String appName = 'HireNest';
   static const String appVersion = '1.0.0';
 
   // API

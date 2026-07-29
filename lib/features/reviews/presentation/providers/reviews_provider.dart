@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 // lib/features/reviews/presentation/providers/reviews_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,9 +10,9 @@ final hasReviewedProvider = FutureProvider.family<bool, ReviewCheckParams>(
     try {
       final repository = ref.read(reviewRepositoryProvider);
 
-      print('🔍 [hasReviewedProvider] Checking for existing review');
-      print('   Job ID: ${params.jobId}');
-      print('   Reviewee ID: ${params.revieweeId}');
+      debugPrint('🔍 [hasReviewedProvider] Checking for existing review');
+      debugPrint('   Job ID: ${params.jobId}');
+      debugPrint('   Reviewee ID: ${params.revieweeId}');
 
       // ✅ Use the new hasReviewed method that calls the correct endpoint
       final hasReviewed = await repository.hasReviewed(
@@ -19,11 +20,11 @@ final hasReviewedProvider = FutureProvider.family<bool, ReviewCheckParams>(
         revieweeId: params.revieweeId,
       );
 
-      print('   Result: ${hasReviewed ? "Already reviewed ✅" : "Not reviewed yet ❌"}');
+      debugPrint('   Result: ${hasReviewed ? "Already reviewed ✅" : "Not reviewed yet ❌"}');
 
       return hasReviewed;
     } catch (e) {
-      print('❌ [hasReviewedProvider] Error checking review: $e');
+      debugPrint('❌ [hasReviewedProvider] Error checking review: $e');
       // On error, assume not reviewed (allow user to try)
       return false;
     }

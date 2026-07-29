@@ -1,45 +1,39 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
-
 import '../../data/repositories/marketplace_repository.dart';
 import '../widgets/image_picker_widget.dart';
 import '../../../../core/widgets/error_widget.dart';
-import '../../../../core/utils/logger.dart';
 
 class CreateProductPage extends ConsumerStatefulWidget {
   const CreateProductPage({super.key});
-
   @override
   ConsumerState<CreateProductPage> createState() => _CreateProductPageState();
 }
 
-class _CreateProductPageState extends ConsumerState<CreateProductPage>
-    with WidgetsBindingObserver {
+class _CreateProductPageState extends ConsumerState<CreateProductPage> with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _cityController = TextEditingController();
-
   String _category = 'Electronics';
   String _condition = 'good';
   bool _negotiable = false;
   bool _canShip = true;
   bool _pickupAvailable = true;
-  int _quantity = 1;
+  final int _quantity = 1;
   List<XFile> _selectedImages = [];
   bool _isLoading = false;
-
   Position? _currentPosition;
   String? _locationError;
   bool _isRequestingLocation = false;
-  int _locationAttempts = 0;
-  static const int _maxLocationAttempts = 2;
+  // Location retry fields removed (unused)
 
   @override
   void initState() {
@@ -47,7 +41,6 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage>
     WidgetsBinding.instance.addObserver(this);
     _requestLocation();
   }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -57,256 +50,34 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage>
     _cityController.dispose();
     super.dispose();
   }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Re-check location when returning from settings
-      _requestLocation();
-    }
+    if (state == AppLifecycleState.resumed) _requestLocation();
   }
 
   Future<void> _requestLocation() async {
     if (_isRequestingLocation) return;
-
-    setState(() {
-      _isRequestingLocation = true;
-      _locationError = null;
-    });
-
-    // Try to get last known position first (faster)
-    final lastPosition = await _getLastKnownPosition();
-    if (lastPosition != null && mounted) {
-      setState(() {
-        _currentPosition = lastPosition;
-        _isRequestingLocation = false;
-        _locationError = null;
-      });
-      AppLogger.info('Using last known position: ${lastPosition.latitude}, ${lastPosition.longitude}');
-      return;
-    }
-
-    // If no last known position, get current position
-    final position = await _determinePosition();
-
-    if (mounted) {
-      setState(() {
-        _isRequestingLocation = false;
-        if (position != null) {
-          _currentPosition = position;
-          _locationError = null;
-          _locationAttempts = 0;
-        } else {
-          _locationAttempts++;
-        }
-      });
-    }
-  }
-
-  Future<Position?> _getLastKnownPosition() async {
+    setState(() { _isRequestingLocation = true; _locationError = null; });
     try {
-      // Check permissions first
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return null;
-      }
-
-      final lastPosition = await Geolocator.getLastKnownPosition();
-
-      // Only use last known position if it's recent (within 30 minutes)
-      if (lastPosition != null) {
-        final age = DateTime.now().difference(lastPosition.timestamp);
-        if (age.inMinutes < 30) {
-          return lastPosition;
-        }
-      }
-
-      return null;
-    } catch (e) {
-      AppLogger.debug('Could not get last known position: $e');
-      return null;
-    }
-  }
-
-  Future<Position?> _determinePosition() async {
-    try {
-      // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        AppLogger.warn('Location services are disabled.');
-        if (mounted) {
-          setState(() => _locationError =
-          'Location is disabled. Please enable location in your device settings.');
-        }
-        return null;
-      }
-
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          AppLogger.warn('Location permissions are denied.');
-          if (mounted) {
-            setState(() => _locationError =
-            'Location permission denied. Please allow location access to list products.');
-          }
-          return null;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        AppLogger.warn('Location permissions are permanently denied.');
-        if (mounted) {
-          setState(() => _locationError =
-          'Location permission permanently denied. Please enable it in app settings.');
-        }
-        return null;
-      }
-
-      // Get current position with flexible timeout
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: AndroidSettings(
-          accuracy: _locationAttempts > 0
-              ? LocationAccuracy.medium  // Use lower accuracy on retry
-              : LocationAccuracy.high,
-          distanceFilter: 0,
-          forceLocationManager: _locationAttempts > 0,  // Try LocationManager on retry
-          timeLimit: Duration(seconds: _locationAttempts > 0 ? 15 : 10),
-        ),
-      ).timeout(
-        Duration(seconds: _locationAttempts > 0 ? 20 : 15),
-        onTimeout: () {
-          throw TimeoutException('Location request timed out');
-        },
-      );
-
-      AppLogger.debug('Got device position: ${position.latitude}, ${position.longitude}');
-      return position;
-    } on TimeoutException catch (e) {
-      AppLogger.error('Location request timed out', error: e);
-      if (mounted) {
-        setState(() => _locationError =
-        'Location request timed out. Please ensure GPS is enabled and you have a clear view of the sky.');
-      }
-      return null;
-    } catch (e, st) {
-      AppLogger.error('Error determining position', error: e, stackTrace: st);
-      if (mounted) {
-        setState(() => _locationError =
-        'Unable to get location. Please check your settings and try again.');
-      }
-      return null;
+      if (!serviceEnabled) throw Exception('Location disabled');
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) perm = await Geolocator.requestPermission();
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) throw Exception('Permission denied');
+      final pos = await Geolocator.getCurrentPosition();
+      if (mounted) setState(() { _currentPosition = pos; _isRequestingLocation = false; _locationError = null; });
+    } catch (e) {
+      if (mounted) setState(() { _isRequestingLocation = false; _locationError = 'Unable to get location.'; });
     }
   }
 
   Future<void> _submitProduct() async {
-    // Validate form
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    // Save form to update quantity
+    if (!_formKey.currentState!.validate() || _selectedImages.isEmpty) return;
     _formKey.currentState!.save();
-
-    // Check for images
-    if (_selectedImages.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please add at least one image.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      AppLogger.warn('No images selected.');
-      return;
-    }
-
-    // Check maximum images
-    if (_selectedImages.length > 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Maximum 10 images allowed.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    // Check for location
-    if (_currentPosition == null) {
-      if (_locationAttempts < _maxLocationAttempts) {
-        // Show dialog asking to retry
-        final retry = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Location Required'),
-            content: const Text(
-              'We need your location to list your product. Would you like to try getting your location again?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        );
-
-        if (retry == true) {
-          await _requestLocation();
-          if (_currentPosition != null) {
-            // Retry submission
-            _submitProduct();
-          }
-        }
-      } else {
-        // Allow manual entry after max attempts
-        final proceed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Location Unavailable'),
-            content: const Text(
-              'Unable to get your location automatically. Your product will be listed with the city you entered. Continue?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Continue'),
-              ),
-            ],
-          ),
-        );
-
-        if (proceed != true) return;
-      }
-    }
-
     setState(() => _isLoading = true);
-
     try {
-      Map<String, dynamic>? coordinates;
-
-      if (_currentPosition != null) {
-        coordinates = {
-          'type': 'Point',
-          'coordinates': [_currentPosition!.longitude, _currentPosition!.latitude]
-        };
-        AppLogger.debug('Using coordinates: ${coordinates['coordinates']}');
-      } else {
-        AppLogger.warn('Submitting product without GPS coordinates');
-      }
-
-      final repository = ref.read(marketplaceRepositoryProvider);
-      await repository.createProduct(
+      Map<String, dynamic>? coordinates = _currentPosition != null ? {'type': 'Point', 'coordinates': [_currentPosition!.longitude, _currentPosition!.latitude]} : null;
+      await ref.read(marketplaceRepositoryProvider).createProduct(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
         category: _category,
@@ -322,368 +93,84 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage>
         images: _selectedImages,
         coordinates: coordinates,
       );
-
-      AppLogger.info('Product listed successfully: ${_nameController.text}');
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Product listed successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        context.pop();
-      }
-    } catch (e, st) {
-      AppLogger.error('Error submitting product', error: e, stackTrace: st);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to list product: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
+      if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listed!'), backgroundColor: AppColors.success)); context.pop(); }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error));
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sell Product'),
-        elevation: 0,
-      ),
+      backgroundColor: AppColors.backgroundLight,
+      appBar: AppBar(title: const Text('Sell Product'), elevation: 0),
       body: Stack(
         children: [
           Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
-                // Location Status Indicator
                 if (_currentPosition != null)
                   Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.location_on, color: Colors.green.shade700, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Location acquired: ${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}',
-                            style: TextStyle(
-                              color: Colors.green.shade700,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: AppSpacing.roundedSm),
+                    child: Row(children: [const Icon(Icons.location_on, color: AppColors.success), const SizedBox(width: AppSpacing.sm), Text('Location acquired', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.successDark))]),
                   ),
-                if (_currentPosition != null) const SizedBox(height: 16),
-
-                // Image Picker
-                ImagePickerWidget(
-                  images: _selectedImages,
-                  onImagesSelected: (images) {
-                    setState(() {
-                      _selectedImages = images.map((f) => XFile(f.path)).toList();
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Name
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Product Name *',
-                    hintText: 'e.g., iPhone 13 Pro',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Product name is required';
-                    }
-                    if (value.trim().length < 3) {
-                      return 'Product name must be at least 3 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Category
+                const SizedBox(height: AppSpacing.lg),
+                ImagePickerWidget(images: _selectedImages, onImagesSelected: (images) => setState(() => _selectedImages = images.map((f) => XFile(f.path)).toList())),
+                const SizedBox(height: AppSpacing.lg),
+                _buildTextField('Product Name', _nameController, isRequired: true),
+                const SizedBox(height: AppSpacing.md),
                 DropdownButtonFormField<String>(
-                  value: _category,
-                  decoration: const InputDecoration(
-                    labelText: 'Category *',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    'Electronics',
-                    'Fashion',
-                    'Home & Garden',
-                    'Sports',
-                    'Books',
-                    'Other'
-                  ].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                  onChanged: (value) => setState(() => _category = value!),
+                  initialValue: _category,
+                  decoration: InputDecoration(labelText: 'Category', border: OutlineInputBorder(borderRadius: AppSpacing.roundedSm)),
+                  items: ['Electronics', 'Fashion', 'Home & Garden', 'Sports', 'Books', 'Other'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) => setState(() => _category = v!),
                 ),
-                const SizedBox(height: 16),
-
-                // Price
-                TextFormField(
-                  controller: _priceController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Price (XAF) *',
-                    hintText: 'e.g., 50000',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Price is required';
-                    }
-                    // Remove any spaces or commas that users might enter
-                    final cleanValue = value.trim().replaceAll(RegExp(r'[,\s]'), '');
-                    final price = double.tryParse(cleanValue);
-                    if (price == null || price <= 0) {
-                      return 'Please enter a valid price';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    // Clean the value before saving
-                    if (value != null && value.trim().isNotEmpty) {
-                      final cleanValue = value.trim().replaceAll(RegExp(r'[,\s]'), '');
-                      _priceController.text = cleanValue;
-                    }
-                  },
-                ),
-                const SizedBox(height: 8),
-
-                CheckboxListTile(
-                  title: const Text('Price is negotiable'),
-                  value: _negotiable,
-                  onChanged: (value) => setState(() => _negotiable = value!),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                const SizedBox(height: 8),
-
-                // Description
-                TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 5,
-                  decoration: const InputDecoration(
-                    labelText: 'Description *',
-                    hintText: 'Provide details about the product...',
-                    alignLabelWithHint: true,
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Description is required';
-                    }
-                    if (value.trim().length < 10) {
-                      return 'Description must be at least 10 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Condition
+                const SizedBox(height: AppSpacing.md),
+                _buildTextField('Price (XAF)', _priceController, isRequired: true, isNumber: true),
+                CheckboxListTile(title: const Text('Negotiable'), value: _negotiable, onChanged: (v) => setState(() => _negotiable = v!), controlAffinity: ListTileControlAffinity.leading),
+                const SizedBox(height: AppSpacing.md),
+                _buildTextField('Description', _descriptionController, isRequired: true, maxLines: 4),
+                const SizedBox(height: AppSpacing.md),
                 DropdownButtonFormField<String>(
-                  value: _condition,
-                  decoration: const InputDecoration(
-                    labelText: 'Condition *',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    {'value': 'new', 'label': 'New'},
-                    {'value': 'like_new', 'label': 'Like New'},
-                    {'value': 'good', 'label': 'Good'},
-                    {'value': 'fair', 'label': 'Fair'},
-                    {'value': 'poor', 'label': 'Poor'},
-                  ].map((c) => DropdownMenuItem(
-                    value: c['value'],
-                    child: Text(c['label']!),
-                  )).toList(),
-                  onChanged: (value) => setState(() => _condition = value!),
+                  initialValue: _condition,
+                  decoration: InputDecoration(labelText: 'Condition', border: OutlineInputBorder(borderRadius: AppSpacing.roundedSm)),
+                  items: [{'v':'new','l':'New'}, {'v':'like_new','l':'Like New'}, {'v':'good','l':'Good'}, {'v':'fair','l':'Fair'}, {'v':'poor','l':'Poor'}].map((c) => DropdownMenuItem(value: c['v'], child: Text(c['l']!))).toList(),
+                  onChanged: (v) => setState(() => _condition = v!),
                 ),
-                const SizedBox(height: 16),
-
-                // City
-                TextFormField(
-                  controller: _cityController,
-                  decoration: const InputDecoration(
-                    labelText: 'City *',
-                    hintText: 'e.g., Douala',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'City is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Delivery Options
-                const Text(
-                  'Delivery Options',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                CheckboxListTile(
-                  title: const Text('Can ship'),
-                  subtitle: const Text('You can deliver this item'),
-                  value: _canShip,
-                  onChanged: (value) => setState(() => _canShip = value!),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-
-                CheckboxListTile(
-                  title: const Text('Pickup available'),
-                  subtitle: const Text('Buyer can pick up in person'),
-                  value: _pickupAvailable,
-                  onChanged: (value) => setState(() => _pickupAvailable = value!),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                const SizedBox(height: 16),
-
-                // Quantity
-                TextFormField(
-                  initialValue: '$_quantity',
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Quantity *',
-                    hintText: 'e.g., 1',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (newValue) {
-                    final qty = int.tryParse(newValue ?? '');
-                    if (qty == null || qty < 1) {
-                      return 'Quantity must be at least 1';
-                    }
-                    return null;
-                  },
-                  onSaved: (newValue) {
-                    final qty = int.tryParse(newValue ?? '');
-                    if (qty != null && qty > 0) {
-                      _quantity = qty;
-                    }
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // Submit Button
+                const SizedBox(height: AppSpacing.md),
+                _buildTextField('City', _cityController, isRequired: true),
+                const SizedBox(height: AppSpacing.lg),
+                Text('Delivery Options', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                CheckboxListTile(title: const Text('Can ship'), value: _canShip, onChanged: (v) => setState(() => _canShip = v!), controlAffinity: ListTileControlAffinity.leading),
+                CheckboxListTile(title: const Text('Pickup available'), value: _pickupAvailable, onChanged: (v) => setState(() => _pickupAvailable = v!), controlAffinity: ListTileControlAffinity.leading),
+                const SizedBox(height: AppSpacing.xl),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submitProduct,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                      : const Text(
-                    'List Product',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 56), shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd)),
+                  child: _isLoading ? const CircularProgressIndicator(color: AppColors.white) : const Text('List Product'),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
               ],
             ),
           ),
-
-          // Error overlay for location issues
-          if (_locationError != null)
-            Positioned(
-              top: 0,
-              left: 16,
-              right: 16,
-              child: Material(
-                elevation: 4,
-                borderRadius: BorderRadius.circular(8),
-                child: CustomErrorWidget(
-                  message: _locationError!,
-                  onRetry: _isRequestingLocation ? null : _requestLocation,
-                ),
-              ),
-            ),
-
-          // Loading overlay for location request
-          if (_isRequestingLocation && _currentPosition == null)
-            Positioned(
-              top: 0,
-              left: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Getting your location...',
-                        style: TextStyle(
-                          color: Colors.blue.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          if (_locationError != null) Positioned(top: 0, left: 16, right: 16, child: Material(elevation: 4, borderRadius: AppSpacing.roundedSm, child: CustomErrorWidget(message: _locationError!, onRetry: _isRequestingLocation ? null : _requestLocation))),
         ],
       ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller, {bool isRequired = false, bool isNumber = false, int maxLines = 1}) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      maxLines: maxLines,
+      decoration: InputDecoration(labelText: label, border: OutlineInputBorder(borderRadius: AppSpacing.roundedSm)),
+      validator: (v) => (isRequired && (v == null || v.trim().isEmpty)) ? 'Required' : null,
     );
   }
 }

@@ -1,13 +1,11 @@
-// Job Card
-// ============================================================================
-// job_card.dart
 // lib/features/jobs/presentation/widgets/job_card.dart
-// ============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/job_model.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 class JobCard extends StatelessWidget {
   final JobModel job;
@@ -23,144 +21,163 @@ class JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with company logo and name
-              Row(
-                children: [
-                  if (job.company.logo != null)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        job.company.logo!,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedMd,
+        boxShadow: AppSpacing.cardShadow,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppSpacing.roundedMd,
+          splashColor: AppColors.primary.withValues(alpha: 0.1),
+          highlightColor: AppColors.primary.withValues(alpha: 0.05),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with company logo and name
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (job.company.logo != null)
+                      ClipRRect(
+                        borderRadius: AppSpacing.roundedSm,
+                        child: Image.network(
+                          job.company.logo!,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    else
+                      Container(
                         width: 48,
                         height: 48,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  else
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          job.company.name[0].toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: AppSpacing.roundedSm,
+                        ),
+                        child: Center(
+                          child: Text(
+                            job.company.name.isNotEmpty ? job.company.name[0].toUpperCase() : '?',
+                            style: AppTextStyles.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
+                      ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            job.title,
+                            style: AppTextStyles.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            job.company.name,
+                            style: AppTextStyles.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondaryLight,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          job.company.name,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
+                    if (trailing != null) trailing!,
+                  ],
+                ),
+                
+                const SizedBox(height: AppSpacing.md),
+
+                // Job details chips
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    _buildChip(
+                      context,
+                      Icons.work_outline,
+                      job.jobType,
+                      _getJobTypeColor(job.jobType),
+                    ),
+                    _buildChip(
+                      context,
+                      Icons.location_on_outlined,
+                      job.location.type,
+                      AppColors.success,
+                    ),
+                    _buildChip(
+                      context,
+                      Icons.school_outlined,
+                      job.experienceLevel,
+                      AppColors.warning,
+                    ),
+                  ],
+                ),
+
+                if (job.salary != null && job.salary!.showSalary) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      const Icon(Icons.attach_money, size: 18, color: AppColors.success),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${NumberFormat.compact().format(job.salary!.min)} - ${NumberFormat.compact().format(job.salary!.max)} ${job.salary!.currency}',
+                        style: AppTextStyles.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.successDark,
                         ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                const SizedBox(height: AppSpacing.md),
+                const Divider(height: 1, color: AppColors.borderLight),
+                const SizedBox(height: AppSpacing.md),
+
+                // Footer with time and applicants
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.access_time, size: 14, color: AppColors.textMutedLight),
+                        const SizedBox(width: 4),
                         Text(
-                          job.title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          _formatTimeAgo(job.createdAt),
+                          style: AppTextStyles.textTheme.bodySmall?.copyWith(color: AppColors.textMutedLight),
                         ),
                       ],
                     ),
-                  ),
-                  if (trailing != null) trailing!,
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Job details chips
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildChip(
-                    context,
-                    Icons.work_outline,
-                    job.jobType,
-                    _getJobTypeColor(job.jobType),
-                  ),
-                  _buildChip(
-                    context,
-                    Icons.location_on_outlined,
-                    job.location.type,
-                    AppColors.success,
-                  ),
-                  _buildChip(
-                    context,
-                    Icons.school_outlined,
-                    job.experienceLevel,
-                    AppColors.warning,
-                  ),
-                ],
-              ),
-
-              if (job.salary != null && job.salary!.showSalary) ...[
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(Icons.attach_money, size: 16, color: AppColors.success),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${NumberFormat.compact().format(job.salary!.min)} - ${NumberFormat.compact().format(job.salary!.max)} ${job.salary!.currency}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.success,
-                      ),
+                    Row(
+                      children: [
+                        const Icon(Icons.people_outline, size: 14, color: AppColors.textMutedLight),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${job.applicantsCount} applicants',
+                          style: AppTextStyles.textTheme.bodySmall?.copyWith(color: AppColors.textMutedLight),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ],
-
-              const SizedBox(height: 12),
-
-              // Footer with time and applicants
-              Row(
-                children: [
-                  Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatTimeAgo(job.createdAt),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  if (job.applicantsCount != null) ...[
-                    const Spacer(),
-                    Icon(Icons.people_outline, size: 14, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${job.applicantsCount} applicants',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -171,8 +188,8 @@ class JobCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.roundedSm,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -181,9 +198,8 @@ class JobCard extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+            style: AppTextStyles.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
               color: color,
             ),
           ),
@@ -195,15 +211,15 @@ class JobCard extends StatelessWidget {
   Color _getJobTypeColor(String type) {
     switch (type.toLowerCase()) {
       case 'full-time':
-        return AppColors.fullTime;
+        return AppColors.primary;
       case 'part-time':
-        return AppColors.partTime;
+        return AppColors.accent;
       case 'contract':
-        return AppColors.contract;
+        return AppColors.warning;
       case 'internship':
-        return AppColors.internship;
+        return AppColors.success;
       case 'freelance':
-        return AppColors.freelance;
+        return AppColors.primaryDark;
       default:
         return AppColors.primary;
     }

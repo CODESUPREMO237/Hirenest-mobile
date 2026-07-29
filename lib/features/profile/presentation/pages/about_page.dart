@@ -4,6 +4,8 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -35,102 +37,103 @@ class _AboutPageState extends ConsumerState<AboutPage> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
-
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
         title: const Text('About'),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: AppColors.textPrimaryLight,
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         children: [
-          // --- App Logo and Info ---
           Container(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(AppSpacing.xxl),
             child: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(AppSpacing.xl),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        primaryColor.withOpacity(0.15),
-                        primaryColor.withOpacity(0.05),
+                        AppColors.primary.withValues(alpha: 0.15),
+                        AppColors.primary.withValues(alpha: 0.05),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: primaryColor.withOpacity(0.1)),
+                    borderRadius: AppSpacing.roundedXl,
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
                   ),
-                  child: Icon(
-                    Icons.work_rounded, // Softer rounded icon
+                  child: const Icon(
+                    Icons.work_rounded,
                     size: 80,
-                    color: primaryColor,
+                    color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xl),
                 Text(
-                  'JobConnect',
+                  'HireNest',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
+                    color: AppColors.textPrimaryLight,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   'Marketplace & Jobs Platform',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondaryLight),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.md),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(20),
+                    color: AppColors.surfaceLight,
+                    borderRadius: AppSpacing.roundedFull,
+                    border: Border.all(color: AppColors.borderLight),
                   ),
                   child: Text(
                     'Version $_appVersion',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textMutedLight),
                   ),
                 ),
               ],
             ),
           ),
 
-          // --- Mission Statement ---
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: AppSpacing.roundedLg,
+              boxShadow: AppSpacing.cardShadow,
             ),
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.lightbulb_rounded, color: primaryColor),
-                      const SizedBox(width: 12),
+                      const Icon(Icons.lightbulb_rounded, color: AppColors.primary),
+                      const SizedBox(width: AppSpacing.md),
                       Text(
                         'Our Mission',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimaryLight,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   Text(
                     'To connect job seekers with opportunities and enable seamless buying and selling in local communities.',
-                    style: TextStyle(
-                      color: Colors.grey[700],
-                      fontSize: 15,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textSecondaryLight,
                       height: 1.5,
                     ),
                   ),
@@ -139,114 +142,107 @@ class _AboutPageState extends ConsumerState<AboutPage> {
             ),
           ),
 
-          // --- Features ---
-          _buildSectionHeader('Features'),
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+          _buildSectionHeader(context, 'Features'),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: AppSpacing.roundedLg,
+              boxShadow: AppSpacing.cardShadow,
             ),
             child: Column(
               children: [
-                _buildFeatureTile(Icons.work_outline_rounded, 'Job Search', 'Browse and apply for jobs', Colors.blue),
-                const Divider(height: 1, indent: 70),
-                _buildFeatureTile(Icons.shopping_bag_outlined, 'Marketplace', 'Buy and sell products locally', Colors.green),
-                const Divider(height: 1, indent: 70),
-                _buildFeatureTile(Icons.chat_bubble_outline_rounded, 'Chat', 'Connect with buyers and sellers', Colors.orange),
-                const Divider(height: 1, indent: 70),
-                _buildFeatureTile(Icons.payment_rounded, 'Secure Payments', 'Safe and secure transactions', Colors.purple),
+                _buildFeatureTile(context, Icons.work_outline_rounded, 'Job Search', 'Browse and apply for jobs', AppColors.primary),
+                const Divider(height: 1, color: AppColors.borderLight, indent: 70),
+                _buildFeatureTile(context, Icons.shopping_bag_outlined, 'Marketplace', 'Buy and sell products locally', AppColors.success),
+                const Divider(height: 1, color: AppColors.borderLight, indent: 70),
+                _buildFeatureTile(context, Icons.chat_bubble_outline_rounded, 'Chat', 'Connect with buyers and sellers', AppColors.warning),
+                const Divider(height: 1, color: AppColors.borderLight, indent: 70),
+                _buildFeatureTile(context, Icons.payment_rounded, 'Secure Payments', 'Safe and secure transactions', AppColors.accent),
               ],
             ),
           ),
 
-          // --- Company Section ---
-          _buildSectionHeader('Company'),
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+          _buildSectionHeader(context, 'Company'),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: AppSpacing.roundedLg,
+              boxShadow: AppSpacing.cardShadow,
             ),
             child: Column(
               children: [
-                _buildListTile(Icons.business_rounded, 'About Us', 'Learn more about our company', () => _launchURL('https://jobconnect.com/about')),
-                const Divider(height: 1, indent: 70),
-                _buildListTile(Icons.people_outline_rounded, 'Our Team', 'Meet the people behind JobConnect', () => _launchURL('https://jobconnect.com/team')),
-                const Divider(height: 1, indent: 70),
-                _buildListTile(Icons.article_outlined, 'Blog', 'News and updates', () => _launchURL('https://jobconnect.com/blog')),
+                _buildListTile(context, Icons.business_rounded, 'About Us', 'Learn more about our company', () => _launchURL('https://HireNest.com/about')),
+                const Divider(height: 1, color: AppColors.borderLight, indent: 56),
+                _buildListTile(context, Icons.people_outline_rounded, 'Our Team', 'Meet the people behind HireNest', () => _launchURL('https://HireNest.com/team')),
+                const Divider(height: 1, color: AppColors.borderLight, indent: 56),
+                _buildListTile(context, Icons.article_outlined, 'Blog', 'News and updates', () => _launchURL('https://HireNest.com/blog')),
               ],
             ),
           ),
 
-          // --- Social Media Section ---
-          _buildSectionHeader('Connect With Us'),
+          _buildSectionHeader(context, 'Connect With Us'),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildSocialButton(FontAwesomeIcons.facebook, 'Facebook', const Color(0xFF1877F2), () => _launchURL('https://facebook.com/jobconnect')),
-                _buildSocialButton(FontAwesomeIcons.xTwitter, 'X', Colors.black, () => _launchURL('https://twitter.com/jobconnect')),
-                _buildSocialButton(FontAwesomeIcons.instagram, 'Instagram', const Color(0xFFE4405F), () => _launchURL('https://instagram.com/jobconnect')),
-                _buildSocialButton(FontAwesomeIcons.linkedinIn, 'LinkedIn', const Color(0xFF0077B5), () => _launchURL('https://linkedin.com/company/jobconnect')),
+                _buildSocialButton(context, FontAwesomeIcons.facebook, 'Facebook', const Color(0xFF1877F2), () => _launchURL('https://facebook.com/HireNest')),
+                _buildSocialButton(context, FontAwesomeIcons.xTwitter, 'X', AppColors.black, () => _launchURL('https://twitter.com/HireNest')),
+                _buildSocialButton(context, FontAwesomeIcons.instagram, 'Instagram', const Color(0xFFE4405F), () => _launchURL('https://instagram.com/HireNest')),
+                _buildSocialButton(context, FontAwesomeIcons.linkedinIn, 'LinkedIn', const Color(0xFF0A66C2), () => _launchURL('https://linkedin.com/company/HireNest')),
               ],
             ),
           ),
 
-          // --- Legal Section ---
-          _buildSectionHeader('Legal'),
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+          _buildSectionHeader(context, 'Legal'),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: AppSpacing.roundedLg,
+              boxShadow: AppSpacing.cardShadow,
             ),
             child: Column(
               children: [
-                _buildListTile(Icons.description_outlined, 'Terms of Service', null, () =>context.push('/profile/legal/terms')),
-                const Divider(height: 1, indent: 70),
-                _buildListTile(Icons.privacy_tip_outlined, 'Privacy Policy', null, () =>context.push('/profile/legal/privacy')),
-                const Divider(height: 1, indent: 70),
-                _buildListTile(Icons.gavel_rounded, 'Licenses', null, () => _showLicensesDialog()),
+                _buildListTile(context, Icons.description_outlined, 'Terms of Service', null, () => context.push('/profile/legal/terms')),
+                const Divider(height: 1, color: AppColors.borderLight, indent: 56),
+                _buildListTile(context, Icons.privacy_tip_outlined, 'Privacy Policy', null, () => context.push('/profile/legal/privacy')),
+                const Divider(height: 1, color: AppColors.borderLight, indent: 56),
+                _buildListTile(context, Icons.gavel_rounded, 'Licenses', null, () => _showLicensesDialog()),
               ],
             ),
           ),
 
-          // --- Rate App ---
-          Card(
-            margin: const EdgeInsets.all(16),
-            elevation: 0,
-            color: Colors.amber.withOpacity(0.05),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.amber.withOpacity(0.2)),
+          Container(
+            margin: const EdgeInsets.all(AppSpacing.xl),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.05),
+              borderRadius: AppSpacing.roundedLg,
+              border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
             ),
             child: ListTile(
-              leading: const Icon(Icons.star_rounded, color: Colors.amber),
-              title: const Text('Rate Our App', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('Help us improve with your feedback'),
-              trailing: const Icon(Icons.chevron_right_rounded),
+              leading: const Icon(Icons.star_rounded, color: AppColors.accent),
+              title: Text('Rate Our App', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: AppColors.accent)),
+              subtitle: Text('Help us improve with your feedback', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondaryLight)),
+              trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.accent),
               onTap: () => _rateApp(),
             ),
           ),
 
-          // --- Credits ---
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
             child: Column(
               children: [
-                Text('© 2025 JobConnect', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
+                Text('© 2025 HireNest', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.textMutedLight, fontWeight: FontWeight.bold)),
+                const SizedBox(height: AppSpacing.xs),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Made with ', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-                    const Icon(Icons.favorite, color: Colors.red, size: 14),
-                    Text(' in Cameroon', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                    Text('Made with ', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textMutedLight)),
+                    const Icon(Icons.favorite, color: AppColors.error, size: 14),
+                    Text(' in Cameroon', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textMutedLight)),
                   ],
                 ),
               ],
@@ -257,74 +253,72 @@ class _AboutPageState extends ConsumerState<AboutPage> {
     );
   }
 
-  // --- UI Helper Methods ---
-
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.sm),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 12,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
           fontWeight: FontWeight.w800,
-          color: Colors.grey[500],
+          color: AppColors.textMutedLight,
           letterSpacing: 1.2,
         ),
       ),
     );
   }
 
-  Widget _buildFeatureTile(IconData icon, String title, String subtitle, Color color) {
+  Widget _buildFeatureTile(BuildContext context, IconData icon, String title, String subtitle, Color color) {
     return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
+          color: color.withValues(alpha: 0.1),
+          borderRadius: AppSpacing.roundedMd,
         ),
         child: Icon(icon, color: color, size: 24),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+      title: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight)),
+      subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondaryLight)),
     );
   }
 
-  Widget _buildListTile(IconData icon, String title, String? subtitle, VoidCallback onTap) {
+  Widget _buildListTile(BuildContext context, IconData icon, String title, String? subtitle, VoidCallback onTap) {
     return ListTile(
-      leading: Icon(icon, color: Colors.blueGrey[700]),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 12)) : null,
-      trailing: const Icon(Icons.open_in_new_rounded, size: 18, color: Colors.grey),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
+      leading: Icon(icon, color: AppColors.textSecondaryLight),
+      title: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w500, color: AppColors.textPrimaryLight)),
+      subtitle: subtitle != null ? Text(subtitle, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMutedLight)) : null,
+      trailing: const Icon(Icons.open_in_new_rounded, size: 18, color: AppColors.textMutedLight),
       onTap: onTap,
     );
   }
 
-  Widget _buildSocialButton(IconData icon, String label, Color color, VoidCallback onTap) {
+  Widget _buildSocialButton(BuildContext context, IconData icon, String label, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: AppSpacing.roundedLg,
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1.5),
-              color: Colors.white,
+              color: AppColors.surfaceLight,
+              border: Border.all(color: AppColors.borderLight, width: 1.5),
+              boxShadow: AppSpacing.cardShadow,
             ),
             child: FaIcon(icon, color: color, size: 22),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             label,
-            style: TextStyle(color: Colors.blueGrey[800], fontSize: 11, fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textSecondaryLight, fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
-
-  // --- Functional Methods ---
 
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
@@ -336,22 +330,6 @@ class _AboutPageState extends ConsumerState<AboutPage> {
   }
 
   void _showLicensesDialog() {
-    // // Option A: Use the built-in styled version
-    // showLicensePage(
-    //   context: context,
-    //   applicationName: 'JobConnect',
-    //   applicationVersion: _appVersion,
-    //   applicationLegalese: '© 2025 JobConnect Team',
-    //   applicationIcon: Container(
-    //     padding: const EdgeInsets.all(12),
-    //     decoration: BoxDecoration(
-    //       color: Theme.of(context).primaryColor.withOpacity(0.1),
-    //       shape: BoxShape.circle,
-    //     ),
-    //     child: Icon(Icons.work_rounded, size: 48, color: Theme.of(context).primaryColor),
-    //   ),
-    // );
-
     context.push('/profile/legal/licenses');
   }
 
@@ -359,22 +337,26 @@ class _AboutPageState extends ConsumerState<AboutPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Rate JobConnect'),
+        shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedXl),
+        title: const Text('Rate HireNest'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('How would you rate your experience?'),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (index) => Icon(Icons.star_border_rounded, size: 40, color: Colors.amber.withOpacity(0.4))),
+              children: List.generate(5, (index) => Icon(Icons.star_border_rounded, size: 40, color: AppColors.accent.withValues(alpha: 0.4))),
             ),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Maybe Later')),
-          ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('Rate Now')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context), 
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: AppColors.white, shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedLg)),
+            child: const Text('Rate Now')
+          ),
         ],
       ),
     );

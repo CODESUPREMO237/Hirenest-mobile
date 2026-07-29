@@ -1,12 +1,12 @@
-// lib/features/marketplace/presentation/widgets/product_filters_widget.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/products_state.dart';
-import '../providers/PaginatedProductsNotifier.dart';
+import '../providers/paginated_products_notifier.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 class ProductFiltersWidget extends ConsumerStatefulWidget {
-  const ProductFiltersWidget({Key? key}) : super(key: key);
+  const ProductFiltersWidget({super.key});
 
   @override
   ConsumerState<ProductFiltersWidget> createState() => _ProductFiltersWidgetState();
@@ -22,10 +22,22 @@ class _ProductFiltersWidgetState extends ConsumerState<ProductFiltersWidget> {
   String _sortOrder = 'desc';
   bool _availableOnly = false;
 
+  final List<String> _categories = [
+    'Electronics', 'Fashion', 'Home', 'Sports', 'Books', 'Toys', 'Other'
+  ];
+
+  final List<String> _conditions = [
+    'new', 'like_new', 'good', 'fair', 'poor'
+  ];
+
+  String _formatConditionText(String condition) {
+    if (condition == 'like_new') return 'Like New';
+    return condition[0].toUpperCase() + condition.substring(1);
+  }
+
   @override
   void initState() {
     super.initState();
-    // Sync local UI with the actual provider state
     final currentFilters = ref.read(paginatedProductsProvider).value?.filters;
     if (currentFilters != null) {
       _searchController.text = currentFilters.search ?? '';
@@ -38,6 +50,7 @@ class _ProductFiltersWidgetState extends ConsumerState<ProductFiltersWidget> {
       _availableOnly = currentFilters.availableOnly ?? false;
     }
   }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -78,228 +91,272 @@ class _ProductFiltersWidgetState extends ConsumerState<ProductFiltersWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusXl)),
       ),
       child: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Drag Handle
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.md),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  borderRadius: AppSpacing.roundedFull,
+                ),
+              ),
+            ),
+            
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Filter Products',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    'Filters',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
+                  TextButton(
+                    onPressed: _clearFilters,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                    ),
+                    child: const Text('Reset'),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // Search
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  labelText: 'Search',
-                  hintText: 'Search products...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Category
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('All Categories')),
-                  DropdownMenuItem(value: 'Electronics', child: Text('Electronics')),
-                  DropdownMenuItem(value: 'Fashion', child: Text('Fashion')),
-                  DropdownMenuItem(value: 'Home', child: Text('Home & Garden')),
-                  DropdownMenuItem(value: 'Sports', child: Text('Sports')),
-                  DropdownMenuItem(value: 'Books', child: Text('Books')),
-                  DropdownMenuItem(value: 'Toys', child: Text('Toys')),
-                  DropdownMenuItem(value: 'Other', child: Text('Other')),
-                ],
-                onChanged: (value) => setState(() => _selectedCategory = value),
-              ),
-              const SizedBox(height: 16),
-
-              // Condition
-              DropdownButtonFormField<String>(
-                value: _selectedCondition,
-                decoration: InputDecoration(
-                  labelText: 'Condition',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('All Conditions')),
-                  DropdownMenuItem(value: 'new', child: Text('New')),
-                  DropdownMenuItem(value: 'like new', child: Text('Like New')),
-                  DropdownMenuItem(value: 'good', child: Text('Good')),
-                  DropdownMenuItem(value: 'fair', child: Text('Fair')),
-                  DropdownMenuItem(value: 'poor', child: Text('Poor')),
-                ],
-                onChanged: (value) => setState(() => _selectedCondition = value),
-              ),
-              const SizedBox(height: 16),
-
-              // Price Range
-              Text(
-                'Price Range',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
+            ),
+            
+            const Divider(),
+            
+            // Content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Search
+                    TextField(
+                      controller: _searchController,
                       decoration: InputDecoration(
-                        labelText: 'Min Price',
-                        prefixText: '\$',
+                        labelText: 'Search Products',
+                        prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: AppSpacing.roundedLg,
                         ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                       ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        setState(() {
-                          _minPrice = double.tryParse(value);
-                        });
-                      },
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Max Price',
-                        prefixText: '\$',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        setState(() {
-                          _maxPrice = double.tryParse(value);
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.xl),
 
-              // Sort By
-              DropdownButtonFormField<String>(
-                value: _sortBy,
-                decoration: InputDecoration(
-                  labelText: 'Sort By',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                    // Category Chips
+                    Text(
+                      'Category',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: _categories.map((cat) {
+                        final isSelected = _selectedCategory == cat;
+                        return FilterChip(
+                          label: Text(cat),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() => _selectedCategory = selected ? cat : null);
+                          },
+                          shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedFull),
+                          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                          selectedColor: Theme.of(context).primaryColor,
+                          labelStyle: TextStyle(
+                            color: isSelected ? AppColors.white : (isDark ? AppColors.textPrimaryLight : AppColors.textPrimaryLight),
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          checkmarkColor: AppColors.white,
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // Condition Chips
+                    Text(
+                      'Condition',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: _conditions.map((cond) {
+                        final isSelected = _selectedCondition == cond;
+                        return FilterChip(
+                          label: Text(_formatConditionText(cond)),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() => _selectedCondition = selected ? cond : null);
+                          },
+                          shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedFull),
+                          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                          selectedColor: Theme.of(context).primaryColor,
+                          labelStyle: TextStyle(
+                            color: isSelected ? AppColors.white : (isDark ? AppColors.textPrimaryLight : AppColors.textPrimaryLight),
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          checkmarkColor: AppColors.white,
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // Price Range
+                    Text(
+                      'Price Range (XAF)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Min',
+                              border: OutlineInputBorder(
+                                borderRadius: AppSpacing.roundedLg,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: (val) => _minPrice = double.tryParse(val),
+                            controller: TextEditingController(text: _minPrice?.toString() ?? ''),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          child: Text('-'),
+                        ),
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Max',
+                              border: OutlineInputBorder(
+                                borderRadius: AppSpacing.roundedLg,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: (val) => _maxPrice = double.tryParse(val),
+                            controller: TextEditingController(text: _maxPrice?.toString() ?? ''),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // Sorting
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            initialValue: _sortBy,
+                            decoration: InputDecoration(
+                              labelText: 'Sort By',
+                              border: OutlineInputBorder(borderRadius: AppSpacing.roundedLg),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'createdAt', child: Text('Date Added')),
+                              DropdownMenuItem(value: 'price.amount', child: Text('Price')),
+                              DropdownMenuItem(value: 'name', child: Text('Name')),
+                            ],
+                            onChanged: (v) => setState(() => _sortBy = v!),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            initialValue: _sortOrder,
+                            decoration: InputDecoration(
+                              labelText: 'Order',
+                              border: OutlineInputBorder(borderRadius: AppSpacing.roundedLg),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'desc', child: Text('High/Latest')),
+                              DropdownMenuItem(value: 'asc', child: Text('Low/Oldest')),
+                            ],
+                            onChanged: (v) => setState(() => _sortOrder = v!),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // Available Only Toggle
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                        borderRadius: AppSpacing.roundedLg,
+                        border: Border.all(
+                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        ),
+                      ),
+                      child: SwitchListTile(
+                        title: const Text('Show Available Only', style: TextStyle(fontWeight: FontWeight.w600)),
+                        value: _availableOnly,
+                        onChanged: (v) => setState(() => _availableOnly = v),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                        activeThumbColor: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                  ],
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'createdAt', child: Text('Date Added')),
-                  DropdownMenuItem(value: 'price.amount', child: Text('Price')),
-                  DropdownMenuItem(value: 'name', child: Text('Name')),
-                  DropdownMenuItem(value: 'views', child: Text('Popularity')),
-                ],
-                onChanged: (value) => setState(() => _sortBy = value!),
               ),
-              const SizedBox(height: 16),
-
-              // Sort Order
-              DropdownButtonFormField<String>(
-                value: _sortOrder,
-                decoration: InputDecoration(
-                  labelText: 'Sort Order',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+            ),
+            
+            // Bottom Action Bar
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
                   ),
+                ],
+              ),
+              child: FilledButton(
+                onPressed: _applyFilters,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                  shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedLg),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'asc', child: Text('Ascending')),
-                  DropdownMenuItem(value: 'desc', child: Text('Descending')),
-                ],
-                onChanged: (value) => setState(() => _sortOrder = value!),
+                child: const Text('Apply Filters', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(height: 16),
-
-              // Available Only
-              SwitchListTile(
-                title: const Text('Show Available Only'),
-                value: _availableOnly,
-                onChanged: (value) => setState(() => _availableOnly = value),
-                contentPadding: EdgeInsets.zero,
-              ),
-              const SizedBox(height: 24),
-
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _clearFilters,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Clear Filters'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _applyFilters,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Apply Filters'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
-
-// Usage: Show filter bottom sheet
-void showProductFilters(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => const ProductFiltersWidget(),
-  );
 }

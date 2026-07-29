@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 class LicensesPage extends StatelessWidget {
   const LicensesPage({super.key});
@@ -28,16 +30,10 @@ class LicensesPage extends StatelessWidget {
           final lib = libraries[index];
           return Container(
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.withOpacity(0.1)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: AppColors.white,
+              borderRadius: AppSpacing.roundedLg,
+              border: Border.all(color: AppColors.textMutedLight.withValues(alpha: 0.1)),
+              boxShadow: AppSpacing.cardShadow,
             ),
             child: ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -49,7 +45,7 @@ class LicensesPage extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 4.0),
                 child: Text('Version ${lib['version']} • ${lib['license']}'),
               ),
-              trailing: const Icon(Icons.verified_user_outlined, color: Colors.green, size: 20),
+              trailing: const Icon(Icons.verified_user_outlined, color: AppColors.success, size: 20),
             ),
           );
         },

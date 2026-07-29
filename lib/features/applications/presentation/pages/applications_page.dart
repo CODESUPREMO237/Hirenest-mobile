@@ -1,9 +1,11 @@
 // lib/features/applications/presentation/pages/applications_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../reviews/presentation/widgets/rating_dialog.dart';
-import '../../../reviews/presentation/providers/reviews_provider.dart'; // ✅ Import reviews provider
+import '../../../reviews/presentation/providers/reviews_provider.dart';
 import '../../data/models/application_model.dart';
 import '../providers/applications_provider.dart';
 import '../widgets/application_card.dart';
@@ -18,15 +20,21 @@ class ApplicationsPage extends ConsumerWidget {
     final statsAsync = ref.watch(applicationStatsProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: roleAsync.when(
           data: (role) => Text(
-              role == 'employer'
-                  ? 'Applications Received'
-                  : 'My Applications'
+            role == 'employer' ? 'Applications Received' : 'My Applications',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimaryLight,
+                ),
           ),
           loading: () => const Text('Applications'),
-          error: (_, __) => const Text('Applications'),
+          error: (err, stack) => const Text('Applications'),
         ),
         centerTitle: true,
       ),
@@ -35,32 +43,28 @@ class ApplicationsPage extends ConsumerWidget {
           // Stats Summary Section
           statsAsync.when(
             data: (stats) => Container(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              margin: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg, horizontal: AppSpacing.md),
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                color: AppColors.surfaceLight,
+                borderRadius: AppSpacing.roundedLg,
+                boxShadow: AppSpacing.cardShadow,
               ),
               child: roleAsync.when(
                 data: (role) => _buildStatsRow(context, stats, role),
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (err, stack) => const SizedBox.shrink(),
               ),
             ),
-            loading: () => const LinearProgressIndicator(minHeight: 2),
-            error: (_, __) => const SizedBox.shrink(),
+            loading: () => const LinearProgressIndicator(minHeight: 2, color: AppColors.primary),
+            error: (err, stack) => const SizedBox.shrink(),
           ),
-
-          const SizedBox(height: 8),
 
           // Applications List Section
           Expanded(
             child: RefreshIndicator(
+              color: AppColors.primary,
+              backgroundColor: AppColors.surfaceLight,
               onRefresh: () async {
                 ref.invalidate(myApplicationsProvider);
                 ref.invalidate(applicationStatsProvider);
@@ -70,13 +74,14 @@ class ApplicationsPage extends ConsumerWidget {
                 data: (applications) {
                   if (applications.isEmpty) {
                     return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       children: [
                         SizedBox(height: MediaQuery.of(context).size.height * 0.2),
                         Center(
                           child: roleAsync.when(
                             data: (role) => _buildEmptyState(context, role),
-                            loading: () => const CircularProgressIndicator(),
-                            error: (_, __) => const Text('Error loading role'),
+                            loading: () => const CircularProgressIndicator(color: AppColors.primary),
+                            error: (err, stack) => const Text('Error loading role'),
                           ),
                         ),
                       ],
@@ -88,21 +93,20 @@ class ApplicationsPage extends ConsumerWidget {
                   ) ?? false;
 
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                     itemCount: applications.length,
                     itemBuilder: (context, index) {
                       final application = applications[index];
 
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
                         child: Column(
                           children: [
                             ApplicationCard(
                               application: application,
                               isEmployerView: isEmployer,
                             ),
-
-                            // ✅ RATING BUTTON WITH DUPLICATE CHECK (Job Seekers only)
                             if (!isEmployer && _canRateEmployer(application))
                               _buildRatingButton(context, ref, application),
                           ],
@@ -111,25 +115,25 @@ class ApplicationsPage extends ConsumerWidget {
                     },
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
                 error: (error, stack) => Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                      const SizedBox(height: 16),
+                      const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                      const SizedBox(height: AppSpacing.md),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
                         child: Text(
                           'Error: $error',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.red),
+                          style: const TextStyle(color: AppColors.error),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.md),
                       TextButton(
                         onPressed: () => ref.invalidate(myApplicationsProvider),
-                        child: const Text('Retry'),
+                        child: const Text('Retry', style: TextStyle(color: AppColors.primary)),
                       ),
                     ],
                   ),
@@ -142,20 +146,12 @@ class ApplicationsPage extends ConsumerWidget {
     );
   }
 
-  // ✅ CHECK: Can the user rate this employer?
   bool _canRateEmployer(ApplicationModel application) {
     final status = application.status.toLowerCase();
-    // Only allow rating for completed, accepted, or rejected applications
     return status == 'rejected' || status == 'completed' || status == 'accepted';
   }
 
-  // ✅ BUILD: Rating button with duplicate review check
-  Widget _buildRatingButton(
-      BuildContext context,
-      WidgetRef ref,
-      ApplicationModel application,
-      ) {
-    // Extract employer ID first
+  Widget _buildRatingButton(BuildContext context, WidgetRef ref, ApplicationModel application) {
     String employerId = '';
     final jobDetails = application.jobDetails;
 
@@ -163,83 +159,79 @@ class ApplicationsPage extends ConsumerWidget {
       employerId = jobDetails.postedBy;
     }
 
-    // If we can't get employer ID, don't show button
     if (employerId.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // ✅ FIX: Use hasReviewedProvider with ReviewCheckParams
     final hasReviewedAsync = ref.watch(
-      hasReviewedProvider(
-        ReviewCheckParams(
-          jobId: application.job,
-          revieweeId: employerId,
-        ),
-      ),
+      hasReviewedProvider(ReviewCheckParams(jobId: application.job, revieweeId: employerId)),
     );
 
     return hasReviewedAsync.when(
       data: (hasReviewed) {
         if (hasReviewed) {
-          // Already reviewed - show disabled button
           return Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
             child: SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: null, // Disabled
+              child: FilledButton.tonalIcon(
+                onPressed: null,
                 icon: const Icon(Icons.check_circle, size: 18),
                 label: const Text('Already Reviewed'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.green,
-                  disabledForegroundColor: Colors.green.withOpacity(0.5),
+                style: FilledButton.styleFrom(
+                  disabledBackgroundColor: AppColors.success.withValues(alpha: 0.1),
+                  disabledForegroundColor: AppColors.success.withValues(alpha: 0.5),
+                  shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
                 ),
               ),
             ),
           );
         }
 
-        // Not reviewed yet - show active button
         return Padding(
-          padding: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.only(top: AppSpacing.sm),
           child: SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
+            child: FilledButton.tonalIcon(
               onPressed: () => _showRatingDialog(context, ref, application),
               icon: const Icon(Icons.star_outline, size: 18),
               label: const Text('Rate Employer'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.amber[700],
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.accent.withValues(alpha: 0.1),
+                foregroundColor: AppColors.accent,
+                shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
               ),
             ),
           ),
         );
       },
       loading: () => Padding(
-        padding: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
         child: SizedBox(
           width: double.infinity,
-          child: OutlinedButton.icon(
+          child: FilledButton.tonalIcon(
             onPressed: null,
             icon: const SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
             ),
             label: const Text('Checking...'),
           ),
         ),
       ),
-      error: (_, __) => Padding(
-        padding: const EdgeInsets.only(top: 8),
+      error: (err, stack) => Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
         child: SizedBox(
           width: double.infinity,
-          child: OutlinedButton.icon(
+          child: FilledButton.tonalIcon(
             onPressed: () => _showRatingDialog(context, ref, application),
             icon: const Icon(Icons.star_outline, size: 18),
             label: const Text('Rate Employer'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.amber[700],
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent.withValues(alpha: 0.1),
+              foregroundColor: AppColors.accent,
+              shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
             ),
           ),
         ),
@@ -247,161 +239,90 @@ class ApplicationsPage extends ConsumerWidget {
     );
   }
 
-  // ✅ SHOW: Rating dialog with better error handling
-  void _showRatingDialog(
-      BuildContext context,
-      WidgetRef ref,
-      ApplicationModel application,
-      ) {
-    print('🎯 === RATING DIALOG DATA EXTRACTION ===');
-
+  void _showRatingDialog(BuildContext context, WidgetRef ref, ApplicationModel application) {
     String employerId = '';
     String employerName = 'Employer';
-    String jobId = '';
-
-    jobId = application.job;
-    print('✅ Job ID from application.job: $jobId');
-
+    String jobId = application.job;
     final jobDetails = application.jobDetails;
 
     if (jobDetails != null) {
-      print('✅ JobDetails found: ${jobDetails.title}');
-      print('   Company: ${jobDetails.company.name}');
-
       employerId = jobDetails.postedBy;
-      print('✅ Employer ID from postedBy: $employerId');
-
       if (jobDetails.postedByDetails != null) {
         final employer = jobDetails.postedByDetails!;
         final profile = employer.profile;
-
         if (profile != null) {
-          employerName = profile.displayName ??
-              '${profile.firstName ?? ''} ${profile.lastName ?? ''}'.trim();
-
-          if (employerName.isEmpty || employerName == ' ') {
-            employerName = employer.email.split('@')[0];
-          }
+          employerName = profile.displayName ?? '${profile.firstName ?? ''} ${profile.lastName ?? ''}'.trim();
+          if (employerName.isEmpty || employerName == ' ') employerName = employer.email.split('@')[0];
         } else {
           employerName = employer.email.split('@')[0];
         }
-
-        print('✅ Employer Name from postedByDetails: $employerName');
       } else {
         employerName = jobDetails.company.name;
-        print('✅ Using Company Name (employer not populated): $employerName');
       }
-    } else {
-      print('⚠️ JobDetails is NULL - job was not populated');
-      print('   Job ID (string): $jobId');
     }
 
-    print('📊 FINAL VALUES:');
-    print('   Job ID: $jobId');
-    print('   Employer ID: $employerId');
-    print('   Employer Name: $employerName');
-    print('=================================');
-
-    // Validation
     if (jobId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot find job information. Please try again.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ),
-      );
-      print('❌ VALIDATION FAILED: Job ID is empty');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cannot find job information. Please try again.'), backgroundColor: AppColors.error),
+        );
+      }
       return;
     }
 
     if (employerId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Job details not fully loaded'),
-              SizedBox(height: 4),
-              Text(
-                'Pull down to refresh and try again',
-                style: TextStyle(fontSize: 12),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 4),
-          action: SnackBarAction(
-            label: 'Refresh',
-            textColor: Colors.white,
-            onPressed: () {
-              ref.invalidate(myApplicationsProvider);
-            },
-          ),
-        ),
-      );
-      print('❌ VALIDATION FAILED: Employer ID is empty');
-
-      Future.delayed(const Duration(milliseconds: 500), () {
-        ref.invalidate(myApplicationsProvider);
-      });
-      return;
-    }
-
-    print('✅ All validations passed - showing dialog');
-
-    showDialog(
-      context: context,
-      builder: (context) => RatingDialog(
-        jobId: jobId,
-        revieweeId: employerId,
-        revieweeName: employerName,
-      ),
-    ).then((success) {
-      if (success == true) {
-        // ✅ FIX: Invalidate the correct provider with params
-        ref.invalidate(myApplicationsProvider);
-        ref.invalidate(
-          hasReviewedProvider(
-            ReviewCheckParams(
-              jobId: jobId,
-              revieweeId: employerId,
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Job details not fully loaded. Pull to refresh.'),
+            backgroundColor: AppColors.warning,
+            action: SnackBarAction(
+              label: 'Refresh',
+              textColor: AppColors.white,
+              onPressed: () => ref.invalidate(myApplicationsProvider),
             ),
           ),
         );
+      }
+      return;
+    }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Thank you for your feedback!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+    showDialog(
+      context: context,
+      builder: (context) => RatingDialog(jobId: jobId, revieweeId: employerId, revieweeName: employerName),
+    ).then((success) {
+      if (success == true) {
+        ref.invalidate(myApplicationsProvider);
+        ref.invalidate(hasReviewedProvider(ReviewCheckParams(jobId: jobId, revieweeId: employerId)));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Thank you for your feedback!'), backgroundColor: AppColors.success),
+          );
+        }
       }
     });
   }
 
   Widget _buildStatsRow(BuildContext context, Map<String, int> stats, String role) {
     int getStatValue(String key) => stats[key] ?? 0;
-
     if (role == 'employer') {
       return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _StatItem('Total', getStatValue('total'), Colors.blue),
-          _StatItem('Pending', getStatValue('pending'), Colors.orange),
-          _StatItem('Reviewing', getStatValue('reviewing'), Colors.purple),
-          _StatItem('Interviewing', getStatValue('interviewing'), Colors.green),
+          _StatItem('Total', getStatValue('total'), AppColors.primary),
+          _StatItem('Pending', getStatValue('pending'), AppColors.warning),
+          _StatItem('Reviewing', getStatValue('reviewing'), AppColors.accent),
+          _StatItem('Interviews', getStatValue('interviewing'), AppColors.success),
         ],
       );
     } else {
       return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _StatItem('Total', getStatValue('total'), Colors.blue),
-          _StatItem('Pending', getStatValue('pending'), Colors.orange),
-          _StatItem('Shortlisted', getStatValue('shortlisted'), Colors.purple),
-          _StatItem('Rejected', getStatValue('rejected'), Colors.red),
+          _StatItem('Total', getStatValue('total'), AppColors.primary),
+          _StatItem('Pending', getStatValue('pending'), AppColors.warning),
+          _StatItem('Shortlisted', getStatValue('shortlisted'), AppColors.success),
+          _StatItem('Rejected', getStatValue('rejected'), AppColors.error),
         ],
       );
     }
@@ -411,29 +332,39 @@ class ApplicationsPage extends ConsumerWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          role == 'employer'
-              ? Icons.people_outline
-              : Icons.description_outlined,
-          size: 80,
-          color: Colors.grey[300],
-        ),
-        const SizedBox(height: 16),
-        Text(
-          role == 'employer'
-              ? 'No applications received yet'
-              : 'No applications yet',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: Colors.grey[600],
-            fontWeight: FontWeight.bold,
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.05),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            role == 'employer' ? Icons.people_outline : Icons.description_outlined,
+            size: 64,
+            color: AppColors.primary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.lg),
         Text(
-          role == 'employer'
-              ? 'Post jobs to receive applications from candidates'
-              : 'Start applying to jobs to see them here!',
-          textAlign: TextAlign.center,
+          role == 'employer' ? 'No applications received' : 'No applications yet',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimaryLight,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+          child: Text(
+            role == 'employer'
+                ? 'Post jobs to start receiving applications from top talent.'
+                : 'Start exploring and applying to jobs to see them here.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textMutedLight,
+                  height: 1.5,
+                ),
+          ),
         ),
       ],
     );
@@ -454,20 +385,18 @@ class _StatItem extends StatelessWidget {
       children: [
         Text(
           '$value',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[600],
-          ),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondaryLight,
+              ),
         ),
       ],
     );

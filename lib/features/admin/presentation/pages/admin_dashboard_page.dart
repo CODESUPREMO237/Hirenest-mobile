@@ -1,19 +1,15 @@
-
-
-// ==================== 3. ADMIN DASHBOARD SCREEN ====================
-// lib/features/admin/presentation/pages/admin_dashboard_page.dart
-
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
+import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../data/repositories/admin_repository.dart';
 
-// Provider
+// ============================================================================
+// PROVIDERS
+// ============================================================================
 final adminServiceProvider = Provider<AdminService>((ref) {
   final dio = ref.watch(dioProvider);
   final authService = ref.watch(authServiceProvider);
@@ -25,336 +21,636 @@ final dashboardDataProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return await adminService.getDashboardOverview();
 });
 
-class AdminDashboardScreen extends ConsumerStatefulWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
-
-  @override
-  ConsumerState<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
-}
-
-class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
-  int _selectedIndex = 0;
-
-  final List<NavigationItem> _navItems = [
-    NavigationItem(icon: Icons.dashboard, label: 'Dashboard'),
-    NavigationItem(icon: Icons.people, label: 'Users'),
-    NavigationItem(icon: Icons.work, label: 'Jobs'),
-    NavigationItem(icon: Icons.shopping_bag, label: 'Products'),
-    NavigationItem(icon: Icons.report, label: 'Reports'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text('Admin Dashboard'),
-        backgroundColor: Colors.deepPurple,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.refresh(dashboardDataProvider),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await ref.read(authServiceProvider).logout();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/login');
-              }
-            },
-          ),
-        ],
-      ),
-      body: Row(
-        children: [
-          // Sidebar
-          Container(
-            width: 250,
-            color: Colors.white,
-            child: ListView.builder(
-              itemCount: _navItems.length,
-              itemBuilder: (context, index) {
-                final item = _navItems[index];
-                final isSelected = _selectedIndex == index;
-                return ListTile(
-                  leading: Icon(
-                    item.icon,
-                    color: isSelected ? Colors.deepPurple : Colors.grey[600],
-                  ),
-                  title: Text(
-                    item.label,
-                    style: TextStyle(
-                      color: isSelected ? Colors.deepPurple : Colors.grey[800],
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                  selected: isSelected,
-                  selectedTileColor: Colors.deepPurple.withOpacity(0.1),
-                  onTap: () => setState(() => _selectedIndex = index),
-                );
-              },
-            ),
-          ),
-
-          // Main Content
-          Expanded(
-            child: _buildContent(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent() {
-    switch (_selectedIndex) {
-      case 0:
-        return const DashboardOverviewTab();
-      case 1:
-        return const UsersManagementTab();
-      case 2:
-        return const JobsManagementTab();
-      case 3:
-        return const ProductsManagementTab();
-      case 4:
-        return const ReportsTab();
-      default:
-        return const DashboardOverviewTab();
-    }
-  }
-}
-
-class NavigationItem {
-  final IconData icon;
-  final String label;
-  NavigationItem({required this.icon, required this.label});
-}
-
-// ==================== 4. DASHBOARD OVERVIEW TAB ====================
-class DashboardOverviewTab extends ConsumerWidget {
-  const DashboardOverviewTab({Key? key}) : super(key: key);
+// ============================================================================
+// ADMIN DASHBOARD SCREEN
+// ============================================================================
+class AdminDashboardScreen extends ConsumerWidget {
+  const AdminDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dashboardData = ref.watch(dashboardDataProvider);
-
-    return dashboardData.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
-      data: (data) {
-        final overview = data['overview'];
-        final usersByRole = data['usersByRole'] as List;
-        final recentUsers = data['recentUsers'] as List;
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Stats Cards
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 4,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.5,
-                children: [
-                  _StatCard(
-                    title: 'Total Users',
-                    value: '${overview['totalUsers']}',
-                    subtitle: '${overview['activeUsers']} active',
-                    icon: Icons.people,
-                    color: Colors.blue,
-                  ),
-                  _StatCard(
-                    title: 'Jobs',
-                    value: '${overview['totalJobs']}',
-                    subtitle: '${overview['activeJobs']} active',
-                    icon: Icons.work,
-                    color: Colors.green,
-                  ),
-                  _StatCard(
-                    title: 'Products',
-                    value: '${overview['totalProducts']}',
-                    subtitle: '${overview['activeProducts']} active',
-                    icon: Icons.shopping_bag,
-                    color: Colors.orange,
-                  ),
-                  _StatCard(
-                    title: 'Applications',
-                    value: '${overview['totalApplications']}',
-                    subtitle: 'All time',
-                    icon: Icons.description,
-                    color: Colors.purple,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 32),
-
-              // Users by Role
-              Text(
-                'Users by Role',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+    return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
+      body: CustomScrollView(
+        slivers: [
+          // ── Gradient App Bar ──
+          SliverAppBar(
+            expandedHeight: 140,
+            pinned: true,
+            backgroundColor: AppColors.primary,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+              title: const Text(
+                'Admin Dashboard',
+                style: TextStyle(
+                  color: AppColors.surfaceLight,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: usersByRole.map((role) {
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: _getRoleColor(role['_id']),
-                          child: Text(
-                            '${role['count']}',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                        title: Text(_formatRole(role['_id'])),
-                        trailing: Text(
-                          '${role['count']} users',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      );
-                    }).toList(),
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF635BFF),
+                      Color(0xFF7C3AED),
+                      Color(0xFF4F46E5),
+                    ],
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Recent Users
-              Text(
-                'Recent Users',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: DataTable(
-                  columns: const [
-                    DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('Email')),
-                    DataColumn(label: Text('Role')),
-                    DataColumn(label: Text('Joined')),
+                child: Stack(
+                  children: [
+                    // Decorative circles
+                    Positioned(
+                      top: -30,
+                      right: -30,
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.surfaceLight.withValues(alpha: 0.08),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: -20,
+                      right: 60,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.surfaceLight.withValues(alpha: 0.06),
+                        ),
+                      ),
+                    ),
                   ],
-                  rows: recentUsers.map((user) {
-                    return DataRow(cells: [
-                      DataCell(Text('${user['profile']['firstName']} ${user['profile']['lastName']}')),
-                      DataCell(Text(user['email'])),
-                      DataCell(_RoleBadge(role: user['role'])),
-                      DataCell(Text(_formatDate(user['createdAt']))),
-                    ]);
-                  }).toList(),
                 ),
               ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: AppColors.surfaceLight),
+                tooltip: 'Refresh',
+                onPressed: () => ref.refresh(dashboardDataProvider),
+              ),
+              IconButton(
+                icon: Icon(Icons.logout_rounded, color: AppColors.surfaceLight.withValues(alpha: 0.7)),
+                tooltip: 'Logout',
+                onPressed: () async {
+                  await ref.read(authServiceProvider).logout();
+                  if (context.mounted) context.go('/auth/login');
+                },
+              ),
+              const SizedBox(width: 8),
             ],
           ),
-        );
-      },
+
+          // ── Body ──
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Section: Quick Actions
+                _SectionHeader(title: 'Quick Actions'),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _QuickActionCard(
+                        title: 'Disputed\nOrders',
+                        icon: Icons.gavel_rounded,
+                        gradient: const [Color(0xFFEF4444), Color(0xFFDC2626)],
+                        onTap: () => context.push('/admin/disputes'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _QuickActionCard(
+                        title: 'User\nManagement',
+                        icon: Icons.people_alt_rounded,
+                        gradient: const [Color(0xFF635BFF), Color(0xFF4F46E5)],
+                        onTap: () => context.push('/admin/users'),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 28),
+
+                // Section: System Overview
+                _SectionHeader(title: 'System Overview'),
+                const SizedBox(height: 12),
+                const DashboardOverviewSection(),
+              ]),
+            ),
+          ),
+        ],
+      ),
     );
-  }
-
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return Colors.red;
-      case 'employer':
-        return Colors.blue;
-      case 'job_seeker':
-        return Colors.green;
-      case 'seller':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _formatRole(String role) {
-    return role.split('_').map((word) =>
-    word[0].toUpperCase() + word.substring(1)
-    ).join(' ');
-  }
-
-  String _formatDate(String dateStr) {
-    final date = DateTime.parse(dateStr);
-    return '${date.day}/${date.month}/${date.year}';
   }
 }
 
-class _StatCard extends StatelessWidget {
+// ============================================================================
+// SECTION HEADER
+// ============================================================================
+class _SectionHeader extends StatelessWidget {
   final String title;
-  final String value;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
+  const _SectionHeader({required this.title});
 
-  const _StatCard({
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+    );
+  }
+}
+
+// ============================================================================
+// QUICK ACTION CARD (gradient, icon, tap)
+// ============================================================================
+class _QuickActionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final List<Color> gradient;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
     required this.title,
-    required this.value,
-    required this.subtitle,
     required this.icon,
-    required this.color,
+    required this.gradient,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+    return Material(
+      borderRadius: AppSpacing.roundedLg,
+      elevation: 2,
+      shadowColor: gradient.first.withValues(alpha: 0.3),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppSpacing.roundedLg,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: AppSpacing.roundedLg,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradient,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight.withValues(alpha: 0.2),
+                  borderRadius: AppSpacing.roundedMd,
                 ),
-                Icon(icon, color: color, size: 24),
-              ],
-            ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
+                child: Icon(icon, color: AppColors.surfaceLight, size: 24),
               ),
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+              const SizedBox(height: 14),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.surfaceLight,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Text(
+                    'View',
+                    style: TextStyle(
+                      color: AppColors.surfaceLight.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: AppColors.surfaceLight.withValues(alpha: 0.8),
+                    size: 14,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ==================== 5. USERS MANAGEMENT TAB ====================
-class UsersManagementTab extends ConsumerStatefulWidget {
-  const UsersManagementTab({Key? key}) : super(key: key);
+// ============================================================================
+// DASHBOARD OVERVIEW SECTION
+// ============================================================================
+class DashboardOverviewSection extends ConsumerWidget {
+  const DashboardOverviewSection({super.key});
 
   @override
-  ConsumerState<UsersManagementTab> createState() => _UsersManagementTabState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashboardData = ref.watch(dashboardDataProvider);
+
+    return dashboardData.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      ),
+      error: (err, stack) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.error[50],
+          borderRadius: AppSpacing.roundedMd,
+          border: Border.all(color: AppColors.error[200]),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error),
+            const SizedBox(width: 12),
+            Expanded(child: Text('Failed to load: $err', style: const TextStyle(color: AppColors.error))),
+          ],
+        ),
+      ),
+      data: (data) {
+        final overview = data['overview'] ?? {};
+        final recentUsers = (data['recentUsers'] as List?) ?? [];
+        final usersByRole = (data['usersByRole'] as List?) ?? [];
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Stat Cards Grid ──
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.6,
+              children: [
+                _StatCard(
+                  title: 'Total Users',
+                  value: '${overview['totalUsers'] ?? 0}',
+                  subtitle: '${overview['activeUsers'] ?? 0} active',
+                  icon: Icons.people_outline_rounded,
+                  iconBgColor: const Color(0xFFEEEDFF),
+                  iconColor: AppColors.primary,
+                ),
+                _StatCard(
+                  title: 'Jobs',
+                  value: '${overview['totalJobs'] ?? 0}',
+                  subtitle: '${overview['activeJobs'] ?? 0} active',
+                  icon: Icons.work_outline_rounded,
+                  iconBgColor: const Color(0xFFE6FAF5),
+                  iconColor: AppColors.success,
+                ),
+                _StatCard(
+                  title: 'Products',
+                  value: '${overview['totalProducts'] ?? 0}',
+                  subtitle: '${overview['activeProducts'] ?? 0} active',
+                  icon: Icons.shopping_bag_outlined,
+                  iconBgColor: const Color(0xFFFFF8E7),
+                  iconColor: const Color(0xFFD97706),
+                ),
+                _StatCard(
+                  title: 'Applications',
+                  value: '${overview['totalApplications'] ?? 0}',
+                  subtitle: 'All time',
+                  icon: Icons.description_outlined,
+                  iconBgColor: const Color(0xFFF0E7FE),
+                  iconColor: AppColors.accent,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── Users By Role ──
+            if (usersByRole.isNotEmpty) ...[
+              const Text(
+                'Users By Role',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: AppSpacing.roundedMd,
+                  boxShadow: AppSpacing.cardShadow,
+                ),
+                child: Column(
+                  children: usersByRole.map<Widget>((role) {
+                    final roleName = _formatRole(role['_id'] ?? 'unknown');
+                    final count = role['count'] ?? 0;
+                    final total = overview['totalUsers'] ?? 1;
+                    final percentage = total > 0 ? (count / total) : 0.0;
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  _RoleDot(role: role['_id'] ?? 'unknown'),
+                                  const SizedBox(width: 8),
+                                  Text(roleName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                ],
+                              ),
+                              Text(
+                                '$count users',
+                                style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: percentage,
+                              minHeight: 6,
+                              backgroundColor: AppColors.borderLight,
+                              valueColor: AlwaysStoppedAnimation<Color>(_getRoleColor(role['_id'] ?? '')),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Recent Users ──
+            if (recentUsers.isNotEmpty) ...[
+              const Text(
+                'Recent Users',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: AppSpacing.roundedMd,
+                  boxShadow: AppSpacing.cardShadow,
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: recentUsers.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final user = recentUsers[index];
+                    final profile = user['profile'] ?? {};
+                    final firstName = profile['firstName'] ?? '';
+                    final lastName = profile['lastName'] ?? '';
+                    final avatar = profile['avatar'];
+                    final email = user['email'] ?? '';
+                    final role = user['role'] ?? '';
+                    final createdAt = user['createdAt'] ?? '';
+
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      leading: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: _getRoleColor(role).withValues(alpha: 0.15),
+                        backgroundImage: avatar != null ? NetworkImage(avatar) : null,
+                        child: avatar == null
+                            ? Text(
+                                firstName.isNotEmpty ? firstName[0].toUpperCase() : '?',
+                                style: TextStyle(
+                                  color: _getRoleColor(role),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              )
+                            : null,
+                      ),
+                      title: Text(
+                        '$firstName $lastName'.trim(),
+                        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        email,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _RoleBadge(role: role),
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatDate(createdAt),
+                            style: const TextStyle(fontSize: 11, color: AppColors.textMutedLight),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  String _formatDate(String dateStr) {
+    if (dateStr.isEmpty) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final diff = now.difference(date);
+
+      if (diff.inDays == 0) return 'Today';
+      if (diff.inDays == 1) return 'Yesterday';
+      if (diff.inDays < 7) return '${diff.inDays}d ago';
+      if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  static String _formatRole(String role) {
+    return role.split('_').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ');
+  }
+
+  static Color _getRoleColor(String role) {
+    switch (role.toLowerCase()) {
+      case 'admin':
+        return AppColors.error;
+      case 'employer':
+        return AppColors.primary;
+      case 'jobseeker':
+      case 'job_seeker':
+        return AppColors.success;
+      default:
+        return AppColors.borderLight;
+    }
+  }
 }
 
-class _UsersManagementTabState extends ConsumerState<UsersManagementTab> {
+// ============================================================================
+// STAT CARD (clean, no overflow)
+// ============================================================================
+class _StatCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+
+  const _StatCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedMd,
+        boxShadow: AppSpacing.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: AppSpacing.roundedSm,
+                ),
+                child: Icon(icon, color: iconColor, size: 16),
+              ),
+            ],
+          ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimaryLight,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textMutedLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// ROLE BADGE (compact pill)
+// ============================================================================
+class _RoleBadge extends StatelessWidget {
+  final String role;
+  const _RoleBadge({required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = DashboardOverviewSection._getRoleColor(role);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: AppSpacing.roundedSm,
+      ),
+      child: Text(
+        DashboardOverviewSection._formatRole(role),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// ROLE DOT (for bar chart labels)
+// ============================================================================
+class _RoleDot extends StatelessWidget {
+  final String role;
+  const _RoleDot({required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        color: DashboardOverviewSection._getRoleColor(role),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// USERS MANAGEMENT PAGE
+// ============================================================================
+class AdminUsersPage extends ConsumerStatefulWidget {
+  const AdminUsersPage({super.key});
+
+  @override
+  ConsumerState<AdminUsersPage> createState() => _AdminUsersPageState();
+}
+
+class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
   String? _selectedRole;
   String? _selectedStatus;
   String _searchQuery = '';
@@ -362,98 +658,142 @@ class _UsersManagementTabState extends ConsumerState<UsersManagementTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Filters
-        Container(
-          padding: const EdgeInsets.all(16),
-          color: Colors.white,
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  decoration: const InputDecoration(
+    return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
+      appBar: AppBar(
+        title: const Text('User Management', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600)),
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0.5,
+        iconTheme: const IconThemeData(color: AppColors.textPrimaryLight),
+      ),
+      body: Column(
+        children: [
+          // Filters
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: AppColors.surfaceLight,
+            child: Column(
+              children: [
+                TextField(
+                  decoration: InputDecoration(
                     hintText: 'Search users...',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    border: OutlineInputBorder(borderRadius: AppSpacing.roundedSm),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    filled: true,
+                    fillColor: AppColors.borderLight,
                   ),
                   onChanged: (value) => setState(() => _searchQuery = value),
                 ),
-              ),
-              const SizedBox(width: 16),
-              DropdownButton<String>(
-                hint: const Text('Role'),
-                value: _selectedRole,
-                items: ['job_seeker', 'employer', 'seller', 'admin']
-                    .map((role) => DropdownMenuItem(
-                  value: role,
-                  child: Text(_formatRole(role)),
-                ))
-                    .toList(),
-                onChanged: (value) => setState(() => _selectedRole = value),
-              ),
-              const SizedBox(width: 16),
-              DropdownButton<String>(
-                hint: const Text('Status'),
-                value: _selectedStatus,
-                items: ['active', 'blocked']
-                    .map((status) => DropdownMenuItem(
-                  value: status,
-                  child: Text(status[0].toUpperCase() + status.substring(1)),
-                ))
-                    .toList(),
-                onChanged: (value) => setState(() => _selectedStatus = value),
-              ),
-            ],
-          ),
-        ),
-
-        // Users List
-        Expanded(
-          child: FutureBuilder<Map<String, dynamic>>(
-            future: ref.read(adminServiceProvider).getUsers(
-              role: _selectedRole,
-              status: _selectedStatus,
-              search: _searchQuery.isEmpty ? null : _searchQuery,
-              page: _currentPage,
-            ),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              }
-
-              final data = snapshot.data!;
-              final users = data['users'] as List;
-              final pagination = data['pagination'];
-
-              return Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: users.length,
-                      itemBuilder: (context, index) {
-                        final user = users[index];
-                        return _UserListTile(user: user);
-                      },
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.borderLight,
+                          borderRadius: AppSpacing.roundedSm,
+                          border: Border.all(color: AppColors.borderLight),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            hint: const Text('All Roles', style: TextStyle(fontSize: 13)),
+                            value: _selectedRole,
+                            isExpanded: true,
+                            items: [null, 'jobseeker', 'employer', 'admin']
+                                .map((role) => DropdownMenuItem(
+                              value: role,
+                              child: Text(role == null ? 'All Roles' : _formatRole(role), style: const TextStyle(fontSize: 13)),
+                            ))
+                                .toList(),
+                            onChanged: (value) => setState(() => _selectedRole = value),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-
-                  // Pagination
-                  _PaginationBar(
-                    currentPage: pagination['page'],
-                    totalPages: pagination['pages'],
-                    onPageChanged: (page) => setState(() => _currentPage = page),
-                  ),
-                ],
-              );
-            },
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.borderLight,
+                          borderRadius: AppSpacing.roundedSm,
+                          border: Border.all(color: AppColors.borderLight),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            hint: const Text('All Status', style: TextStyle(fontSize: 13)),
+                            value: _selectedStatus,
+                            isExpanded: true,
+                            items: [null, 'active', 'blocked']
+                                .map((status) => DropdownMenuItem(
+                              value: status,
+                              child: Text(
+                                status == null ? 'All Status' : '${status[0].toUpperCase()}${status.substring(1)}',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ))
+                                .toList(),
+                            onChanged: (value) => setState(() => _selectedStatus = value),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+
+          // Users List
+          Expanded(
+            child: FutureBuilder<Map<String, dynamic>>(
+              future: ref.read(adminServiceProvider).getUsers(
+                role: _selectedRole,
+                status: _selectedStatus,
+                search: _searchQuery.isEmpty ? null : _searchQuery,
+                page: _currentPage,
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                final data = snapshot.data!;
+                final users = data['users'] as List;
+                final pagination = data['pagination'];
+
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: users.length,
+                        itemBuilder: (context, index) {
+                          final user = users[index];
+                          return _UserListTile(user: user);
+                        },
+                      ),
+                    ),
+
+                    // Pagination
+                    _PaginationBar(
+                      currentPage: pagination['page'],
+                      totalPages: pagination['pages'],
+                      onPageChanged: (page) => setState(() => _currentPage = page),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -472,40 +812,58 @@ class _UserListTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isBlocked = user['isBlocked'] ?? false;
+    final profile = user['profile'] ?? {};
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppSpacing.roundedMd,
+        side: BorderSide(color: AppColors.borderLight),
+      ),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: CircleAvatar(
-          backgroundImage: user['profile']['avatar'] != null
-              ? NetworkImage(user['profile']['avatar'])
+          backgroundImage: profile['avatar'] != null
+              ? NetworkImage(profile['avatar'])
               : null,
-          child: user['profile']['avatar'] == null
-              ? Text(user['profile']['firstName'][0])
+          child: profile['avatar'] == null
+              ? Text(
+                  (profile['firstName'] ?? '?')[0],
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                )
               : null,
         ),
-        title: Text('${user['profile']['firstName']} ${user['profile']['lastName']}'),
+        title: Text(
+          '${profile['firstName'] ?? ''} ${profile['lastName'] ?? ''}'.trim(),
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(user['email']),
-            _RoleBadge(role: user['role']),
+            Text(user['email'] ?? '', style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 4),
+            _RoleBadge(role: user['role'] ?? ''),
           ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (isBlocked)
-              const Chip(
-                label: Text('Blocked', style: TextStyle(color: Colors.white)),
-                backgroundColor: Colors.red,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.error[50],
+                  borderRadius: AppSpacing.roundedSm,
+                ),
+                child: const Text('Blocked', style: TextStyle(color: AppColors.error, fontSize: 11, fontWeight: FontWeight.w600)),
               ),
             IconButton(
-              icon: Icon(isBlocked ? Icons.lock_open : Icons.block),
+              icon: Icon(isBlocked ? Icons.lock_open_rounded : Icons.block_rounded, size: 20),
               onPressed: () => _showBlockDialog(context, ref, user),
             ),
             IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
+              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
               onPressed: () => _showDeleteDialog(context, ref, user),
             ),
           ],
@@ -521,6 +879,7 @@ class _UserListTile extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedLg),
         title: Text(isBlocked ? 'Unblock User' : 'Block User'),
         content: isBlocked
             ? const Text('Are you sure you want to unblock this user?')
@@ -531,9 +890,9 @@ class _UserListTile extends ConsumerWidget {
             const SizedBox(height: 16),
             TextField(
               controller: reasonController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Reason',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(borderRadius: AppSpacing.roundedSm),
               ),
               maxLines: 3,
             ),
@@ -545,6 +904,10 @@ class _UserListTile extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isBlocked ? AppColors.success : AppColors.warning,
+              shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
+            ),
             onPressed: () async {
               try {
                 await ref.read(adminServiceProvider).toggleUserBlock(
@@ -576,6 +939,7 @@ class _UserListTile extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedLg),
         title: const Text('Delete User'),
         content: const Text('Are you sure? This action cannot be undone.'),
         actions: [
@@ -584,7 +948,10 @@ class _UserListTile extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
+            ),
             onPressed: () async {
               try {
                 await ref.read(adminServiceProvider).deleteUser(user['_id']);
@@ -602,7 +969,7 @@ class _UserListTile extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Delete'),
+            child: const Text('Delete', style: TextStyle(color: AppColors.surfaceLight)),
           ),
         ],
       ),
@@ -610,47 +977,9 @@ class _UserListTile extends ConsumerWidget {
   }
 }
 
-// ==================== 6. SHARED WIDGETS ====================
-class _RoleBadge extends StatelessWidget {
-  final String role;
-
-  const _RoleBadge({required this.role});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _getRoleColor(role);
-    return Chip(
-      label: Text(
-        _formatRole(role),
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-      ),
-      backgroundColor: color,
-      padding: EdgeInsets.zero,
-    );
-  }
-
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return Colors.red;
-      case 'employer':
-        return Colors.blue;
-      case 'job_seeker':
-        return Colors.green;
-      case 'seller':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _formatRole(String role) {
-    return role.split('_').map((word) =>
-    word[0].toUpperCase() + word.substring(1)
-    ).join(' ');
-  }
-}
-
+// ============================================================================
+// PAGINATION BAR
+// ============================================================================
 class _PaginationBar extends StatelessWidget {
   final int currentPage;
   final int totalPages;
@@ -665,18 +994,31 @@ class _PaginationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        border: Border(top: BorderSide(color: AppColors.borderLight)),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left),
+            icon: const Icon(Icons.chevron_left_rounded),
             onPressed: currentPage > 1 ? () => onPageChanged(currentPage - 1) : null,
           ),
-          Text('Page $currentPage of $totalPages'),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.borderLight,
+              borderRadius: AppSpacing.roundedSm,
+            ),
+            child: Text(
+              'Page $currentPage of $totalPages',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ),
           IconButton(
-            icon: const Icon(Icons.chevron_right),
+            icon: const Icon(Icons.chevron_right_rounded),
             onPressed: currentPage < totalPages ? () => onPageChanged(currentPage + 1) : null,
           ),
         ],
@@ -684,32 +1026,3 @@ class _PaginationBar extends StatelessWidget {
     );
   }
 }
-
-// ==================== PLACEHOLDER TABS (implement similarly) ====================
-class JobsManagementTab extends StatelessWidget {
-  const JobsManagementTab({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Jobs Management - Coming Soon'));
-  }
-}
-
-class ProductsManagementTab extends StatelessWidget {
-  const ProductsManagementTab({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Products Management - Coming Soon'));
-  }
-}
-
-class ReportsTab extends StatelessWidget {
-  const ReportsTab({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Reports - Coming Soon'));
-  }
-}
-

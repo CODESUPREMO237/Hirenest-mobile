@@ -5,6 +5,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../../../../../core/theme/app_colors.dart';
 import '../constants/app_constants.dart';
 
 extension StringExtension on String {
@@ -47,7 +48,7 @@ extension BuildContextExtension on BuildContext {
     ScaffoldMessenger.of(this).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red : null,
+        backgroundColor: isError ? AppColors.error : null,
       ),
     );
   }

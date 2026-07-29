@@ -1,13 +1,13 @@
-// lib/features/jobs/presentation/pages/job_applicants_page.dart
-
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../applications/data/models/application_model.dart';
 import '../../../applications/data/repositories/applications_repository.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../reviews/presentation/widgets/rating_dialog.dart';
-import '../../../reviews/presentation/providers/reviews_provider.dart'; // ✅ Import reviews provider
+import '../../../reviews/presentation/providers/reviews_provider.dart';
 
 class JobApplicantsPage extends ConsumerStatefulWidget {
   final String jobId;
@@ -45,6 +45,7 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
     final applicantsAsync = ref.watch(jobApplicantsProvider(widget.jobId));
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,13 +53,18 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
             const Text('Applicants'),
             Text(
               widget.jobTitle,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondaryLight),
             ),
           ],
         ),
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textMutedLight,
+          indicatorColor: AppColors.primary,
           tabs: const [
             Tab(text: 'All'),
             Tab(text: 'Pending'),
@@ -86,7 +92,7 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: const Icon(Icons.filter_list, color: AppColors.textPrimaryLight),
             onPressed: () => _showFilterSheet(context),
           ),
         ],
@@ -109,12 +115,12 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
                 _buildStatsSummary(applicants),
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     itemCount: filteredApplicants.length,
                     itemBuilder: (context, index) {
                       return _ApplicantCard(
                         application: filteredApplicants[index],
-                        jobId: widget.jobId, // ✅ Pass jobId
+                        jobId: widget.jobId,
                         onTap: () => _viewApplicantDetails(
                           context,
                           filteredApplicants[index],
@@ -142,16 +148,21 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error loading applicants: $error'),
-              const SizedBox(height: 16),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+              const SizedBox(height: AppSpacing.md),
+              Text('Error loading applicants: $error', style: const TextStyle(color: AppColors.textSecondaryLight)),
+              const SizedBox(height: AppSpacing.md),
               ElevatedButton.icon(
                 onPressed: () {
                   ref.invalidate(jobApplicantsProvider(widget.jobId));
                 },
                 icon: const Icon(Icons.refresh),
                 label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
+                ),
               ),
             ],
           ),
@@ -170,13 +181,9 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
     return applicants.where((app) => app.status == _selectedFilter).toList();
   }
 
-  // ✅ UPDATED: Rate applicant with validation
   void _rateApplicant(BuildContext context, ApplicationModel application) {
-    print('🎯 === RATING APPLICANT ===');
-
     final applicantId = application.applicantDetails?.id ?? application.applicant;
 
-    // Build applicant name
     String applicantName = 'Applicant';
     final profile = application.applicantDetails?.profile;
     if (profile != null) {
@@ -186,22 +193,15 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
       }
     }
 
-    print('   Job ID: ${widget.jobId}');
-    print('   Applicant ID: $applicantId');
-    print('   Applicant Name: $applicantName');
-
     if (applicantId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cannot submit rating: Missing applicant information'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
-      print('❌ Missing applicant ID');
       return;
     }
-
-    print('✅ Showing rating dialog');
 
     showDialog(
       context: context,
@@ -212,9 +212,6 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
       ),
     ).then((success) {
       if (success == true && mounted) {
-        print('✅ Rating submitted successfully - refreshing list');
-
-        // ✅ Invalidate both the applicants list and the review check
         ref.invalidate(jobApplicantsProvider(widget.jobId));
         ref.invalidate(
           hasReviewedProvider(
@@ -225,12 +222,14 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
           ),
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rating submitted successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Rating submitted successfully!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
       }
     });
   }
@@ -243,11 +242,11 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
     a.status == 'accepted' || a.status == 'rejected').length;
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceLight,
         border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200),
+          bottom: BorderSide(color: AppColors.borderLight),
         ),
       ),
       child: Row(
@@ -257,25 +256,25 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
             icon: Icons.people,
             label: 'Total',
             value: total.toString(),
-            color: Colors.blue,
+            color: AppColors.primary,
           ),
           _StatItem(
             icon: Icons.schedule,
             label: 'Pending',
             value: pending.toString(),
-            color: Colors.orange,
+            color: AppColors.warning,
           ),
           _StatItem(
             icon: Icons.star,
             label: 'Shortlisted',
             value: shortlisted.toString(),
-            color: Colors.purple,
+            color: AppColors.accent,
           ),
           _StatItem(
             icon: Icons.check_circle,
             label: 'Reviewed',
             value: reviewed.toString(),
-            color: Colors.green,
+            color: AppColors.success,
           ),
         ],
       ),
@@ -287,22 +286,22 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[300]),
-          const SizedBox(height: 16),
+          const Icon(Icons.inbox_outlined, size: 80, color: AppColors.textMutedLight),
+          const SizedBox(height: AppSpacing.md),
           Text(
             _selectedFilter == 'all'
                 ? 'No applicants yet'
-                : 'No ${_selectedFilter} applicants',
-            style: TextStyle(
+                : 'No $_selectedFilter applicants',
+            style: const TextStyle(
               fontSize: 18,
-              color: Colors.grey[600],
+              color: AppColors.textSecondaryLight,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
+          const SizedBox(height: AppSpacing.sm),
+          const Text(
             'Applications will appear here when candidates apply',
-            style: TextStyle(color: Colors.grey[500], fontSize: 14),
+            style: TextStyle(color: AppColors.textMutedLight, fontSize: 14),
           ),
         ],
       ),
@@ -312,11 +311,12 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusXl)),
       ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,13 +325,14 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
               'Filter Applicants',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
+                color: AppColors.textPrimaryLight,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             ListTile(
-              leading: const Icon(Icons.sort),
+              leading: const Icon(Icons.sort, color: AppColors.textSecondaryLight),
               title: const Text('Sort by: Most Recent'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textMutedLight),
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -340,9 +341,9 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.star),
+              leading: const Icon(Icons.star, color: AppColors.textSecondaryLight),
               title: const Text('Experience Level'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textMutedLight),
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -361,7 +362,6 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
       '/jobs/${widget.jobId}/applicants/${application.id}',
       extra: application,
     ).then((result) {
-      // ✅ Refresh list when returning from details page
       if (result == true) {
         ref.invalidate(jobApplicantsProvider(widget.jobId));
       }
@@ -375,14 +375,14 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Applicant shortlisted')),
+          const SnackBar(content: Text('Applicant shortlisted'), backgroundColor: AppColors.success),
         );
         ref.invalidate(jobApplicantsProvider(widget.jobId));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -395,6 +395,7 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedLg),
         title: const Text('Reject Application'),
         content: Text('Are you sure you want to reject $applicantName?'),
         actions: [
@@ -404,7 +405,11 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.white,
+              shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
+            ),
             child: const Text('Reject'),
           ),
         ],
@@ -425,7 +430,7 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
+            SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
           );
         }
       }
@@ -433,7 +438,6 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
   }
 }
 
-// Stat Item Widget
 class _StatItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -452,14 +456,14 @@ class _StatItem extends StatelessWidget {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: color.withValues(alpha: 0.1),
+            borderRadius: AppSpacing.roundedSm,
           ),
           child: Icon(icon, color: color, size: 20),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           value,
           style: TextStyle(
@@ -470,9 +474,9 @@ class _StatItem extends StatelessWidget {
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey[600],
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondaryLight,
           ),
         ),
       ],
@@ -480,10 +484,9 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-// ✅ UPDATED: Applicant Card with Duplicate Check for Rating
 class _ApplicantCard extends ConsumerWidget {
   final ApplicationModel application;
-  final String jobId; // ✅ NEW
+  final String jobId;
   final VoidCallback onTap;
   final VoidCallback onShortlist;
   final VoidCallback onReject;
@@ -491,7 +494,7 @@ class _ApplicantCard extends ConsumerWidget {
 
   const _ApplicantCard({
     required this.application,
-    required this.jobId, // ✅ NEW
+    required this.jobId,
     required this.onTap,
     required this.onShortlist,
     required this.onReject,
@@ -504,127 +507,138 @@ class _ApplicantCard extends ConsumerWidget {
     final profile = applicantDetails?.profile;
     final jobSeekerProfile = applicantDetails?.jobSeekerProfile;
 
-    // ✅ Get applicant ID for review check
     final applicantId = applicantDetails?.id ?? application.applicant;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundImage: profile?.avatar != null
-                        ? NetworkImage(profile!.avatar!)
-                        : null,
-                    child: profile?.avatar == null
-                        ? Text(
-                      profile?.firstName?.substring(0, 1).toUpperCase() ?? 'A',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${profile?.firstName ?? ""} ${profile?.lastName ?? ""}'.trim().isEmpty
-                              ? 'Applicant'
-                              : '${profile?.firstName ?? ""} ${profile?.lastName ?? ""}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        if (profile?.headline != null)
-                          Text(
-                            profile!.headline!,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
-                    ),
-                  ),
-                  _StatusBadge(status: application.status),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.work_outline, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${jobSeekerProfile?.experience?.length ?? 0} years exp',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(width: 16),
-                  Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    _getTimeAgo(application.createdAt ?? DateTime.now()),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Action Buttons - Pending
-              if (application.status == 'pending')
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppSpacing.roundedLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: onShortlist,
-                        icon: const Icon(Icons.star_outline, size: 18),
-                        label: const Text('Shortlist'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.purple,
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      backgroundImage: profile?.avatar != null
+                          ? NetworkImage(profile!.avatar!)
+                          : null,
+                      child: profile?.avatar == null
+                          ? Text(
+                        profile?.firstName?.substring(0, 1).toUpperCase() ?? 'A',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
                         ),
+                      )
+                          : null,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${profile?.firstName ?? ""} ${profile?.lastName ?? ""}'.trim().isEmpty
+                                ? 'Applicant'
+                                : '${profile?.firstName ?? ""} ${profile?.lastName ?? ""}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimaryLight,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          if (profile?.headline != null)
+                            Text(
+                              profile!.headline!,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondaryLight,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: onReject,
-                        icon: const Icon(Icons.close, size: 18),
-                        label: const Text('Reject'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                        ),
-                      ),
+                    _StatusBadge(status: application.status),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    const Icon(Icons.work_outline, size: 16, color: AppColors.textMutedLight),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${jobSeekerProfile?.experience?.length ?? 0} years exp',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    const Icon(Icons.schedule, size: 16, color: AppColors.textMutedLight),
+                    const SizedBox(width: 4),
+                    Text(
+                      _getTimeAgo(application.createdAt ?? DateTime.now()),
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
                     ),
                   ],
                 ),
-
-              // ✅ UPDATED: Show rating button with duplicate check for accepted/completed
-              if ((application.status == 'accepted' || application.status == 'completed') &&
-                  applicantId.isNotEmpty)
-                _buildRatingButton(context, ref, applicantId),
-            ],
+                if (application.status == 'pending') ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: onShortlist,
+                          icon: const Icon(Icons.star_outline, size: 18),
+                          label: const Text('Shortlist'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.accent,
+                            side: const BorderSide(color: AppColors.accent),
+                            shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: onReject,
+                          icon: const Icon(Icons.close, size: 18),
+                          label: const Text('Reject'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.error,
+                            side: const BorderSide(color: AppColors.error),
+                            shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if ((application.status == 'accepted' || application.status == 'completed') &&
+                    applicantId.isNotEmpty)
+                  _buildRatingButton(context, ref, applicantId),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ✅ NEW: Build rating button with duplicate check
   Widget _buildRatingButton(BuildContext context, WidgetRef ref, String applicantId) {
     final hasReviewedAsync = ref.watch(
       hasReviewedProvider(
@@ -638,7 +652,7 @@ class _ApplicantCard extends ConsumerWidget {
     return hasReviewedAsync.when(
       data: (hasReviewed) {
         return Padding(
-          padding: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.only(top: AppSpacing.md),
           child: SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -649,15 +663,17 @@ class _ApplicantCard extends ConsumerWidget {
               ),
               label: Text(hasReviewed ? 'Already Rated' : 'Rate Applicant'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: hasReviewed ? Colors.green : Colors.amber[700],
-                disabledForegroundColor: Colors.green.withOpacity(0.5),
+                foregroundColor: hasReviewed ? AppColors.success : AppColors.primary,
+                side: BorderSide(color: hasReviewed ? AppColors.success : AppColors.primary),
+                shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
+                disabledForegroundColor: AppColors.success.withValues(alpha: 0.5),
               ),
             ),
           ),
         );
       },
       loading: () => Padding(
-        padding: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.only(top: AppSpacing.md),
         child: SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
@@ -671,8 +687,8 @@ class _ApplicantCard extends ConsumerWidget {
           ),
         ),
       ),
-      error: (_, __) => Padding(
-        padding: const EdgeInsets.only(top: 8),
+      error: (err, stack) => Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.md),
         child: SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
@@ -680,7 +696,9 @@ class _ApplicantCard extends ConsumerWidget {
             icon: const Icon(Icons.star, size: 18),
             label: const Text('Rate Applicant'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.amber[700],
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary),
+              shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
             ),
           ),
         ),
@@ -696,7 +714,6 @@ class _ApplicantCard extends ConsumerWidget {
   }
 }
 
-// Status Badge
 class _StatusBadge extends StatelessWidget {
   final String status;
 
@@ -709,32 +726,32 @@ class _StatusBadge extends StatelessWidget {
 
     switch (status) {
       case 'pending':
-        color = Colors.orange;
+        color = AppColors.warning;
         text = 'Pending';
         break;
       case 'shortlisted':
-        color = Colors.purple;
+        color = AppColors.accent;
         text = 'Shortlisted';
         break;
       case 'accepted':
-        color = Colors.green;
+        color = AppColors.success;
         text = 'Accepted';
         break;
       case 'rejected':
-        color = Colors.red;
+        color = AppColors.error;
         text = 'Rejected';
         break;
       default:
-        color = Colors.grey;
+        color = AppColors.textMutedLight;
         text = status;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.roundedMd,
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,

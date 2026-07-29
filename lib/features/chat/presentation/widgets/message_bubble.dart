@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../data/models/message_model.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -19,35 +21,36 @@ class MessageBubble extends StatelessWidget {
     return GestureDetector(
       onLongPress: onLongPress,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
         child: Row(
           mainAxisAlignment:
-          isMyMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+              isMyMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             if (!isMyMessage) ...[
               const CircleAvatar(
                 radius: 14,
-                child: Icon(Icons.person, size: 14),
+                backgroundColor: AppColors.surfaceLight,
+                child: Icon(Icons.person, size: 14, color: AppColors.textSecondaryLight),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
             ],
             Flexible(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: isMyMessage
-                      ? Theme.of(context).primaryColor
-                      : Colors.grey[200],
+                  color: isMyMessage ? AppColors.primary : AppColors.surfaceLight,
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(isMyMessage ? 16 : 4),
-                    bottomRight: Radius.circular(isMyMessage ? 4 : 16),
+                    topLeft: const Radius.circular(AppSpacing.radiusLg),
+                    topRight: const Radius.circular(AppSpacing.radiusLg),
+                    bottomLeft: Radius.circular(isMyMessage ? AppSpacing.radiusLg : AppSpacing.radiusSm),
+                    bottomRight: Radius.circular(isMyMessage ? AppSpacing.radiusSm : AppSpacing.radiusLg),
                   ),
+                  border: isMyMessage ? null : Border.all(color: AppColors.borderLight),
+                  boxShadow: isMyMessage ? null : AppSpacing.cardShadow,
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end, // Align time/ticks to the right
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SelectionArea(
@@ -57,21 +60,20 @@ class MessageBubble extends StatelessWidget {
                         isMyMessage,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.xs),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           DateFormat('HH:mm').format(message.timestamp),
-                          style: TextStyle(
-                            color: isMyMessage
-                                ? Colors.white.withOpacity(0.7)
-                                : Colors.grey[600],
-                            fontSize: 10,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: isMyMessage
+                                    ? AppColors.white.withValues(alpha: 0.8)
+                                    : AppColors.textMutedLight,
+                              ),
                         ),
                         if (isMyMessage) ...[
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSpacing.xs),
                           _buildStatusIcon(),
                         ],
                       ],
@@ -80,53 +82,46 @@ class MessageBubble extends StatelessWidget {
                 ),
               ),
             ),
-            if (isMyMessage) const SizedBox(width: 32),
+            if (isMyMessage) const SizedBox(width: AppSpacing.xxl),
           ],
         ),
       ),
     );
   }
 
-  /// Builds the WhatsApp-style checkmarks
   Widget _buildStatusIcon() {
-    // If read, show blue double checks
     if (message.read) {
       return const Icon(
         Icons.done_all,
-        size: 15,
-        color: Colors.lightBlueAccent, // WhatsApp Blue
+        size: 14,
+        color: AppColors.white,
       );
     }
 
-    // If your backend supports "delivered" status, you can check it here
-    // Otherwise, show grey double checks for received by server
     return Icon(
-      Icons.done_all,
-      size: 15,
-      color: Colors.white.withOpacity(0.6), // Grey double checks
+      Icons.done,
+      size: 14,
+      color: AppColors.white.withValues(alpha: 0.7),
     );
   }
 
   Widget _buildMessageContent(BuildContext context, String text, bool isMe) {
     final List<String> parts = text.split('**');
 
+    final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: isMe ? AppColors.white : AppColors.textPrimaryLight,
+        );
+
     if (parts.length == 1) {
       return Text(
         text,
-        style: TextStyle(
-          color: isMe ? Colors.white : Colors.black87,
-          fontSize: 14,
-        ),
+        style: textStyle,
       );
     }
 
     return RichText(
       text: TextSpan(
-        style: TextStyle(
-          color: isMe ? Colors.white : Colors.black87,
-          fontSize: 14,
-          fontFamily: DefaultTextStyle.of(context).style.fontFamily,
-        ),
+        style: textStyle,
         children: List.generate(parts.length, (index) {
           final bool isBold = index % 2 != 0;
           return TextSpan(
@@ -135,7 +130,9 @@ class MessageBubble extends StatelessWidget {
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               decoration: isBold ? TextDecoration.underline : null,
               backgroundColor: isBold
-                  ? (isMe ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.05))
+                  ? (isMe
+                      ? AppColors.white.withValues(alpha: 0.2)
+                      : AppColors.textMutedLight.withValues(alpha: 0.1))
                   : null,
             ),
           );

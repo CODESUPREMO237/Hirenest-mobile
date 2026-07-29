@@ -1,5 +1,6 @@
-// lib/features/jobs/presentation/widgets/job_details_section.dart
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../data/models/job_model.dart';
 
 class JobDetailsSection extends StatelessWidget {
@@ -10,7 +11,7 @@ class JobDetailsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -18,62 +19,81 @@ class JobDetailsSection extends StatelessWidget {
             'Description',
             Text(
               job.description,
-              style: TextStyle(height: 1.5, color: Colors.grey[800]),
+              style: const TextStyle(
+                height: 1.6, 
+                color: AppColors.textSecondaryLight,
+                fontSize: 15,
+              ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
 
-          // Requirements Section
           _buildSection(
             'Requirements',
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: job.requirements.skills.map((skill) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check_circle_outline, size: 20, color: Colors.green),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          skill.name,
-                          style: const TextStyle(fontSize: 15),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: AppSpacing.roundedLg,
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: job.requirements.skills.map((skill) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: Icon(Icons.check_circle, size: 18, color: AppColors.primary),
                         ),
-                      ),
-                      if (skill.required)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
                           child: Text(
-                            'Required',
-                            style: TextStyle(fontSize: 10, color: Colors.red.shade700, fontWeight: FontWeight.bold),
+                            skill.name,
+                            style: const TextStyle(fontSize: 15, color: AppColors.textPrimaryLight),
                           ),
                         ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                        if (skill.required)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.1),
+                              borderRadius: AppSpacing.roundedSm,
+                            ),
+                            child: const Text(
+                              'Required',
+                              style: TextStyle(
+                                fontSize: 11, 
+                                color: AppColors.error, 
+                                fontWeight: FontWeight.bold
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
 
-          // Benefits Section
           if (job.benefits.isNotEmpty)
             _buildSection(
               'Benefits',
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
                 children: job.benefits.map((benefit) {
                   return Chip(
-                    label: Text(benefit, style: const TextStyle(fontSize: 13)),
-                    backgroundColor: Colors.grey.shade100,
-                    side: BorderSide(color: Colors.grey.shade300),
+                    label: Text(benefit, style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryLight)),
+                    backgroundColor: AppColors.surfaceLight,
+                    side: const BorderSide(color: AppColors.borderLight),
+                    shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
                   );
                 }).toList(),
               ),
@@ -92,9 +112,10 @@ class JobDetailsSection extends StatelessWidget {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
+            color: AppColors.textPrimaryLight,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         content,
       ],
     );

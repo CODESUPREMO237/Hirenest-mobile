@@ -1,26 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../data/models/chat_model.dart';
 import 'package:timeago/timeago.dart' as timeago;
-
-/// A simple online indicator widget
-class OnlineStatus extends StatelessWidget {
-  final bool isOnline;
-
-  const OnlineStatus({super.key, required this.isOnline});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 12,
-      height: 12,
-      decoration: BoxDecoration(
-        color: isOnline ? Colors.green : Colors.grey,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-      ),
-    );
-  }
-}
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../data/models/chat_model.dart';
+import 'online_status.dart';
 
 class ChatTile extends StatelessWidget {
   final ChatModel chat;
@@ -36,65 +19,103 @@ class ChatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final participant = chat.participants.first;
 
-    return ListTile(
-      leading: Stack(
-        children: [
-          CircleAvatar(
-            backgroundImage: participant.avatar != null
-                ? NetworkImage(participant.avatar!)
-                : null,
-            child: participant.avatar == null
-                ? Text(
-              participant.name.isNotEmpty
-                  ? participant.name[0].toUpperCase()
-                  : 'U',
-            )
-                : null,
-          ),
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: const OnlineStatus(isOnline: false), // placeholder
-          ),
-        ],
-      ),
-      title: Text(
-        participant.name.isNotEmpty ? participant.name : 'Unknown',
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        chat.lastMessage?.content ?? 'No messages yet',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            timeago.format(chat.updatedAt),
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-          ),
-          if (chat.unreadCount > 0)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '${chat.unreadCount}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.backgroundLight,
+                  backgroundImage: participant.avatar != null
+                      ? NetworkImage(participant.avatar!)
+                      : null,
+                  child: participant.avatar == null
+                      ? Text(
+                          participant.name.isNotEmpty
+                              ? participant.name[0].toUpperCase()
+                              : 'U',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        )
+                      : null,
                 ),
+                const Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: OnlineStatus(isOnline: false, size: 14),
+                ),
+              ],
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    participant.name.isNotEmpty ? participant.name : 'Unknown',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.textPrimaryLight,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    chat.lastMessage?.content ?? 'No messages yet',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: chat.unreadCount > 0
+                              ? AppColors.textPrimaryLight
+                              : AppColors.textSecondaryLight,
+                          fontWeight: chat.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                  ),
+                ],
               ),
             ),
-        ],
+            const SizedBox(width: AppSpacing.sm),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  timeago.format(chat.lastMessage?.timestamp ?? chat.updatedAt),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: chat.unreadCount > 0
+                            ? AppColors.primary
+                            : AppColors.textMutedLight,
+                        fontWeight: chat.unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                      ),
+                ),
+                if (chat.unreadCount > 0)
+                  Container(
+                    margin: const EdgeInsets.only(top: AppSpacing.xs),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: AppSpacing.roundedFull,
+                    ),
+                    child: Text(
+                      '${chat.unreadCount}',
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
-      onTap: onTap,
     );
   }
 }

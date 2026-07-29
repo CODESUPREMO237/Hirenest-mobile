@@ -3,9 +3,12 @@
 
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
+
 import '../providers/analytics_provider.dart';
 
 class AnalyticsPage extends ConsumerStatefulWidget {
@@ -58,51 +61,51 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
           );
 
           // 🔍 DEBUG: Log specific values
-          print('═══════════════════════════════════════════════════════');
-          print('📊 ANALYTICS DEBUG OUTPUT');
-          print('═══════════════════════════════════════════════════════');
-          print('Total Jobs: ${analytics['totalJobs']}');
-          print('Active Jobs: ${analytics['activeJobs']}');
-          print('Total Applications: ${analytics['totalApplications']}');
-          print('Total Views: ${analytics['totalViews']}');
-          print('Total Unique Views: ${analytics['totalUniqueViews']}');
-          print('───────────────────────────────────────────────────────');
-          print('Marketplace Data:');
-          print('  Total Products: ${analytics['marketplace']?['totalProducts']}');
-          print('  Active Products: ${analytics['marketplace']?['activeProducts']}');
-          print('  Total Views: ${analytics['marketplace']?['totalViews']}');
-          print('  Seller Rating: ${analytics['marketplace']?['sellerRating']}');
-          print('───────────────────────────────────────────────────────');
-          print('Jobs with Stats:');
+          debugPrint('═══════════════════════════════════════════════════════');
+          debugPrint('📊 ANALYTICS DEBUG OUTPUT');
+          debugPrint('═══════════════════════════════════════════════════════');
+          debugPrint('Total Jobs: ${analytics['totalJobs']}');
+          debugPrint('Active Jobs: ${analytics['activeJobs']}');
+          debugPrint('Total Applications: ${analytics['totalApplications']}');
+          debugPrint('Total Views: ${analytics['totalViews']}');
+          debugPrint('Total Unique Views: ${analytics['totalUniqueViews']}');
+          debugPrint('───────────────────────────────────────────────────────');
+          debugPrint('Marketplace Data:');
+          debugPrint('  Total Products: ${analytics['marketplace']?['totalProducts']}');
+          debugPrint('  Active Products: ${analytics['marketplace']?['activeProducts']}');
+          debugPrint('  Total Views: ${analytics['marketplace']?['totalViews']}');
+          debugPrint('  Seller Rating: ${analytics['marketplace']?['sellerRating']}');
+          debugPrint('───────────────────────────────────────────────────────');
+          debugPrint('Jobs with Stats:');
           final jobsWithStats = analytics['jobsWithStats'] as List?;
           if (jobsWithStats != null) {
             for (var job in jobsWithStats) {
-              print('  Job: ${job['title']}');
-              print('    Views: ${job['views']}');
-              print('    Unique Views: ${job['uniqueViews']}');
-              print('    Applications: ${job['applications']}');
-              print('    Status: ${job['status']}');
+              debugPrint('  Job: ${job['title']}');
+              debugPrint('    Views: ${job['views']}');
+              debugPrint('    Unique Views: ${job['uniqueViews']}');
+              debugPrint('    Applications: ${job['applications']}');
+              debugPrint('    Status: ${job['status']}');
             }
           } else {
-            print('  No jobs with stats found');
+            debugPrint('  No jobs with stats found');
           }
-          print('───────────────────────────────────────────────────────');
-          print('Application Stats:');
+          debugPrint('───────────────────────────────────────────────────────');
+          debugPrint('Application Stats:');
           final appStats = analytics['applicationStats'] as List?;
           if (appStats != null) {
             for (var stat in appStats) {
-              print('  ${stat['_id']}: ${stat['count']}');
+              debugPrint('  ${stat['_id']}: ${stat['count']}');
             }
           }
-          print('───────────────────────────────────────────────────────');
-          print('Jobs by Status:');
+          debugPrint('───────────────────────────────────────────────────────');
+          debugPrint('Jobs by Status:');
           final jobsByStatus = analytics['jobsByStatus'] as List?;
           if (jobsByStatus != null) {
             for (var status in jobsByStatus) {
-              print('  ${status['_id']}: ${status['count']}');
+              debugPrint('  ${status['_id']}: ${status['count']}');
             }
           }
-          print('═══════════════════════════════════════════════════════\n');
+          debugPrint('═══════════════════════════════════════════════════════\n');
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -121,7 +124,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
         },
         loading: () {
           developer.log('⏳ Loading Analytics...', name: 'AnalyticsPage');
-          print('⏳ Analytics Page: Loading data...');
+          debugPrint('⏳ Analytics Page: Loading data...');
           return const Center(child: CircularProgressIndicator());
         },
         error: (error, stack) {
@@ -131,24 +134,24 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
             error: error,
             stackTrace: stack,
           );
-          print('═══════════════════════════════════════════════════════');
-          print('❌ ANALYTICS ERROR');
-          print('═══════════════════════════════════════════════════════');
-          print('Error: $error');
-          print('Stack Trace: $stack');
-          print('═══════════════════════════════════════════════════════\n');
+          debugPrint('═══════════════════════════════════════════════════════');
+          debugPrint('❌ ANALYTICS ERROR');
+          debugPrint('═══════════════════════════════════════════════════════');
+          debugPrint('Error: $error');
+          debugPrint('Stack Trace: $stack');
+          debugPrint('═══════════════════════════════════════════════════════\n');
 
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                 const SizedBox(height: 16),
                 Text('Error loading analytics: $error'),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: () {
-                    print('🔄 Retrying analytics fetch...');
+                    debugPrint('🔄 Retrying analytics fetch...');
                     ref.invalidate(userAnalyticsProvider);
                   },
                   icon: const Icon(Icons.refresh),
@@ -171,12 +174,12 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
     final totalViews = analytics['totalViews'] ?? 0; // 🔍 Job views
     final marketplaceViews = analytics['marketplace']?['totalViews'] ?? 0; // 🔍 Product views
 
-    print('📊 Overview Tab - Displaying:');
-    print('  Total Jobs: $totalJobs');
-    print('  Total Applications: $totalApplications');
-    print('  Total Products: $totalProducts');
-    print('  Job Views: $totalViews');
-    print('  Marketplace Views: $marketplaceViews');
+    debugPrint('📊 Overview Tab - Displaying:');
+    debugPrint('  Total Jobs: $totalJobs');
+    debugPrint('  Total Applications: $totalApplications');
+    debugPrint('  Total Products: $totalProducts');
+    debugPrint('  Job Views: $totalViews');
+    debugPrint('  Marketplace Views: $marketplaceViews');
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -201,7 +204,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
               icon: Icons.work_outline,
               title: 'Total Jobs',
               value: '$totalJobs',
-              color: Colors.blue,
+              color: AppColors.primary,
               trend: '+12%',
               isPositive: true,
             ),
@@ -209,7 +212,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
               icon: Icons.people_outline,
               title: 'Applications',
               value: '$totalApplications',
-              color: Colors.green,
+              color: AppColors.success,
               trend: '+8%',
               isPositive: true,
             ),
@@ -217,7 +220,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
               icon: Icons.shopping_bag_outlined,
               title: 'Products',
               value: '$totalProducts',
-              color: Colors.purple,
+              color: AppColors.accent,
               trend: '+5%',
               isPositive: true,
             ),
@@ -225,7 +228,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
               icon: Icons.visibility_outlined,
               title: 'Job Views', // Changed to clarify this is job views
               value: '$totalViews',
-              color: Colors.orange,
+              color: AppColors.warning,
               trend: '+15%',
               isPositive: true,
             ),
@@ -265,7 +268,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                 icon: Icons.check_circle_outline,
                 title: 'Active Jobs',
                 value: '${analytics['activeJobs'] ?? 0}',
-                color: Colors.green,
+                color: AppColors.success,
               ),
             ),
             const SizedBox(width: 12),
@@ -274,7 +277,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                 icon: Icons.star_outline,
                 title: 'Avg Rating',
                 value: '${analytics['marketplace']?['sellerRating']?['average']?.toStringAsFixed(1) ?? '0.0'}',
-                color: Colors.amber,
+                color: AppColors.accent,
               ),
             ),
           ],
@@ -290,10 +293,10 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
     final totalViews = analytics['totalViews'] ?? 0;
     final totalUniqueViews = analytics['totalUniqueViews'] ?? 0;
 
-    print('💼 Jobs Tab - Data:');
-    print('  Total Views: $totalViews');
-    print('  Unique Views: $totalUniqueViews');
-    print('  Applications by Job: ${applicationsByJob.length} jobs');
+    debugPrint('💼 Jobs Tab - Data:');
+    debugPrint('  Total Views: $totalViews');
+    debugPrint('  Unique Views: $totalUniqueViews');
+    debugPrint('  Applications by Job: ${applicationsByJob.length} jobs');
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -318,17 +321,17 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                     _StatColumn(
                       label: 'Total Jobs',
                       value: '${analytics['totalJobs'] ?? 0}',
-                      color: Colors.blue,
+                      color: AppColors.primary,
                     ),
                     _StatColumn(
                       label: 'Active',
                       value: '${analytics['activeJobs'] ?? 0}',
-                      color: Colors.green,
+                      color: AppColors.success,
                     ),
                     _StatColumn(
                       label: 'Applications',
                       value: '${analytics['totalApplications'] ?? 0}',
-                      color: Colors.purple,
+                      color: AppColors.accent,
                     ),
                   ],
                 ),
@@ -340,12 +343,12 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                     _StatColumn(
                       label: 'Total Views',
                       value: '$totalViews',
-                      color: Colors.orange,
+                      color: AppColors.warning,
                     ),
                     _StatColumn(
                       label: 'Unique Views',
                       value: '$totalUniqueViews',
-                      color: Colors.deepOrange,
+                      color: AppColors.error,
                     ),
                   ],
                 ),
@@ -422,11 +425,11 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
 
     final marketplace = analytics['marketplace'] as Map<String, dynamic>? ?? {};
 
-    print('🛒 Marketplace Tab - Data:');
-    print('  Total Products: ${marketplace['totalProducts']}');
-    print('  Active Products: ${marketplace['activeProducts']}');
-    print('  Total Views: ${marketplace['totalViews']}');
-    print('  Seller Rating: ${marketplace['sellerRating']}');
+    debugPrint('🛒 Marketplace Tab - Data:');
+    debugPrint('  Total Products: ${marketplace['totalProducts']}');
+    debugPrint('  Active Products: ${marketplace['activeProducts']}');
+    debugPrint('  Total Views: ${marketplace['totalViews']}');
+    debugPrint('  Seller Rating: ${marketplace['sellerRating']}');
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -444,25 +447,25 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
               icon: Icons.shopping_bag_outlined,
               title: 'Total Products',
               value: '${marketplace['totalProducts'] ?? 0}',
-              color: Colors.blue,
+              color: AppColors.primary,
             ),
             _MetricCard(
               icon: Icons.check_circle_outline,
               title: 'Active Products',
               value: '${marketplace['activeProducts'] ?? 0}',
-              color: Colors.green,
+              color: AppColors.success,
             ),
             _MetricCard(
               icon: Icons.visibility_outlined,
               title: 'Total Views',
               value: '${marketplace['totalViews'] ?? 0}',
-              color: Colors.purple,
+              color: AppColors.accent,
             ),
             _MetricCard(
               icon: Icons.star_outline,
               title: 'Seller Rating',
               value: '${marketplace['sellerRating']?['average']?.toStringAsFixed(1) ?? '0.0'}',
-              color: Colors.amber,
+              color: AppColors.accent,
             ),
           ],
         ),
@@ -487,7 +490,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                   marketplace['totalProducts'] != null && marketplace['totalProducts'] > 0
                       ? '${(marketplace['totalViews'] / marketplace['totalProducts']).toStringAsFixed(0)}'
                       : '0',
-                  Colors.blue,
+                  AppColors.primary,
                 ),
                 const Divider(height: 24),
                 _buildPerformanceMetric(
@@ -495,13 +498,13 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                   marketplace['totalProducts'] != null && marketplace['totalProducts'] > 0
                       ? '${((marketplace['activeProducts'] / marketplace['totalProducts']) * 100).toStringAsFixed(1)}%'
                       : '0%',
-                  Colors.green,
+                  AppColors.success,
                 ),
                 const Divider(height: 24),
                 _buildPerformanceMetric(
                   'Rating Count',
                   '${marketplace['sellerRating']?['count'] ?? 0}',
-                  Colors.amber,
+                  AppColors.accent,
                 ),
               ],
             ),
@@ -521,11 +524,11 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.blue.shade50,
-            Colors.purple.shade50,
+            AppColors.primary.shade50,
+            AppColors.accent.shade50,
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppSpacing.roundedLg,
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -536,17 +539,17 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
             mainAxisAlignment: MainAxisAlignment.center,
             children: const [
               _ChartLegendItem(
-                color: Colors.blue,
+                color: AppColors.primary,
                 label: 'Jobs',
               ),
               SizedBox(width: 24),
               _ChartLegendItem(
-                color: Colors.purple,
+                color: AppColors.accent,
                 label: 'Products',
               ),
               SizedBox(width: 24),
               _ChartLegendItem(
-                color: Colors.green,
+                color: AppColors.success,
                 label: 'Applications',
               ),
             ],
@@ -562,7 +565,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                   horizontalInterval: 2,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: AppColors.textMutedLight.withValues(alpha: 0.2),
                       strokeWidth: 1,
                     );
                   },
@@ -584,7 +587,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                         const style = TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: AppColors.textMutedLight,
                         );
                         String text;
                         switch (value.toInt()) {
@@ -624,7 +627,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                         const style = TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 11,
-                          color: Colors.grey,
+                          color: AppColors.textMutedLight,
                         );
                         return Text(
                           value.toInt().toString(),
@@ -644,7 +647,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                 lineTouchData: LineTouchData(
                   enabled: true,
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (touchedSpot) => Colors.blueGrey.withOpacity(0.9),
+                    getTooltipColor: (touchedSpot) => AppColors.textSecondaryLight.withValues(alpha: 0.9),
                     getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
                       return touchedBarSpots.map((barSpot) {
                         String label;
@@ -658,7 +661,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                         return LineTooltipItem(
                           '$label\n${barSpot.y.toInt()}',
                           const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.surfaceLight,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -671,16 +674,16 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                     return spotIndexes.map((spotIndex) {
                       return TouchedSpotIndicatorData(
                         FlLine(
-                          color: Colors.white.withOpacity(0.5),
+                          color: AppColors.surfaceLight.withValues(alpha: 0.5),
                           strokeWidth: 2,
                         ),
                         FlDotData(
                           getDotPainter: (spot, percent, barData, index) {
                             return FlDotCirclePainter(
                               radius: 6,
-                              color: Colors.white,
+                              color: AppColors.surfaceLight,
                               strokeWidth: 3,
-                              strokeColor: barData.gradient?.colors.first ?? barData.color ?? Colors.blue,
+                              strokeColor: barData.gradient?.colors.first ?? barData.color ?? AppColors.primary,
                             );
                           },
                         ),
@@ -703,8 +706,8 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                     isCurved: true,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.blue.shade400,
-                        Colors.blue.shade600,
+                        AppColors.primary.shade400,
+                        AppColors.primary.shade600,
                       ],
                     ),
                     barWidth: 3,
@@ -714,9 +717,9 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                       getDotPainter: (spot, percent, barData, index) {
                         return FlDotCirclePainter(
                           radius: 4,
-                          color: Colors.white,
+                          color: AppColors.surfaceLight,
                           strokeWidth: 2,
-                          strokeColor: Colors.blue.shade600,
+                          strokeColor: AppColors.primary.shade600,
                         );
                       },
                     ),
@@ -724,8 +727,8 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          Colors.blue.withOpacity(0.3),
-                          Colors.blue.withOpacity(0.05),
+                          AppColors.primary.withValues(alpha: 0.3),
+                          AppColors.primary.withValues(alpha: 0.05),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -746,8 +749,8 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                     isCurved: true,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.purple.shade400,
-                        Colors.purple.shade600,
+                        AppColors.accent.shade400,
+                        AppColors.accent.shade600,
                       ],
                     ),
                     barWidth: 3,
@@ -757,9 +760,9 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                       getDotPainter: (spot, percent, barData, index) {
                         return FlDotCirclePainter(
                           radius: 4,
-                          color: Colors.white,
+                          color: AppColors.surfaceLight,
                           strokeWidth: 2,
-                          strokeColor: Colors.purple.shade600,
+                          strokeColor: AppColors.accent.shade600,
                         );
                       },
                     ),
@@ -767,8 +770,8 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          Colors.purple.withOpacity(0.2),
-                          Colors.purple.withOpacity(0.05),
+                          AppColors.accent.withValues(alpha: 0.2),
+                          AppColors.accent.withValues(alpha: 0.05),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -789,8 +792,8 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                     isCurved: true,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.green.shade400,
-                        Colors.green.shade600,
+                        AppColors.success.shade400,
+                        AppColors.success.shade600,
                       ],
                     ),
                     barWidth: 3,
@@ -800,9 +803,9 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                       getDotPainter: (spot, percent, barData, index) {
                         return FlDotCirclePainter(
                           radius: 4,
-                          color: Colors.white,
+                          color: AppColors.surfaceLight,
                           strokeWidth: 2,
-                          strokeColor: Colors.green.shade600,
+                          strokeColor: AppColors.success.shade600,
                         );
                       },
                     ),
@@ -810,8 +813,8 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          Colors.green.withOpacity(0.2),
-                          Colors.green.withOpacity(0.05),
+                          AppColors.success.withValues(alpha: 0.2),
+                          AppColors.success.withValues(alpha: 0.05),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -828,7 +831,6 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
   }
 
   Widget _buildApplicationStatusChart(Map<String, dynamic> analytics) {
-    final total = analytics['totalApplications'] ?? 1;
     final pending = analytics['applicationStats']
         ?.firstWhere((s) => s['_id'] == 'pending', orElse: () => {'count': 0})['count'] ?? 0;
     final shortlisted = analytics['applicationStats']
@@ -842,19 +844,19 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
           PieChartSectionData(
             value: pending.toDouble(),
             title: 'Pending',
-            color: Colors.orange,
+            color: AppColors.warning,
             radius: 100,
           ),
           PieChartSectionData(
             value: shortlisted.toDouble(),
             title: 'Shortlisted',
-            color: Colors.purple,
+            color: AppColors.accent,
             radius: 100,
           ),
           PieChartSectionData(
             value: rejected.toDouble(),
             title: 'Rejected',
-            color: Colors.red,
+            color: AppColors.error,
             radius: 100,
           ),
         ],
@@ -869,7 +871,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage>
         Text(
           label,
           style: TextStyle(
-            color: Colors.grey[700],
+            color: AppColors.textSecondaryLight,
             fontSize: 14,
           ),
         ),
@@ -907,13 +909,7 @@ class _ChartLegendItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(3),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            boxShadow: AppSpacing.cardShadow,
           ),
         ),
         const SizedBox(width: 6),
@@ -922,7 +918,7 @@ class _ChartLegendItem extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
+            color: AppColors.textMutedLight.shade700,
           ),
         ),
       ],
@@ -952,9 +948,9 @@ class _MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.roundedMd,
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -975,7 +971,7 @@ class _MetricCard extends StatelessWidget {
             title,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[700],
+              color: AppColors.textSecondaryLight,
             ),
           ),
           if (trend != null) ...[
@@ -985,14 +981,14 @@ class _MetricCard extends StatelessWidget {
                 Icon(
                   isPositive == true ? Icons.trending_up : Icons.trending_down,
                   size: 12,
-                  color: isPositive == true ? Colors.green : Colors.red,
+                  color: isPositive == true ? AppColors.success : AppColors.error,
                 ),
                 const SizedBox(width: 2),
                 Text(
                   trend!,
                   style: TextStyle(
                     fontSize: 10,
-                    color: isPositive == true ? Colors.green : Colors.red,
+                    color: isPositive == true ? AppColors.success : AppColors.error,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1021,7 +1017,7 @@ class _QuickStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1040,7 +1036,7 @@ class _QuickStatCard extends StatelessWidget {
               title,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[700],
+                color: AppColors.textSecondaryLight,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1079,7 +1075,7 @@ class _StatColumn extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey[600],
+            color: AppColors.textSecondaryLight,
           ),
         ),
       ],

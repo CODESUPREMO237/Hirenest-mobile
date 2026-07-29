@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'dart:io';
 
 /// Checks if a file is empty or only contains comments/whitespace

@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.jobconnect.app"
+    namespace = "com.hirenest.app"
     compileSdk = 36
     ndkVersion = "29.0.14206865"
 
@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.jobconnect.app"
+        applicationId = "com.hirenest.app"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = 1

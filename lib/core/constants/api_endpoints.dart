@@ -21,6 +21,7 @@ class ApiEndpoints {
   static const String uploadAvatar = '/users/me/avatar';
   static const String changePassword = '/users/me/password';
   static const String deleteAccount = '/users/me';
+  static const String talent = '/users/talent';
   static String publicProfile(String id) => '/users/$id/public-profile';
   static String userById(String id) => '/users/$id';
 
@@ -61,6 +62,19 @@ class ApiEndpoints {
       '/marketplace/products/$id/mark-sold';
   static String reportProduct(String id) =>
       '/marketplace/products/$id/report';
+
+  // ==================== ORDERS & DELIVERY ====================
+  // Backend: app.use('/api/v1/orders', deliveryRoutes)
+  static String order(String id) => '/orders/$id';
+  static const String myOrders = '/orders/my-orders';
+  static const String mySales = '/orders/my-sales';
+  
+  // Delivery
+  static String orderDeliveryOtp(String id) => '/orders/$id/delivery/otp';
+  static String verifyDeliveryOtp(String id) => '/orders/$id/delivery/verify-otp';
+  static String rejectDelivery(String id) => '/orders/$id/delivery/reject';
+  static String shipOrder(String id) => '/orders/$id/ship';
+  static String nudgeSeller(String id) => '/orders/$id/nudge-seller';
 
   // ==================== APPLICATIONS ====================
 
@@ -138,6 +152,8 @@ class ApiEndpoints {
   static String moderateJob(String id) => '/admin/jobs/$id/moderate';
   static String moderateProduct(String id) => '/admin/products/$id/moderate';
   static const String adminReported = '/admin/reported';
+  static const String adminDisputes = '/admin/disputes';
+  static String resolveAdminDispute(String id) => '/admin/disputes/$id/resolve';
 
 // ==================== REVIEWS ====================
   // ==================== REVIEWS ====================
@@ -149,11 +165,45 @@ class ApiEndpoints {
   static String checkReview(String jobId, String revieweeId) =>
       '/reviews/check/$jobId/$revieweeId';
 
+  // ==================== GDPR / ACCOUNT (Phase 6) ====================
+  static const String exportMyData = '/account/export';
+  static const String deleteMyAccount = '/account/delete';
+
+  // ==================== VERIFICATION (Phase 7) ====================
+  static const String submitVerification = '/verifications';
+  static const String myVerifications = '/verifications/mine';
+  static const String pendingVerifications = '/verifications/pending';
+  static String reviewVerification(String id) => '/verifications/$id/review';
+
+  // ==================== SAVED SEARCHES (Phase 8) ====================
+  static const String savedSearches = '/saved-searches';
+  static String savedSearch(String id) => '/saved-searches/$id';
+
+  // ==================== SUBSCRIPTIONS (Phase 9) ====================
+  static const String plans = '/subscriptions/plans';
+  static const String subscribe = '/subscriptions/subscribe';
+  static const String mySubscription = '/subscriptions/mine';
+  static const String cancelSubscription = '/subscriptions/cancel';
+  static const String boostListing = '/subscriptions/boost';
+
+  // ==================== MATCHING (Phase 10) ====================
+  static const String recommendedJobs = '/matching/jobs';
+  static String recommendedCandidates(String jobId) => '/matching/candidates/$jobId';
+
+  // ==================== FEATURE FLAGS (Phase 11) ====================
+  static const String myFeatureFlags = '/feature-flags/mine';
+  static const String featureFlags = '/feature-flags';
+  static String featureFlag(String id) => '/feature-flags/$id';
+
+  // ==================== LEGAL (Phase 12) ====================
+  static const String legalStatus = '/legal/status';
+  static const String acceptLegal = '/legal/accept';
+
 }
 
 // Helper extension for building full URLs
 extension ApiEndpointsExtension on ApiEndpoints {
   static String fullUrl(String endpoint) {
-    return '${ApiEndpoints.baseUrl}${endpoint}';
+    return '${ApiEndpoints.baseUrl}$endpoint';
   }
 }

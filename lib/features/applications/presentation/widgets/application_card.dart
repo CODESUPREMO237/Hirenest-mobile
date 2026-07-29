@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/application_model.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 class ApplicationCard extends StatelessWidget {
   final ApplicationModel application;
@@ -26,116 +27,121 @@ class ApplicationCard extends StatelessWidget {
     // Extracting Company and City from the nested JobModel
     final String companyName = job?.company.name ?? 'Company N/A';
     final String city = job?.location.address?.city ?? 'Location N/A';
+    final textTheme = Theme.of(context).textTheme;
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // TITLE AND STATUS ROW
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      displayTitle,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppSpacing.roundedLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // TITLE AND STATUS ROW
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        displayTitle,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimaryLight,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _buildStatusBadge(application.status, textTheme),
+                  ],
+                ),
+
+                // ✅ CONDITIONAL DISPLAY: Show different info for employer vs job seeker
+                if (isEmployerView) ...[
+                  // EMPLOYER VIEW: Show applicant name
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.sm),
+                    child: Row(
+                      children: [
+                        Icon(Icons.person_outline, size: 16, color: Theme.of(context).primaryColor),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          _getApplicantName(),
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  _buildStatusBadge(application.status),
+                ] else ...[
+                  // JOB SEEKER VIEW: Show company name
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.sm),
+                    child: Text(
+                      companyName,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ],
-              ),
 
-              // ✅ CONDITIONAL DISPLAY: Show different info for employer vs job seeker
-              if (isEmployerView) ...[
-                // EMPLOYER VIEW: Show applicant name
-                Padding(
-                  padding: const EdgeInsets.only(top: 4, bottom: 8),
-                  child: Row(
+                Divider(height: AppSpacing.xl, color: AppColors.borderLight),
+
+                // LOCATION AND DATE ROW
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textMutedLight),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      city,
+                      style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondaryLight),
+                    ),
+                    const SizedBox(width: AppSpacing.lg),
+                    const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textMutedLight),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      application.appliedAt != null
+                          ? DateFormat('MMM dd, yyyy').format(application.appliedAt!)
+                          : 'N/A',
+                      style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondaryLight),
+                    ),
+                  ],
+                ),
+
+                // SALARY SECTION
+                if (_hasExpectedSalary(application.additionalInfo)) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
                     children: [
-                      const Icon(Icons.person_outline, size: 16),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.payments_outlined, size: 16, color: AppColors.success),
+                      const SizedBox(width: AppSpacing.xs),
                       Text(
-                        _getApplicantName(),
-                        style: TextStyle(
-                          color: Colors.blue[800],
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                        _getExpectedSalaryText(application.additionalInfo?['expectedSalary']),
+                        style: textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.success,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ] else ...[
-                // JOB SEEKER VIEW: Show company name
-                Padding(
-                  padding: const EdgeInsets.only(top: 4, bottom: 8),
-                  child: Text(
-                    companyName,
-                    style: TextStyle(
-                      color: Colors.blue[800],
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-
-              const Divider(height: 16),
-
-              // LOCATION AND DATE ROW
-              Row(
-                children: [
-                  Icon(Icons.location_on_outlined, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    city,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                  ),
-                  const SizedBox(width: 16),
-                  Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    application.appliedAt != null
-                        ? DateFormat('MMM dd, yyyy').format(application.appliedAt!)
-                        : 'N/A',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                  ),
                 ],
-              ),
-
-              // SALARY SECTION
-              if (_hasExpectedSalary(application.additionalInfo)) ...[
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(Icons.payments_outlined, size: 16, color: AppColors.success),
-                    const SizedBox(width: 6),
-                    Text(
-                      _getExpectedSalaryText(application.additionalInfo?['expectedSalary']),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.success,
-                      ),
-                    ),
-                  ],
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -145,14 +151,12 @@ class ApplicationCard extends StatelessWidget {
   // --- Helpers ---
 
   String _getApplicantName() {
-    // ✅ FIXED: Use applicantDetails (UserModel) instead of applicant (String)
     final applicantDetails = application.applicantDetails;
 
     if (applicantDetails == null) {
       return 'Applicant';
     }
 
-    // ✅ CORRECT: firstName and lastName are in ProfileData, not JobSeekerProfileData
     final profile = applicantDetails.profile;
     if (profile != null) {
       final firstName = profile.firstName ?? '';
@@ -163,13 +167,11 @@ class ApplicationCard extends StatelessWidget {
         return fullName;
       }
 
-      // Try display name if full name is empty
       if (profile.displayName != null && profile.displayName!.isNotEmpty) {
         return profile.displayName!;
       }
     }
 
-    // Fallback to email (split at @ to get username part)
     if (applicantDetails.email.isNotEmpty) {
       return applicantDetails.email.split('@')[0];
     }
@@ -195,25 +197,28 @@ class ApplicationCard extends StatelessWidget {
     return 'Expected: $expectedSalary';
   }
 
-  Widget _buildStatusBadge(String status) {
+  Widget _buildStatusBadge(String status, TextTheme textTheme) {
     Color color;
     switch (status.toLowerCase()) {
-      case 'pending': color = AppColors.pending; break;
+      case 'pending': color = AppColors.warning; break;
       case 'accepted': color = AppColors.success; break;
-      case 'rejected': color = AppColors.rejected; break;
-      case 'shortlisted': color = AppColors.shortlisted; break;
-      default: color = Colors.grey;
+      case 'rejected': color = AppColors.error; break;
+      case 'shortlisted': color = AppColors.primary; break;
+      default: color = AppColors.textMutedLight;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.roundedSm,
       ),
       child: Text(
         status.toUpperCase(),
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+        style: textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
       ),
     );
   }

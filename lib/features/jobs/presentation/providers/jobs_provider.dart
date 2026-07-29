@@ -1,14 +1,13 @@
+import 'package:flutter/foundation.dart';
 // ============================================================================
 // JOBS PROVIDERS - State Management (COMPLETE - NO DUPLICATES)
 // lib/features/jobs/presentation/providers/jobs_provider.dart
 // ============================================================================
 
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/job_model.dart';
 import '../../data/repositories/jobs_repository.dart';
 import '../../../applications/data/models/application_model.dart';
-import '../../../../core/models/paginated_response.dart';
 
 // ============================================================================
 // JOBS LIST PROVIDER
@@ -90,13 +89,13 @@ final jobsPaginationLoadingProvider = StateProvider<bool>((ref) => false);
 // ============================================================================
 final jobDetailProvider = FutureProvider.autoDispose.family<JobModel, String>(
       (ref, id) async {
-    print('🔍 [jobDetailProvider] Fetching job ID: $id');
+    debugPrint('🔍 [jobDetailProvider] Fetching job ID: $id');
     final repository = ref.read(jobsRepositoryProvider);
     final job = await repository.getJob(id);
-    print('✅ [jobDetailProvider] Loaded: ${job.title}');
-    print('   📊 Views: ${job.stats?.views ?? 0}');
-    print('   👤 Unique: ${job.stats?.uniqueViews ?? 0}');
-    print('   📝 Apps: ${job.stats?.applications ?? 0}');
+    debugPrint('✅ [jobDetailProvider] Loaded: ${job.title}');
+    debugPrint('   📊 Views: ${job.stats?.views ?? 0}');
+    debugPrint('   👤 Unique: ${job.stats?.uniqueViews ?? 0}');
+    debugPrint('   📝 Apps: ${job.stats?.applications ?? 0}');
     return job;
   },
 );

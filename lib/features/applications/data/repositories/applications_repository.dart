@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -18,9 +19,9 @@ class ApplicationsRepository {
     int limit = 20,
   }) async {
     try {
-      print('📋 [Repository] getMyApplications called');
-      print('   Status filter: ${status ?? "none"}');
-      print('   Page: $page, Limit: $limit');
+      debugPrint('📋 [Repository] getMyApplications called');
+      debugPrint('   Status filter: ${status ?? "none"}');
+      debugPrint('   Page: $page, Limit: $limit');
 
       final queryParams = <String, dynamic>{
         'page': page,
@@ -28,20 +29,20 @@ class ApplicationsRepository {
       };
       if (status != null) queryParams['status'] = status;
 
-      print('   Endpoint: ${ApiEndpoints.myApplications}');
-      print('   Full URL: ${ApiEndpoints.baseUrl}${ApiEndpoints.myApplications}');
+      debugPrint('   Endpoint: ${ApiEndpoints.myApplications}');
+      debugPrint('   Full URL: ${ApiEndpoints.baseUrl}${ApiEndpoints.myApplications}');
 
       final response = await _dio.get(
         ApiEndpoints.myApplications,
         queryParameters: queryParams,
       );
 
-      print('✅ [Repository] Response received');
-      print('   Status code: ${response.statusCode}');
+      debugPrint('✅ [Repository] Response received');
+      debugPrint('   Status code: ${response.statusCode}');
 
       return response.data['data'];
     } catch (e) {
-      print('❌ [Repository] Error in getMyApplications: $e');
+      debugPrint('❌ [Repository] Error in getMyApplications: $e');
       throw _handleError(e);
     }
   }
@@ -93,17 +94,17 @@ class ApplicationsRepository {
     Map<String, dynamic>? additionalInfo,
   }) async {
     try {
-      print('');
-      print('═══════════════════════════════════════════════════');
-      print('📤 APPLYING TO JOB - REPOSITORY LAYER');
-      print('═══════════════════════════════════════════════════');
-      print('Job ID: $jobId');
-      print('Cover Letter: ${coverLetter?.isEmpty ?? true ? "EMPTY/NULL" : "Present (${coverLetter!.length} chars)"}');
-      print('Resume File: ${resume.name}');
-      print('Screening Answers: ${screeningAnswers?.length ?? 0}');
-      print('Additional Info: ${additionalInfo?.keys.length ?? 0} fields');
-      print('═══════════════════════════════════════════════════');
-      print('');
+      debugPrint('');
+      debugPrint('═══════════════════════════════════════════════════');
+      debugPrint('📤 APPLYING TO JOB - REPOSITORY LAYER');
+      debugPrint('═══════════════════════════════════════════════════');
+      debugPrint('Job ID: $jobId');
+      debugPrint('Cover Letter: ${coverLetter?.isEmpty ?? true ? "EMPTY/NULL" : "Present (${coverLetter!.length} chars)"}');
+      debugPrint('Resume File: ${resume.name}');
+      debugPrint('Screening Answers: ${screeningAnswers?.length ?? 0}');
+      debugPrint('Additional Info: ${additionalInfo?.keys.length ?? 0} fields');
+      debugPrint('═══════════════════════════════════════════════════');
+      debugPrint('');
 
       // Create multipart form data
       final formData = FormData();
@@ -111,9 +112,9 @@ class ApplicationsRepository {
       // Add cover letter if provided
       if (coverLetter != null && coverLetter.trim().isNotEmpty) {
         formData.fields.add(MapEntry('coverLetter', coverLetter.trim()));
-        print('✅ Added cover letter to form data');
+        debugPrint('✅ Added cover letter to form data');
       } else {
-        print('⚠️  Cover letter is empty or null - not sending');
+        debugPrint('⚠️  Cover letter is empty or null - not sending');
       }
 
       // Add resume file
@@ -123,25 +124,25 @@ class ApplicationsRepository {
         filename: fileName,
       );
       formData.files.add(MapEntry('resume', multipartFile));
-      print('✅ Added resume file: $fileName');
+      debugPrint('✅ Added resume file: $fileName');
 
       // Add screening answers (if any)
       if (screeningAnswers != null && screeningAnswers.isNotEmpty) {
         final jsonString = jsonEncode(screeningAnswers);
         formData.fields.add(MapEntry('screeningAnswers', jsonString));
-        print('✅ Added ${screeningAnswers.length} screening answers');
+        debugPrint('✅ Added ${screeningAnswers.length} screening answers');
       }
 
       // Add additional info (if any)
       if (additionalInfo != null && additionalInfo.isNotEmpty) {
         final jsonString = jsonEncode(additionalInfo);
         formData.fields.add(MapEntry('additionalInfo', jsonString));
-        print('✅ Added additional info');
+        debugPrint('✅ Added additional info');
       }
 
-      print('');
-      print('📡 Sending POST request to: /jobs/$jobId/apply');
-      print('');
+      debugPrint('');
+      debugPrint('📡 Sending POST request to: /jobs/$jobId/apply');
+      debugPrint('');
 
       // Make the API request
       final response = await _dio.post(
@@ -154,52 +155,52 @@ class ApplicationsRepository {
         ),
       );
 
-      print('');
-      print('═══════════════════════════════════════════════════');
-      print('✅ APPLICATION RESPONSE RECEIVED');
-      print('═══════════════════════════════════════════════════');
-      print('Status Code: ${response.statusCode}');
-      print('Response keys: ${response.data.keys}');
+      debugPrint('');
+      debugPrint('═══════════════════════════════════════════════════');
+      debugPrint('✅ APPLICATION RESPONSE RECEIVED');
+      debugPrint('═══════════════════════════════════════════════════');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response keys: ${response.data.keys}');
 
       if (response.data['data'] != null) {
-        print('Data keys: ${response.data['data'].keys}');
+        debugPrint('Data keys: ${response.data['data'].keys}');
         if (response.data['data']['application'] != null) {
           final app = response.data['data']['application'];
-          print('Application ID: ${app['_id']}');
-          print('Has coverLetter: ${app['coverLetter'] != null}');
-          print('Has resume: ${app['resume'] != null}');
-          print('Has applicant: ${app['applicant'] != null}');
+          debugPrint('Application ID: ${app['_id']}');
+          debugPrint('Has coverLetter: ${app['coverLetter'] != null}');
+          debugPrint('Has resume: ${app['resume'] != null}');
+          debugPrint('Has applicant: ${app['applicant'] != null}');
 
           if (app['applicant'] is Map) {
-            print('Applicant type: MAP (POPULATED) ✅');
-            print('Has profile: ${app['applicant']['profile'] != null}');
-            print('Has jobSeekerProfile: ${app['applicant']['jobSeekerProfile'] != null}');
+            debugPrint('Applicant type: MAP (POPULATED) ✅');
+            debugPrint('Has profile: ${app['applicant']['profile'] != null}');
+            debugPrint('Has jobSeekerProfile: ${app['applicant']['jobSeekerProfile'] != null}');
           } else {
-            print('Applicant type: STRING (NOT POPULATED) ❌');
+            debugPrint('Applicant type: STRING (NOT POPULATED) ❌');
           }
         }
       }
-      print('═══════════════════════════════════════════════════');
-      print('');
+      debugPrint('═══════════════════════════════════════════════════');
+      debugPrint('');
 
       return ApplicationModel.fromJson(response.data['data']['application']);
     } on DioException catch (e) {
-      print('');
-      print('❌ DIO ERROR in applyToJob:');
-      print('   Type: ${e.type}');
-      print('   Message: ${e.message}');
+      debugPrint('');
+      debugPrint('❌ DIO ERROR in applyToJob:');
+      debugPrint('   Type: ${e.type}');
+      debugPrint('   Message: ${e.message}');
       if (e.response != null) {
-        print('   Status Code: ${e.response?.statusCode}');
-        print('   Response Data: ${e.response?.data}');
+        debugPrint('   Status Code: ${e.response?.statusCode}');
+        debugPrint('   Response Data: ${e.response?.data}');
       }
-      print('');
+      debugPrint('');
       throw _handleError(e);
     } catch (e, stackTrace) {
-      print('');
-      print('❌ GENERAL ERROR in applyToJob:');
-      print('   Error: $e');
-      print('   Stack trace: $stackTrace');
-      print('');
+      debugPrint('');
+      debugPrint('❌ GENERAL ERROR in applyToJob:');
+      debugPrint('   Error: $e');
+      debugPrint('   Stack trace: $stackTrace');
+      debugPrint('');
       rethrow;
     }
   }
@@ -313,9 +314,9 @@ class ApplicationsRepository {
     String? status,
   }) async {
     try {
-      print('📋 [Repository] Fetching employer applications (OPTIMIZED)...');
-      print('   Endpoint: ${ApiEndpoints.employerApplications}');
-      print('   Page: $page, Status: ${status ?? "all"}');
+      debugPrint('📋 [Repository] Fetching employer applications (OPTIMIZED)...');
+      debugPrint('   Endpoint: ${ApiEndpoints.employerApplications}');
+      debugPrint('   Page: $page, Status: ${status ?? "all"}');
 
       final startTime = DateTime.now();
 
@@ -335,9 +336,9 @@ class ApplicationsRepository {
 
       final duration = DateTime.now().difference(startTime);
 
-      print('✅ [Repository] Fetched ${applications.length} applications in ${duration.inMilliseconds}ms');
+      debugPrint('✅ [Repository] Fetched ${applications.length} applications in ${duration.inMilliseconds}ms');
       if (applications.isNotEmpty) {
-        print('   ⚡ ${(duration.inMilliseconds / applications.length).toStringAsFixed(1)}ms per application');
+        debugPrint('   ⚡ ${(duration.inMilliseconds / applications.length).toStringAsFixed(1)}ms per application');
       }
 
       return applications;
@@ -363,15 +364,15 @@ class ApplicationsRepository {
     if (error is DioException) {
       if (error.response != null) {
         final message = error.response?.data['message'] ?? 'An error occurred';
-        print('❌ [Repository] API Error: $message');
-        print('   Status: ${error.response?.statusCode}');
-        print('   Data: ${error.response?.data}');
+        debugPrint('❌ [Repository] API Error: $message');
+        debugPrint('   Status: ${error.response?.statusCode}');
+        debugPrint('   Data: ${error.response?.data}');
         return message;
       }
-      print('❌ [Repository] Network error');
+      debugPrint('❌ [Repository] Network error');
       return 'Network error. Please check your connection.';
     }
-    print('❌ [Repository] Unknown error: $error');
+    debugPrint('❌ [Repository] Unknown error: $error');
     return error.toString();
   }
 }

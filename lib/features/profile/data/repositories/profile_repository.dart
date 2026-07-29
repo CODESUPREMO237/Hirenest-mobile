@@ -81,7 +81,7 @@ class ProfileRepository {
     }
 
     if (kDebugMode) {
-      print("SENDING DATA: $requestData");
+      debugPrint("SENDING DATA: $requestData");
     }
 
     final response = await dio.put('/users/me', data: requestData);

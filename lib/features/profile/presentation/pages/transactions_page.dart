@@ -2,6 +2,8 @@
 // lib/features/profile/presentation/pages/transactions_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/services/payment_service.dart';
@@ -28,20 +30,21 @@ class TransactionsPage extends ConsumerWidget {
     final transactionsAsync = ref.watch(transactionsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.backgroundLight,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 120,
             floating: false,
             pinned: true,
-            backgroundColor: Theme.of(context).primaryColor,
+            backgroundColor: AppColors.primary,
+            elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
+              title: Text(
                 'Transactions',
-                style: TextStyle(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.white,
                 ),
               ),
               background: Container(
@@ -50,8 +53,8 @@ class TransactionsPage extends ConsumerWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Theme.of(context).primaryColor,
-                      Theme.of(context).primaryColor.withOpacity(0.8),
+                      AppColors.primary,
+                      AppColors.primaryDark,
                     ],
                   ),
                 ),
@@ -60,7 +63,7 @@ class TransactionsPage extends ConsumerWidget {
           ),
           transactionsAsync.when(
             loading: () => const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
             ),
             error: (error, stack) => SliverFillRemaining(
               child: CustomErrorWidget(
@@ -70,21 +73,21 @@ class TransactionsPage extends ConsumerWidget {
             ),
             data: (transactions) {
               if (transactions.isEmpty) {
-                return SliverFillRemaining(child: _buildEmptyState());
+                return SliverFillRemaining(child: _buildEmptyState(context));
               }
 
               return SliverPadding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                        (context, index) {
+                    (context, index) {
                       if (index == 0) {
                         return Column(
                           children: [
-                            _buildSummaryCard(transactions),
-                            const SizedBox(height: 24),
-                            _buildSectionHeader('Recent Activity'),
-                            const SizedBox(height: 12),
+                            _buildSummaryCard(context, transactions),
+                            const SizedBox(height: AppSpacing.xl),
+                            _buildSectionHeader(context, 'Recent Activity'),
+                            const SizedBox(height: AppSpacing.md),
                           ],
                         );
                       }
@@ -103,9 +106,10 @@ class TransactionsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildSummaryCard(List<Transaction> transactions) {
+  Widget _buildSummaryCard(BuildContext context, List<Transaction> transactions) {
     final completed = transactions.where((t) =>
-    t.status.toLowerCase() == 'completed' || t.status.toLowerCase() == 'success'
+      ['completed', 'success', 'paid_escrow', 'shipped', 'out_for_delivery', 'delivered_confirmed', 'released', 'auto_released']
+          .contains(t.status.toLowerCase())
     ).toList();
 
     final totalIn = completed
@@ -113,24 +117,24 @@ class TransactionsPage extends ConsumerWidget {
         .fold(0.0, (sum, t) => sum + t.amount);
 
     final totalOut = completed
-        .where((t) => t.type.toLowerCase() == 'payout' || t.type.toLowerCase() == 'withdrawal')
+        .where((t) => t.type.toLowerCase() == 'payout' || t.type.toLowerCase() == 'withdrawal' || t.type.toLowerCase() == 'purchase')
         .fold(0.0, (sum, t) => sum + t.amount);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.blue[600]!,
-            Colors.blue[800]!,
+            AppColors.primary,
+            AppColors.primaryDark,
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppSpacing.roundedXl,
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -146,15 +150,15 @@ class TransactionsPage extends ConsumerWidget {
                 label: 'Total In',
                 amount: totalIn,
                 currency: transactions.firstOrNull?.currency ?? 'XAF',
-                color: Colors.greenAccent,
+                color: AppColors.success,
               ),
-              Container(width: 1, height: 40, color: Colors.white24),
+              Container(width: 1, height: 40, color: AppColors.white.withValues(alpha: 0.24)),
               _SummaryItem(
                 icon: Icons.arrow_upward_rounded,
                 label: 'Total Out',
                 amount: totalOut,
                 currency: transactions.firstOrNull?.currency ?? 'XAF',
-                color: Colors.redAccent,
+                color: AppColors.error,
               ),
             ],
           ),
@@ -163,53 +167,51 @@ class TransactionsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Row(
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: AppColors.textPrimaryLight,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(AppSpacing.xxl),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: AppColors.surfaceLight,
               shape: BoxShape.circle,
+              boxShadow: AppSpacing.cardShadow,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.receipt_long_rounded,
               size: 80,
-              color: Colors.grey[400],
+              color: AppColors.textMutedLight,
             ),
           ),
-          const SizedBox(height: 24),
-          const Text(
+          const SizedBox(height: AppSpacing.xl),
+          Text(
             'No transactions yet',
-            style: TextStyle(
-              fontSize: 20,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: AppColors.textPrimaryLight,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'Your transaction history will appear here',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondaryLight,
             ),
           ),
         ],
@@ -242,26 +244,24 @@ class _SummaryItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppColors.white.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             NumberFormat.currency(
               symbol: currency,
               decimalDigits: 0,
             ).format(amount),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: AppColors.white,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -279,50 +279,40 @@ class _TransactionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppSpacing.roundedLg,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () {
-              // TODO: Navigate to transaction details
-            },
+            onTap: () {},
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Row(
                 children: [
                   _TransactionIcon(type: transaction.type),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           _getTransactionTitle(transaction.type),
-                          style: const TextStyle(
-                            fontSize: 16,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                            color: AppColors.textPrimaryLight,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           transaction.description ?? 'No description',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondaryLight,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -330,27 +320,27 @@ class _TransactionCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.access_time_rounded,
                               size: 12,
-                              color: Colors.grey[400],
+                              color: AppColors.textMutedLight,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               DateFormat('MMM dd, yyyy').format(transaction.createdAt),
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 fontSize: 11,
-                                color: Colors.grey[500],
+                                color: AppColors.textMutedLight,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.md),
                             _StatusBadge(status: transaction.status),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -359,8 +349,7 @@ class _TransactionCard extends StatelessWidget {
                           symbol: transaction.currency,
                           decimalDigits: 0,
                         ).format(transaction.amount)}',
-                        style: TextStyle(
-                          fontSize: 18,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: _getAmountColor(transaction.type),
                         ),
@@ -368,9 +357,9 @@ class _TransactionCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         DateFormat('hh:mm a').format(transaction.createdAt),
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontSize: 11,
-                          color: Colors.grey[500],
+                          color: AppColors.textMutedLight,
                         ),
                       ),
                     ],
@@ -388,6 +377,8 @@ class _TransactionCard extends StatelessWidget {
     switch (type.toLowerCase()) {
       case 'payment':
         return 'Payment Received';
+      case 'purchase':
+        return 'Purchase';
       case 'payout':
         return 'Payout';
       case 'refund':
@@ -395,7 +386,7 @@ class _TransactionCard extends StatelessWidget {
       case 'withdrawal':
         return 'Withdrawal';
       default:
-        return type;
+        return type.isNotEmpty ? type[0].toUpperCase() + type.substring(1) : type;
     }
   }
 
@@ -407,8 +398,8 @@ class _TransactionCard extends StatelessWidget {
 
   Color _getAmountColor(String type) {
     return type.toLowerCase() == 'payment' || type.toLowerCase() == 'refund'
-        ? Colors.green[600]!
-        : Colors.red[600]!;
+        ? AppColors.success
+        : AppColors.error;
   }
 }
 
@@ -425,27 +416,31 @@ class _TransactionIcon extends StatelessWidget {
     switch (type.toLowerCase()) {
       case 'payment':
         icon = Icons.arrow_downward_rounded;
-        color = Colors.green;
+        color = AppColors.success;
+        break;
+      case 'purchase':
+        icon = Icons.shopping_cart_rounded;
+        color = AppColors.error;
         break;
       case 'payout':
       case 'withdrawal':
         icon = Icons.arrow_upward_rounded;
-        color = Colors.red;
+        color = AppColors.error;
         break;
       case 'refund':
         icon = Icons.refresh_rounded;
-        color = Colors.blue;
+        color = AppColors.primary;
         break;
       default:
         icon = Icons.attach_money_rounded;
-        color = Colors.grey;
+        color = AppColors.textMutedLight;
     }
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.roundedMd,
       ),
       child: Icon(icon, color: color, size: 24),
     );
@@ -466,28 +461,34 @@ class _StatusBadge extends StatelessWidget {
     switch (status.toLowerCase()) {
       case 'completed':
       case 'success':
-        backgroundColor = Colors.green.withOpacity(0.15);
-        textColor = Colors.green[700]!;
-        label = 'Completed';
+      case 'paid_escrow':
+      case 'shipped':
+      case 'out_for_delivery':
+      case 'delivered_confirmed':
+      case 'released':
+      case 'auto_released':
+        backgroundColor = AppColors.success.withValues(alpha: 0.15);
+        textColor = AppColors.successDark;
+        label = status.split('_').map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1).toLowerCase() : '').join(' ');
         break;
       case 'pending':
-        backgroundColor = Colors.orange.withOpacity(0.15);
-        textColor = Colors.orange[700]!;
+        backgroundColor = AppColors.warning.withValues(alpha: 0.15);
+        textColor = AppColors.warning;
         label = 'Pending';
         break;
       case 'failed':
-        backgroundColor = Colors.red.withOpacity(0.15);
-        textColor = Colors.red[700]!;
+        backgroundColor = AppColors.error.withValues(alpha: 0.15);
+        textColor = AppColors.error;
         label = 'Failed';
         break;
       case 'cancelled':
-        backgroundColor = Colors.grey.withOpacity(0.15);
-        textColor = Colors.grey[700]!;
+        backgroundColor = AppColors.textMutedLight.withValues(alpha: 0.15);
+        textColor = AppColors.textSecondaryLight;
         label = 'Cancelled';
         break;
       default:
-        backgroundColor = Colors.grey.withOpacity(0.15);
-        textColor = Colors.grey[700]!;
+        backgroundColor = AppColors.textMutedLight.withValues(alpha: 0.15);
+        textColor = AppColors.textSecondaryLight;
         label = status;
     }
 
@@ -495,14 +496,14 @@ class _StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppSpacing.roundedSm,
       ),
       child: Text(
         label,
-        style: TextStyle(
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: textColor,
-          fontSize: 10,
           fontWeight: FontWeight.w600,
+          fontSize: 10,
         ),
       ),
     );

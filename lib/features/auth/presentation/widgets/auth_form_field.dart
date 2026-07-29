@@ -1,10 +1,6 @@
-// Auth Form Field
-// ============================================================================
-// auth_form_field.dart
-// lib/features/auth/presentation/widgets/auth_form_field.dart
-// ============================================================================
-
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 class AuthFormField extends StatelessWidget {
   final TextEditingController controller;
@@ -36,31 +32,37 @@ class AuthFormField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+        labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
+        hintStyle: const TextStyle(color: AppColors.textMutedLight),
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.textMutedLight) : null,
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppSpacing.roundedMd,
+          borderSide: const BorderSide(color: AppColors.borderLight),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderRadius: AppSpacing.roundedMd,
+          borderSide: const BorderSide(color: AppColors.borderLight),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Theme.of(context).primaryColor,
-            width: 2,
-          ),
+          borderRadius: AppSpacing.roundedMd,
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
+          borderRadius: AppSpacing.roundedMd,
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: AppSpacing.roundedMd,
+          borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.surfaceLight,
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       ),
       validator: validator,
       onChanged: onChanged,

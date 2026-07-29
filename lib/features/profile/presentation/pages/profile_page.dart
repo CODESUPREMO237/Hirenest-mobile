@@ -4,6 +4,8 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -12,7 +14,7 @@ import '../../../../core/services/payment_service.dart';
 import '../../../applications/presentation/providers/applications_provider.dart';
 import '../../../reviews/presentation/widgets/rating_display_widget.dart';
 import '../providers/profile_provider.dart';
-import '../../helpers/logout_handler.dart'; // ✅ Import logout handler
+import '../../helpers/logout_handler.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -23,21 +25,30 @@ class ProfilePage extends ConsumerWidget {
     final balanceAsync = ref.watch(balanceProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(
+          'Profile',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimaryLight,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimaryLight),
             onPressed: () => context.push('/profile/settings'),
           ),
         ],
       ),
       body: profileAsync.when(
         data: (profile) {
-          // Calculate profile completion
           final completionData = _calculateProfileCompletion(profile);
 
           return RefreshIndicator(
+            color: AppColors.primary,
             onRefresh: () async {
               ref.invalidate(profileProvider);
               ref.invalidate(balanceProvider);
@@ -46,16 +57,14 @@ class ProfilePage extends ConsumerWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 children: [
-                  // Profile Header with Completion Indicator
+                  // Profile Header
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(AppSpacing.xl),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).primaryColor,
-                          Theme.of(context).primaryColor.withOpacity(0.7),
-                        ],
+                      color: AppColors.surfaceLight,
+                      border: const Border(
+                        bottom: BorderSide(color: AppColors.borderLight),
                       ),
                     ),
                     child: Column(
@@ -64,57 +73,61 @@ class ProfilePage extends ConsumerWidget {
                         Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Completion Ring
                             SizedBox(
                               width: 110,
                               height: 110,
                               child: CircularProgressIndicator(
                                 value: completionData['percentage'] / 100,
-                                strokeWidth: 4,
-                                backgroundColor: Colors.white.withOpacity(0.3),
+                                strokeWidth: 3,
+                                backgroundColor: AppColors.borderLight,
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   completionData['percentage'] == 100
-                                      ? Colors.greenAccent
-                                      : Colors.orangeAccent,
+                                      ? AppColors.success
+                                      : AppColors.warning,
                                 ),
                               ),
                             ),
-                            // Avatar
-                            CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Colors.white,
-                              backgroundImage: profile.profile?.avatar != null
-                                  ? NetworkImage(profile.profile!.avatar!)
-                                  : null,
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                image: profile.profile?.avatar != null
+                                    ? DecorationImage(
+                                        image: NetworkImage(profile.profile!.avatar!),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
                               child: profile.profile?.avatar == null
-                                  ? Text(
-                                _getInitials(profile.email),
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              )
+                                  ? Center(
+                                      child: Text(
+                                        _getInitials(profile.email),
+                                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    )
                                   : null,
                             ),
-                            // Completion Badge
                             if (completionData['percentage'] < 100)
                               Positioned(
                                 right: 0,
                                 bottom: 0,
                                 child: Container(
-                                  padding: const EdgeInsets.all(6),
+                                  padding: const EdgeInsets.all(AppSpacing.xs),
                                   decoration: const BoxDecoration(
-                                    color: Colors.orange,
+                                    color: AppColors.warning,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Text(
                                     '${completionData['percentage'].toInt()}%',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                          color: AppColors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -123,114 +136,103 @@ class ProfilePage extends ConsumerWidget {
                                 right: 0,
                                 bottom: 0,
                                 child: Container(
-                                  padding: const EdgeInsets.all(4),
+                                  padding: const EdgeInsets.all(AppSpacing.xs),
                                   decoration: const BoxDecoration(
-                                    color: Colors.greenAccent,
+                                    color: AppColors.success,
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
                                     Icons.check,
-                                    color: Colors.white,
-                                    size: 20,
+                                    color: AppColors.white,
+                                    size: 16,
                                   ),
                                 ),
                               ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.lg),
 
-                        // Name
                         Text(
                           profile.profile?.firstName != null
                               ? '${profile.profile!.firstName} ${profile.profile!.lastName ?? ''}'
                               : profile.email,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: AppColors.textPrimaryLight,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xs),
 
-                        // Role Badge
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.xs,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: AppSpacing.roundedFull,
                           ),
                           child: Text(
                             _getRoleText(profile.role),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.sm),
 
-                        // Email
                         Text(
                           profile.email,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 14,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondaryLight,
+                              ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.md),
 
-                        // Job Performance Rating (for job seekers)
                         if (profile.ratingsAverage != null &&
                             profile.ratingsQuantity != null &&
                             profile.ratingsQuantity! > 0)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
+                              horizontal: AppSpacing.lg,
+                              vertical: AppSpacing.sm,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
+                              color: AppColors.backgroundLight,
+                              borderRadius: AppSpacing.roundedFull,
                             ),
                             child: RatingDisplayWidget(
-                              rating: profile.ratingsAverage,   // ✅ Changed
-                              count: profile.ratingsQuantity,    // ✅ Changed
+                              rating: profile.ratingsAverage,
+                              count: profile.ratingsQuantity,
                               size: 18,
-                              color: Colors.white,
+                              color: AppColors.warning,
                             ),
                           ),
 
-                        // Marketplace Rating (for sellers/employers)
                         if (profile.marketplaceStats?.sellerRating != null &&
                             profile.marketplaceStats!.sellerRating!.count > 0)
                           Padding(
-                            padding: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.only(top: AppSpacing.sm),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
+                                horizontal: AppSpacing.lg,
+                                vertical: AppSpacing.sm,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
+                                color: AppColors.backgroundLight,
+                                borderRadius: AppSpacing.roundedFull,
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.store,
-                                      color: Colors.white, size: 16),
-                                  const SizedBox(width: 6),
+                                  const Icon(Icons.store, color: AppColors.textSecondaryLight, size: 16),
+                                  const SizedBox(width: AppSpacing.sm),
                                   RatingDisplayWidget(
-                                    rating: profile.marketplaceStats!
-                                        .sellerRating!.average,
-                                    count: profile
-                                        .marketplaceStats!.sellerRating!.count,
+                                    rating: profile.marketplaceStats!.sellerRating!.average,
+                                    count: profile.marketplaceStats!.sellerRating!.count,
                                     size: 16,
-                                    color: Colors.white,
+                                    color: AppColors.warning,
                                   ),
                                 ],
                               ),
@@ -240,11 +242,9 @@ class ProfilePage extends ConsumerWidget {
                     ),
                   ),
 
-                  // Profile Completion Alert
                   if (completionData['percentage'] < 100)
                     _buildCompletionAlert(context, completionData),
 
-                  // Balance Card (for sellers)
                   if (profile.role == 'jobseeker' || profile.role == 'employer')
                     balanceAsync.when(
                       data: (balance) => _buildBalanceCard(context, balance),
@@ -252,9 +252,8 @@ class ProfilePage extends ConsumerWidget {
                       error: (error, _) => const SizedBox.shrink(),
                     ),
 
-                  // Profile Stats with Rating
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     child: Row(
                       children: [
                         Expanded(
@@ -263,10 +262,10 @@ class ProfilePage extends ConsumerWidget {
                             Icons.shopping_bag_outlined,
                             '${profile.marketplaceStats?.activeProducts ?? 0}',
                             'Products',
-                            Colors.blue,
+                            AppColors.primary,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: _buildStatCard(
                             context,
@@ -276,25 +275,23 @@ class ProfilePage extends ConsumerWidget {
                               orElse: () => '0',
                             ),
                             'Applications',
-                            Colors.purple,
+                            AppColors.accent,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: _buildStatCard(
                             context,
                             Icons.star_outline,
-                            (profile.ratingsAverage ?? 0.0).toStringAsFixed(1),  // ✅ Changed
-
+                            (profile.ratingsAverage ?? 0.0).toStringAsFixed(1),
                             'Job Rating',
-                            Colors.orange,
+                            AppColors.warning,
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  // Menu Items
                   _buildMenuSection(
                     context,
                     'Account',
@@ -302,22 +299,32 @@ class ProfilePage extends ConsumerWidget {
                       _MenuItem(
                         Icons.person_outline,
                         'Edit Profile',
-                            () => context.push('/profile/edit'),
+                        () => context.push('/profile/edit'),
                       ),
                       _MenuItem(
                         Icons.shopping_bag_outlined,
                         'My Products',
-                            () => context.push('/marketplace/my-products'),
+                        () => context.push('/marketplace/my-products'),
+                      ),
+                      _MenuItem(
+                        Icons.shopping_cart_outlined,
+                        'My Purchases',
+                        () => context.push('/marketplace/my-orders'),
+                      ),
+                      _MenuItem(
+                        Icons.storefront_outlined,
+                        'My Sales',
+                        () => context.push('/marketplace/my-sales'),
                       ),
                       _MenuItem(
                         Icons.work_outline,
                         'My Applications',
-                            () => context.push('/applications'),
+                        () => context.push('/applications'),
                       ),
                       _MenuItem(
                         Icons.receipt_long_outlined,
                         'Transaction History',
-                            () => context.push('/profile/transactions'),
+                        () => context.push('/profile/transactions'),
                       ),
                     ],
                   ),
@@ -329,60 +336,72 @@ class ProfilePage extends ConsumerWidget {
                       _MenuItem(
                         Icons.notifications_outlined,
                         'Notifications',
-                            () => context.push('/profile/notifications'),
+                        () => context.push('/profile/notifications'),
                       ),
                       _MenuItem(
                         Icons.privacy_tip_outlined,
                         'Privacy & Security',
-                            () => context.push('/profile/privacy-security'),
+                        () => context.push('/profile/privacy-security'),
                       ),
                       _MenuItem(
                         Icons.help_outline,
                         'Help & Support',
-                            () => context.push('/profile/help-support'),
+                        () => context.push('/profile/help-support'),
                       ),
                       _MenuItem(
                         Icons.info_outline,
                         'About',
-                            () => context.push('/profile/about'),
+                        () => context.push('/profile/about'),
                       ),
                     ],
                   ),
 
-                  // ✅ UPDATED: Logout Button using handleLogout
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     child: OutlinedButton.icon(
                       onPressed: () => handleLogout(context, ref),
-                      icon: const Icon(Icons.logout, color: Colors.red),
-                      label: const Text(
-                        'Logout',
-                        style: TextStyle(color: Colors.red),
-                      ),
+                      icon: const Icon(Icons.logout, color: AppColors.error),
+                      label: const Text('Logout'),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.red),
-                        minimumSize: const Size(double.infinity, 50),
+                        foregroundColor: AppColors.error,
+                        side: const BorderSide(color: AppColors.borderLight),
+                        backgroundColor: AppColors.surfaceLight,
+                        minimumSize: const Size(double.infinity, 54),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppSpacing.roundedMd,
+                        ),
+                        textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 32),
+                  const SizedBox(height: AppSpacing.xxl),
                 ],
               ),
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error: $error'),
-              const SizedBox(height: 16),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Error: $error',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondaryLight),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
                 onPressed: () => ref.invalidate(profileProvider),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
+                ),
                 child: const Text('Retry'),
               ),
             ],
@@ -392,25 +411,19 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  // ============================================================================
-  // PROFILE COMPLETION CALCULATOR
-  // ============================================================================
   Map<String, dynamic> _calculateProfileCompletion(dynamic profile) {
     int completed = 0;
     int total = 0;
     List<String> missing = [];
 
-    // Basic profile fields (30%)
-    if (profile.profile?.firstName != null &&
-        profile.profile!.firstName!.isNotEmpty) {
+    if (profile.profile?.firstName != null && profile.profile!.firstName!.isNotEmpty) {
       completed += 10;
     } else {
       missing.add('First Name');
     }
     total += 10;
 
-    if (profile.profile?.lastName != null &&
-        profile.profile!.lastName!.isNotEmpty) {
+    if (profile.profile?.lastName != null && profile.profile!.lastName!.isNotEmpty) {
       completed += 10;
     } else {
       missing.add('Last Name');
@@ -424,7 +437,6 @@ class ProfilePage extends ConsumerWidget {
     }
     total += 10;
 
-    // Location (20%)
     if (profile.profile?.location?.city != null) {
       completed += 10;
     } else {
@@ -439,7 +451,6 @@ class ProfilePage extends ConsumerWidget {
     }
     total += 10;
 
-    // Bio (10%)
     if (profile.profile?.bio != null && profile.profile!.bio!.isNotEmpty) {
       completed += 10;
     } else {
@@ -447,7 +458,6 @@ class ProfilePage extends ConsumerWidget {
     }
     total += 10;
 
-    // Avatar (10%)
     if (profile.profile?.avatar != null && profile.profile!.avatar!.isNotEmpty) {
       completed += 10;
     } else {
@@ -455,29 +465,22 @@ class ProfilePage extends ConsumerWidget {
     }
     total += 10;
 
-    // Role-specific completion
     if (profile.role?.toLowerCase() == 'jobseeker') {
-      // Skills (10%)
-      if (profile.jobSeekerProfile?.skills != null &&
-          profile.jobSeekerProfile!.skills!.isNotEmpty) {
+      if (profile.jobSeekerProfile?.skills != null && profile.jobSeekerProfile!.skills!.isNotEmpty) {
         completed += 10;
       } else {
         missing.add('Skills');
       }
       total += 10;
 
-      // Education (10%)
-      if (profile.jobSeekerProfile?.education != null &&
-          profile.jobSeekerProfile!.education!.isNotEmpty) {
+      if (profile.jobSeekerProfile?.education != null && profile.jobSeekerProfile!.education!.isNotEmpty) {
         completed += 10;
       } else {
         missing.add('Education');
       }
       total += 10;
 
-      // Experience (10%)
-      if (profile.jobSeekerProfile?.experience != null &&
-          profile.jobSeekerProfile!.experience!.isNotEmpty) {
+      if (profile.jobSeekerProfile?.experience != null && profile.jobSeekerProfile!.experience!.isNotEmpty) {
         completed += 10;
       } else {
         missing.add('Work Experience');
@@ -495,85 +498,75 @@ class ProfilePage extends ConsumerWidget {
     };
   }
 
-  // ============================================================================
-  // COMPLETION ALERT WIDGET
-  // ============================================================================
-  Widget _buildCompletionAlert(
-      BuildContext context,
-      Map<String, dynamic> completionData,
-      ) {
+  Widget _buildCompletionAlert(BuildContext context, Map<String, dynamic> completionData) {
     final percentage = completionData['percentage'] as double;
     final missing = completionData['missing'] as List<String>;
 
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.orange[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange[200]!),
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.roundedLg,
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, color: Colors.orange[800]),
-              const SizedBox(width: 12),
+              const Icon(Icons.info_outline, color: AppColors.warning),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
                   'Complete Your Profile (${percentage.toInt()}%)',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange[900],
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimaryLight,
+                      ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Text(
             'Add these details to improve your visibility:',
-            style: TextStyle(color: Colors.orange[800], fontSize: 14),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondaryLight),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
             children: missing.take(3).map((item) {
               return Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.orange[300]!),
+                  color: AppColors.surfaceLight,
+                  borderRadius: AppSpacing.roundedFull,
+                  border: Border.all(color: AppColors.borderLight),
                 ),
                 child: Text(
                   item,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.orange[900],
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.textSecondaryLight,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               );
             }).toList(),
           ),
           if (missing.length > 3)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: AppSpacing.sm),
               child: Text(
                 '+${missing.length - 3} more',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.orange[700],
-                  fontStyle: FontStyle.italic,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.textMutedLight,
+                      fontStyle: FontStyle.italic,
+                    ),
               ),
             ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.lg),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -581,8 +574,9 @@ class ProfilePage extends ConsumerWidget {
               icon: const Icon(Icons.edit, size: 18),
               label: const Text('Complete Profile'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.orange[800],
-                side: BorderSide(color: Colors.orange[800]!),
+                foregroundColor: AppColors.warning,
+                side: const BorderSide(color: AppColors.warning),
+                shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
               ),
             ),
           ),
@@ -594,21 +588,14 @@ class ProfilePage extends ConsumerWidget {
   Widget _buildBalanceCard(BuildContext context, dynamic balance) {
     return InkWell(
       onTap: () => context.push('/profile/balance'),
+      borderRadius: AppSpacing.roundedLg,
       child: Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.green[700]!, Colors.green[500]!],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.green.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: AppColors.success,
+          borderRadius: AppSpacing.roundedLg,
+          boxShadow: AppSpacing.elevatedShadow,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -618,44 +605,39 @@ class ProfilePage extends ConsumerWidget {
               children: [
                 Text(
                   'Available Balance',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
-                  ),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppColors.white.withValues(alpha: 0.9),
+                      ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   NumberFormat.currency(
                     symbol: balance.currency,
                     decimalDigits: 0,
                   ).format(balance.availableForWithdrawal),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
             Column(
               children: [
-                const Icon(Icons.account_balance_wallet,
-                    color: Colors.white, size: 32),
-                const SizedBox(height: 8),
+                const Icon(Icons.account_balance_wallet, color: AppColors.white, size: 32),
+                const SizedBox(height: AppSpacing.sm),
                 Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.white.withValues(alpha: 0.2),
+                    borderRadius: AppSpacing.roundedSm,
                   ),
-                  child: const Text(
+                  child: Text(
                     'Withdraw',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ),
               ],
@@ -667,72 +649,105 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Widget _buildStatCard(
-      BuildContext context,
-      IconData icon,
-      String value,
-      String label,
-      Color color,
-      ) {
+    BuildContext context,
+    IconData icon,
+    String value,
+    String label,
+    Color color,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedLg,
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 28),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             value,
-            style: TextStyle(
-              color: color,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.textPrimaryLight,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
+          const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMenuSection(
-      BuildContext context,
-      String title,
-      List<_MenuItem> items,
-      ) {
+  Widget _buildMenuSection(BuildContext context, String title, List<_MenuItem> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.sm),
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
-            ),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textMutedLight,
+                  letterSpacing: 1.2,
+                ),
           ),
         ),
-        Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: AppSpacing.roundedLg,
+            border: Border.all(color: AppColors.borderLight),
+            boxShadow: AppSpacing.cardShadow,
+          ),
           child: Column(
             children: items.map((item) {
               final isLast = items.last == item;
               return Column(
                 children: [
                   ListTile(
-                    leading: Icon(item.icon),
-                    title: Text(item.title),
-                    trailing: const Icon(Icons.chevron_right),
+                    leading: Container(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundLight,
+                        borderRadius: AppSpacing.roundedSm,
+                      ),
+                      child: Icon(item.icon, color: AppColors.primary, size: 20),
+                    ),
+                    title: Text(
+                      item.title,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textPrimaryLight,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right, color: AppColors.textMutedLight, size: 20),
                     onTap: item.onTap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: isLast
+                          ? const BorderRadius.vertical(bottom: Radius.circular(AppSpacing.radiusLg))
+                          : items.first == item
+                              ? const BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusLg))
+                              : BorderRadius.zero,
+                    ),
                   ),
-                  if (!isLast) const Divider(height: 1),
+                  if (!isLast)
+                    const Divider(
+                      height: 1,
+                      thickness: 1,
+                      indent: AppSpacing.xl + 20,
+                      color: AppColors.borderLight,
+                    ),
                 ],
               );
             }).toList(),
@@ -747,7 +762,7 @@ class ProfilePage extends ConsumerWidget {
   }
 
   String _getRoleText(String role) {
-    switch (role) {
+    switch (role.toLowerCase()) {
       case 'job_seeker':
       case 'jobseeker':
         return 'Job Seeker';

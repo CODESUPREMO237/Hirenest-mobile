@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,7 +19,6 @@ class EditProfilePage extends ConsumerStatefulWidget {
 class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Basic profile controllers
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -25,7 +26,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _cityController = TextEditingController();
   final _countryController = TextEditingController();
 
-  // JobSeeker data lists
   List<SkillModel> _skills = [];
   List<EducationModel> _education = [];
   List<ExperienceModel> _experience = [];
@@ -52,7 +52,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   void _populateControllers(ProfileModel profile) {
     if (!_initialized) {
-      // Basic profile
       _firstNameController.text = profile.profile?.firstName ?? '';
       _lastNameController.text = profile.profile?.lastName ?? '';
       _phoneController.text = profile.profile?.phone ?? '';
@@ -60,7 +59,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       _cityController.text = profile.profile?.location?.city ?? '';
       _countryController.text = profile.profile?.location?.country ?? '';
 
-      // JobSeeker data
       if (profile.role.toLowerCase() == 'jobseeker' && profile.jobSeekerProfile != null) {
         _skills = List.from(profile.jobSeekerProfile!.skills);
         _education = List.from(profile.jobSeekerProfile!.education);
@@ -81,17 +79,34 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final profileState = ref.watch(profileProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: Text(
+          'Edit Profile',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimaryLight,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.textPrimaryLight),
         actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _saveProfile,
-            child: const Text('Save', style: TextStyle(color: Colors.white)),
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: TextButton(
+              onPressed: _isLoading ? null : _saveProfile,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                textStyle: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              child: const Text('Save'),
+            ),
           ),
         ],
       ),
       body: profileState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (error, stack) => Center(child: Text('Error: $error')),
         data: (profile) {
           _populateControllers(profile);
@@ -99,34 +114,21 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           return Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
-                // Profile Picture
                 _buildProfilePictureSection(profile),
-                const SizedBox(height: 32),
-
-                // Basic Info Section
+                const SizedBox(height: AppSpacing.xxl),
                 _buildBasicInfoSection(),
-                const SizedBox(height: 24),
-
-                // CV Section (JobSeekers only)
+                const SizedBox(height: AppSpacing.xl),
                 if (profile.role.toLowerCase() == 'jobseeker') ...[
                   _buildCVSection(profile),
-                  const SizedBox(height: 24),
-
-                  // Skills Section
+                  const SizedBox(height: AppSpacing.xl),
                   _buildSkillsSection(),
-                  const SizedBox(height: 24),
-
-                  // Education Section
+                  const SizedBox(height: AppSpacing.xl),
                   _buildEducationSection(),
-                  const SizedBox(height: 24),
-
-                  // Experience Section
+                  const SizedBox(height: AppSpacing.xl),
                   _buildExperienceSection(),
-                  const SizedBox(height: 24),
-
-                  // Preferences Section
+                  const SizedBox(height: AppSpacing.xl),
                   _buildPreferencesSection(),
                 ],
               ],
@@ -141,25 +143,37 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     return Center(
       child: Stack(
         children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.grey[300],
-            backgroundImage: (profile.profile?.avatar != null && profile.profile!.avatar!.isNotEmpty)
-                ? NetworkImage(profile.profile!.avatar!)
-                : null,
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppColors.borderLight,
+              shape: BoxShape.circle,
+              image: (profile.profile?.avatar != null && profile.profile!.avatar!.isNotEmpty)
+                  ? DecorationImage(
+                      image: NetworkImage(profile.profile!.avatar!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
             child: (profile.profile?.avatar == null || profile.profile!.avatar!.isEmpty)
-                ? const Icon(Icons.person, size: 50, color: Colors.white)
+                ? const Icon(Icons.person, size: 50, color: AppColors.textMutedLight)
                 : null,
           ),
           Positioned(
             bottom: 0,
             right: 0,
-            child: CircleAvatar(
-              backgroundColor: Theme.of(context).primaryColor,
-              radius: 18,
-              child: IconButton(
-                icon: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
-                onPressed: _isLoading ? null : _handleAvatarUpload,
+            child: InkWell(
+              onTap: _isLoading ? null : _handleAvatarUpload,
+              borderRadius: AppSpacing.roundedFull,
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surfaceLight, width: 2),
+                ),
+                child: const Icon(Icons.camera_alt, size: 16, color: AppColors.white),
               ),
             ),
           ),
@@ -168,43 +182,87 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
   }
 
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: AppColors.textMutedLight),
+      filled: true,
+      fillColor: AppColors.surfaceLight,
+      border: OutlineInputBorder(
+        borderRadius: AppSpacing.roundedMd,
+        borderSide: const BorderSide(color: AppColors.borderLight),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: AppSpacing.roundedMd,
+        borderSide: const BorderSide(color: AppColors.borderLight),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppSpacing.roundedMd,
+        borderSide: const BorderSide(color: AppColors.primary),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+    );
+  }
+
   Widget _buildBasicInfoSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Basic Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
+        Text(
+          'Personal Info',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimaryLight,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.md),
         TextFormField(
           controller: _firstNameController,
-          decoration: const InputDecoration(labelText: 'First Name', border: OutlineInputBorder()),
+          decoration: _inputDecoration('First Name'),
           validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         TextFormField(
           controller: _lastNameController,
-          decoration: const InputDecoration(labelText: 'Last Name', border: OutlineInputBorder()),
+          decoration: _inputDecoration('Last Name'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         TextFormField(
           controller: _phoneController,
-          decoration: const InputDecoration(labelText: 'Phone', border: OutlineInputBorder()),
+          decoration: _inputDecoration('Phone'),
           keyboardType: TextInputType.phone,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         TextFormField(
           controller: _bioController,
-          decoration: const InputDecoration(labelText: 'Bio', border: OutlineInputBorder()),
+          decoration: _inputDecoration('Bio').copyWith(alignLabelWithHint: true),
           maxLines: 3,
         ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _cityController,
-          decoration: const InputDecoration(labelText: 'City', border: OutlineInputBorder()),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          'Location',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimaryLight,
+              ),
         ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _countryController,
-          decoration: const InputDecoration(labelText: 'Country', border: OutlineInputBorder()),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _cityController,
+                decoration: _inputDecoration('City'),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: TextFormField(
+                controller: _countryController,
+                decoration: _inputDecoration('Country'),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -214,34 +272,44 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Divider(),
-        const Text('Resume / CV', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
+        const Divider(color: AppColors.borderLight),
+        const SizedBox(height: AppSpacing.sm),
+        Text('Resume / CV',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimaryLight,
+                )),
+        const SizedBox(height: AppSpacing.md),
         if (profile.jobSeekerProfile?.resume != null && profile.jobSeekerProfile!.resume!['url'] != null)
-          ListTile(
-            tileColor: Colors.blue.withOpacity(0.05),
-            leading: const Icon(Icons.description, color: Colors.blue),
-            title: Text(
-              profile.jobSeekerProfile!.resume!['filename'] ?? 'Resume.pdf',
-              style: const TextStyle(fontWeight: FontWeight.w500),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: AppSpacing.roundedMd,
+              border: Border.all(color: AppColors.borderLight),
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.visibility, color: Colors.grey),
-                  onPressed: () async {
-                    final url = profile.jobSeekerProfile!.resume!['url'];
-                    if (url != null) await launchUrl(Uri.parse(url));
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: _isLoading ? null : _handleDeleteCV,
-                ),
-              ],
+            child: ListTile(
+              leading: const Icon(Icons.description, color: AppColors.primary),
+              title: Text(
+                profile.jobSeekerProfile!.resume!['filename'] ?? 'Resume.pdf',
+                style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimaryLight),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.visibility, color: AppColors.textSecondaryLight),
+                    onPressed: () async {
+                      final url = profile.jobSeekerProfile!.resume!['url'];
+                      if (url != null) await launchUrl(Uri.parse(url));
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: AppColors.error),
+                    onPressed: _isLoading ? null : _handleDeleteCV,
+                  ),
+                ],
+              ),
             ),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           )
         else
           OutlinedButton.icon(
@@ -249,7 +317,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             icon: const Icon(Icons.upload_file),
             label: const Text('Upload Resume'),
             style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary),
               minimumSize: const Size(double.infinity, 54),
+              shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
             ),
           ),
       ],
@@ -260,31 +331,38 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Divider(),
+        const Divider(color: AppColors.borderLight),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Skills', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Skills',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimaryLight,
+                    )),
             IconButton(
-              icon: const Icon(Icons.add_circle),
+              icon: const Icon(Icons.add_circle, color: AppColors.primary),
               onPressed: () => _showAddSkillDialog(),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         if (_skills.isEmpty)
-          const Text('No skills added yet', style: TextStyle(color: Colors.grey))
+          const Text('No skills added yet', style: TextStyle(color: AppColors.textMutedLight))
         else
-          ..._skills.map((skill) => Card(
-            child: ListTile(
-              title: Text(skill.name),
-              subtitle: Text('Level: ${skill.level}'),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () => setState(() => _skills.remove(skill)),
-              ),
-            ),
-          )),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: _skills.map((skill) => Chip(
+                  label: Text('${skill.name} (${skill.level})'),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  onDeleted: () => setState(() => _skills.remove(skill)),
+                  backgroundColor: AppColors.surfaceLight,
+                  side: const BorderSide(color: AppColors.borderLight),
+                  labelStyle: const TextStyle(color: AppColors.textPrimaryLight),
+                )).toList(),
+          ),
       ],
     );
   }
@@ -293,32 +371,43 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Divider(),
+        const Divider(color: AppColors.borderLight),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Education', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Education',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimaryLight,
+                    )),
             IconButton(
-              icon: const Icon(Icons.add_circle),
+              icon: const Icon(Icons.add_circle, color: AppColors.primary),
               onPressed: () => _showAddEducationDialog(),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         if (_education.isEmpty)
-          const Text('No education added yet', style: TextStyle(color: Colors.grey))
+          const Text('No education added yet', style: TextStyle(color: AppColors.textMutedLight))
         else
-          ..._education.map((edu) => Card(
-            child: ListTile(
-              title: Text(edu.degree),
-              subtitle: Text('${edu.institution}\n${edu.fieldOfStudy}'),
-              isThreeLine: true,
-              trailing: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () => setState(() => _education.remove(edu)),
-              ),
-            ),
-          )),
+          ..._education.map((edu) => Container(
+                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: AppSpacing.roundedMd,
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: ListTile(
+                  title: Text(edu.degree, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text('${edu.institution}\n${edu.fieldOfStudy}'),
+                  isThreeLine: true,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: AppColors.error),
+                    onPressed: () => setState(() => _education.remove(edu)),
+                  ),
+                ),
+              )),
       ],
     );
   }
@@ -327,32 +416,43 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Divider(),
+        const Divider(color: AppColors.borderLight),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Experience', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Experience',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimaryLight,
+                    )),
             IconButton(
-              icon: const Icon(Icons.add_circle),
+              icon: const Icon(Icons.add_circle, color: AppColors.primary),
               onPressed: () => _showAddExperienceDialog(),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         if (_experience.isEmpty)
-          const Text('No experience added yet', style: TextStyle(color: Colors.grey))
+          const Text('No experience added yet', style: TextStyle(color: AppColors.textMutedLight))
         else
-          ..._experience.map((exp) => Card(
-            child: ListTile(
-              title: Text(exp.position),
-              subtitle: Text('${exp.company}\n${exp.location ?? ""}'),
-              isThreeLine: true,
-              trailing: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () => setState(() => _experience.remove(exp)),
-              ),
-            ),
-          )),
+          ..._experience.map((exp) => Container(
+                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: AppSpacing.roundedMd,
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: ListTile(
+                  title: Text(exp.position, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text('${exp.company}\n${exp.location ?? ""}'),
+                  isThreeLine: true,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: AppColors.error),
+                    onPressed: () => setState(() => _experience.remove(exp)),
+                  ),
+                ),
+              )),
       ],
     );
   }
@@ -361,19 +461,29 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Divider(),
-        const Text('Job Preferences', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
+        const Divider(color: AppColors.borderLight),
+        const SizedBox(height: AppSpacing.sm),
+        Text('Job Preferences',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimaryLight,
+                )),
+        const SizedBox(height: AppSpacing.lg),
 
-        // Job Types
-        const Text('Preferred Job Types', style: TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 8),
+        Text('Preferred Job Types', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight)),
+        const SizedBox(height: AppSpacing.sm),
         Wrap(
-          spacing: 8,
+          spacing: AppSpacing.sm,
           children: ['full-time', 'part-time', 'contract', 'internship', 'freelance'].map((type) {
             return FilterChip(
               label: Text(type),
               selected: _selectedJobTypes.contains(type),
+              selectedColor: AppColors.primary.withValues(alpha: 0.2),
+              checkmarkColor: AppColors.primary,
+              backgroundColor: AppColors.surfaceLight,
+              side: BorderSide(
+                color: _selectedJobTypes.contains(type) ? AppColors.primary : AppColors.borderLight,
+              ),
               onSelected: (selected) {
                 setState(() {
                   if (selected) {
@@ -386,51 +496,66 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             );
           }).toList(),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
-        // Expected Salary
-        const Text('Expected Salary', style: TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 8),
+        Text('Expected Salary', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight)),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           children: [
             Expanded(
               child: TextFormField(
-                decoration: const InputDecoration(labelText: 'Min', border: OutlineInputBorder()),
+                decoration: _inputDecoration('Min'),
                 keyboardType: TextInputType.number,
                 initialValue: _minSalary?.toString(),
                 onChanged: (v) => _minSalary = int.tryParse(v),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: TextFormField(
-                decoration: const InputDecoration(labelText: 'Max', border: OutlineInputBorder()),
+                decoration: _inputDecoration('Max'),
                 keyboardType: TextInputType.number,
                 initialValue: _maxSalary?.toString(),
                 onChanged: (v) => _maxSalary = int.tryParse(v),
               ),
             ),
-            const SizedBox(width: 16),
-            DropdownButton<String>(
-              value: _currency,
-              items: ['USD', 'EUR', 'GBP', 'XAF'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-              onChanged: (v) => setState(() => _currency = v!),
+            const SizedBox(width: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: AppSpacing.roundedMd,
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _currency,
+                  items: ['USD', 'EUR', 'GBP', 'XAF'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) => setState(() => _currency = v!),
+                ),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
-        // Willing to Relocate
-        SwitchListTile(
-          title: const Text('Willing to Relocate'),
-          value: _willingToRelocate,
-          onChanged: (v) => setState(() => _willingToRelocate = v),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: AppSpacing.roundedMd,
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: SwitchListTile(
+            title: const Text('Willing to Relocate', style: TextStyle(fontWeight: FontWeight.w500)),
+            value: _willingToRelocate,
+            activeThumbColor: AppColors.primary,
+            onChanged: (v) => setState(() => _willingToRelocate = v),
+          ),
         ),
       ],
     );
   }
 
-  // Dialog for adding a skill
   void _showAddSkillDialog() {
     final nameController = TextEditingController();
     String selectedLevel = 'beginner';
@@ -439,18 +564,19 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
+          backgroundColor: AppColors.surfaceLight,
           title: const Text('Add Skill'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Skill Name', border: OutlineInputBorder()),
+                decoration: _inputDecoration('Skill Name'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
-                value: selectedLevel,
-                decoration: const InputDecoration(labelText: 'Proficiency Level', border: OutlineInputBorder()),
+                initialValue: selectedLevel,
+                decoration: _inputDecoration('Proficiency Level'),
                 items: ['beginner', 'intermediate', 'advanced', 'expert']
                     .map((level) => DropdownMenuItem(value: level, child: Text(level)))
                     .toList(),
@@ -459,8 +585,16 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondaryLight)),
+            ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
+              ),
               onPressed: () {
                 if (nameController.text.isNotEmpty) {
                   this.setState(() {
@@ -477,7 +611,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
   }
 
-  // Dialog for adding education
   void _showAddEducationDialog() {
     final institutionController = TextEditingController();
     final degreeController = TextEditingController();
@@ -491,48 +624,63 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surfaceLight,
           title: const Text('Add Education'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: institutionController, decoration: const InputDecoration(labelText: 'Institution')),
-                const SizedBox(height: 8),
-                TextField(controller: degreeController, decoration: const InputDecoration(labelText: 'Degree')),
-                const SizedBox(height: 8),
-                TextField(controller: fieldController, decoration: const InputDecoration(labelText: 'Field of Study')),
-                const SizedBox(height: 8),
-                TextField(controller: descController, decoration: const InputDecoration(labelText: 'Description'), maxLines: 2),
-                const SizedBox(height: 8),
+                TextField(controller: institutionController, decoration: _inputDecoration('Institution')),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(controller: degreeController, decoration: _inputDecoration('Degree')),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(controller: fieldController, decoration: _inputDecoration('Field of Study')),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(controller: descController, decoration: _inputDecoration('Description'), maxLines: 2),
+                const SizedBox(height: AppSpacing.sm),
 
-                // --- Start Date Picker ---
                 ListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: Text(startDate == null ? 'Select Start Date' : 'Start: ${startDate!.toLocal().toString().split(' ')[0]}'),
-                  trailing: const Icon(Icons.calendar_today),
+                  trailing: const Icon(Icons.calendar_today, color: AppColors.primary),
                   onTap: () => _selectDate(context, startDate, (date) => setDialogState(() => startDate = date)),
                 ),
 
-                // --- End Date Picker (Hide if current) ---
                 if (!isCurrent)
                   ListTile(
+                    contentPadding: EdgeInsets.zero,
                     title: Text(endDate == null ? 'Select End Date' : 'End: ${endDate!.toLocal().toString().split(' ')[0]}'),
-                    trailing: const Icon(Icons.calendar_today),
+                    trailing: const Icon(Icons.calendar_today, color: AppColors.primary),
                     onTap: () => _selectDate(context, endDate, (date) => setDialogState(() => endDate = date)),
                   ),
 
                 CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Currently Studying'),
                   value: isCurrent,
+                  activeColor: AppColors.primary,
                   onChanged: (v) => setDialogState(() => isCurrent = v!),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondaryLight)),
+            ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
+              ),
               onPressed: () {
                 if (institutionController.text.isNotEmpty) {
+                  if (startDate == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Start Date is required')));
+                    return;
+                  }
                   setState(() {
                     _education.add(EducationModel(
                       institution: institutionController.text,
@@ -545,11 +693,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     ));
                   });
                   Navigator.pop(context);
-                }else {
-                  // Show a small warning if date is missing
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Start Date is required')));
                 }
-
               },
               child: const Text('Add'),
             ),
@@ -559,61 +703,76 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
   }
 
-  // Dialog for adding experience
   void _showAddExperienceDialog() {
     final companyController = TextEditingController();
     final positionController = TextEditingController();
     final locationController = TextEditingController();
     final descController = TextEditingController();
     bool isCurrent = false;
-    DateTime? startDate; // Change this to local state inside the dialog
+    DateTime? startDate;
     DateTime? endDate;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surfaceLight,
           title: const Text('Add Experience'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: companyController, decoration: const InputDecoration(labelText: 'Company')),
-                const SizedBox(height: 8),
-                TextField(controller: positionController, decoration: const InputDecoration(labelText: 'Position')),
-                const SizedBox(height: 8),
-                TextField(controller: locationController, decoration: const InputDecoration(labelText: 'Location')),
-                const SizedBox(height: 8),
-                TextField(controller: descController, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),
-                const SizedBox(height: 8),
-                // --- Start Date Picker ---
+                TextField(controller: companyController, decoration: _inputDecoration('Company')),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(controller: positionController, decoration: _inputDecoration('Position')),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(controller: locationController, decoration: _inputDecoration('Location')),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(controller: descController, decoration: _inputDecoration('Description'), maxLines: 3),
+                const SizedBox(height: AppSpacing.sm),
+
                 ListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: Text(startDate == null ? 'Select Start Date' : 'Start: ${startDate!.toLocal().toString().split(' ')[0]}'),
-                  trailing: const Icon(Icons.calendar_today),
+                  trailing: const Icon(Icons.calendar_today, color: AppColors.primary),
                   onTap: () => _selectDate(context, startDate, (date) => setDialogState(() => startDate = date)),
                 ),
 
-                // --- End Date Picker (Hide if current) ---
                 if (!isCurrent)
                   ListTile(
+                    contentPadding: EdgeInsets.zero,
                     title: Text(endDate == null ? 'Select End Date' : 'End: ${endDate!.toLocal().toString().split(' ')[0]}'),
-                    trailing: const Icon(Icons.calendar_today),
+                    trailing: const Icon(Icons.calendar_today, color: AppColors.primary),
                     onTap: () => _selectDate(context, endDate, (date) => setDialogState(() => endDate = date)),
                   ),
 
                 CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Currently Working'),
                   value: isCurrent,
+                  activeColor: AppColors.primary,
                   onChanged: (v) => setDialogState(() => isCurrent = v!),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondaryLight)),
+            ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
+              ),
               onPressed: () {
                 if (companyController.text.isNotEmpty) {
+                  if (startDate == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Start Date is required')));
+                    return;
+                  }
                   setState(() {
                     _experience.add(ExperienceModel(
                       company: companyController.text,
@@ -621,14 +780,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       location: locationController.text,
                       description: descController.text,
                       current: isCurrent,
-                      startDate: startDate, // Now this is passed correctly
+                      startDate: startDate,
                       endDate: endDate,
                     ));
                   });
                   Navigator.pop(context);
-                }else if (startDate == null) {
-                  // Show a small warning if date is missing
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Start Date is required')));
                 }
               },
               child: const Text('Add'),
@@ -674,14 +830,14 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated!'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Profile updated!'), backgroundColor: AppColors.success),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -724,12 +880,25 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
   Future<void> _selectDate(BuildContext context, DateTime? initialDate, Function(DateTime) onDateSelected) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate ?? DateTime.now(),
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: AppColors.white,
+              onSurface: AppColors.textPrimaryLight,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       onDateSelected(picked);

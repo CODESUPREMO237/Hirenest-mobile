@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -54,7 +56,7 @@ class _ApplyJobPageState extends ConsumerState<ApplyJobPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Applied successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -131,25 +133,25 @@ class _ApplyJobPageState extends ConsumerState<ApplyJobPage> {
   Widget _buildTipsCard() {
     return Card(
       elevation: 0,
-      color: Colors.blue.shade50,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: AppColors.primary.withValues(alpha: 0.1),
+      shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.lightbulb_outline, color: Colors.blue),
-                SizedBox(width: 8),
+                const Icon(Icons.lightbulb_outline, color: AppColors.primary),
+                const SizedBox(width: 8),
                 Text('Application Tip',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 8),
             Text(
               'Your profile details (Education, Experience, and Skills) will be automatically attached to this application.',
-              style: TextStyle(fontSize: 13, color: Colors.blue.shade900),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.primaryDark),
             ),
           ],
         ),

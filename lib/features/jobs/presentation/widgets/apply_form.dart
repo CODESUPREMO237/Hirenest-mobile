@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../auth/data/models/user_model.dart';
@@ -9,7 +11,7 @@ class ApplyForm extends StatefulWidget {
   final UserModel user;
   final Function(XFile resume, String coverLetter, List<Map<String, dynamic>> screeningAnswers) onSubmit;
   final bool isSubmitting;
-  final List<ScreeningQuestionModel> screeningQuestions; // ✅ Changed type
+  final List<ScreeningQuestionModel> screeningQuestions;
 
   const ApplyForm({
     super.key,
@@ -17,7 +19,7 @@ class ApplyForm extends StatefulWidget {
     required this.user,
     required this.onSubmit,
     required this.isSubmitting,
-    this.screeningQuestions = const [], // ✅ Default empty list
+    this.screeningQuestions = const [],
   });
 
   @override
@@ -54,12 +56,14 @@ class _ApplyFormState extends State<ApplyForm> {
 
     if (_selectedResume == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload a resume')),
+        const SnackBar(
+          content: Text('Please upload a resume'),
+          backgroundColor: AppColors.error,
+        ),
       );
       return;
     }
 
-    // Convert answers map to list format for backend
     final formattedAnswers = _answers.entries.map((e) => {
       'question': e.key,
       'answer': e.value,
@@ -81,110 +85,143 @@ class _ApplyFormState extends State<ApplyForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- 1. PROFILE PREVIEW SECTION ---
           _buildSectionHeader('Your Profile Details'),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.shade100),
+              color: AppColors.surfaceLight,
+              borderRadius: AppSpacing.roundedLg,
+              border: Border.all(color: AppColors.borderLight),
             ),
             child: Column(
               children: [
                 _buildProfileRow(
-                  Icons.school,
+                  Icons.school_outlined,
                   'Education',
                   '${profile?.education?.length ?? 0} records',
                 ),
-                const Divider(),
+                const Divider(height: AppSpacing.lg),
                 _buildProfileRow(
-                  Icons.work,
+                  Icons.work_outline,
                   'Experience',
                   '${profile?.experience?.length ?? 0} records',
                 ),
-                const Divider(),
+                const Divider(height: AppSpacing.lg),
                 _buildProfileRow(
-                  Icons.psychology,
+                  Icons.psychology_outlined,
                   'Skills',
                   '${profile?.skills?.length ?? 0} skills identified',
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
 
-          // --- 2. COVER LETTER ---
           _buildSectionHeader('Cover Letter'),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           TextFormField(
             controller: _coverLetterController,
             maxLines: 5,
             decoration: InputDecoration(
               hintText: 'Explain why you are the best fit...',
+              filled: true,
+              fillColor: AppColors.surfaceLight,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AppSpacing.roundedMd,
+                borderSide: const BorderSide(color: AppColors.borderLight),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AppSpacing.roundedMd,
+                borderSide: const BorderSide(color: AppColors.borderLight),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: AppSpacing.roundedMd,
+                borderSide: const BorderSide(color: AppColors.primary, width: 2),
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
 
-          // --- 3. RESUME UPLOAD ---
           _buildSectionHeader('Resume (Required)'),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           InkWell(
             onTap: widget.isSubmitting ? null : _pickResume,
+            borderRadius: AppSpacing.roundedLg,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
+                color: _selectedResume == null ? AppColors.surfaceLight : AppColors.primary.withValues(alpha: 0.05),
                 border: Border.all(
-                  color: Colors.grey.shade300,
+                  color: _selectedResume == null ? AppColors.borderLight : AppColors.primary.withValues(alpha: 0.3),
                   style: BorderStyle.solid,
+                  width: _selectedResume == null ? 1 : 2,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AppSpacing.roundedLg,
               ),
               child: _selectedResume == null
-                  ? const Column(
+                  ? Column(
                 children: [
-                  Icon(Icons.upload_file, size: 40, color: Colors.blue),
-                  SizedBox(height: 8),
-                  Text('Tap to upload PDF/DOCX'),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.upload_file, size: 32, color: AppColors.primary),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  const Text('Tap to upload PDF/DOCX', style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.textSecondaryLight)),
                 ],
               )
                   : Row(
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.green),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(_selectedResume!.name)),
-                  const Text(
-                    'Change',
-                    style: TextStyle(color: Colors.blue),
+                  const Icon(Icons.check_circle, color: AppColors.success, size: 28),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_selectedResume!.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight)),
+                        const Text('Resume attached', style: TextStyle(fontSize: 12, color: AppColors.success)),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: widget.isSubmitting ? null : _pickResume,
+                    child: const Text('Change'),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xxl),
 
-          // --- 4. SCREENING QUESTIONS ---
           if (widget.screeningQuestions.isNotEmpty) ...[
             _buildSectionHeader('Employer Questions'),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             ...widget.screeningQuestions.map((q) => _buildQuestionInput(q)),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
           ],
 
-          // --- 5. SUBMIT BUTTON ---
           SizedBox(
             width: double.infinity,
-            height: 55,
+            height: 56,
             child: ElevatedButton(
               onPressed: widget.isSubmitting ? null : _handleLocalSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
+                elevation: 0,
+              ),
               child: widget.isSubmitting
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Submit Application'),
+                  ? const SizedBox(
+                      width: 24, height: 24,
+                      child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2)
+                    )
+                  : const Text('Submit Application', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -195,7 +232,7 @@ class _ApplyFormState extends State<ApplyForm> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
     );
   }
 
@@ -204,10 +241,11 @@ class _ApplyFormState extends State<ApplyForm> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.blue),
-          const SizedBox(width: 10),
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w500)),
-          Text(value),
+          Icon(icon, size: 20, color: AppColors.primary),
+          const SizedBox(width: AppSpacing.md),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimaryLight)),
+          const Spacer(),
+          Text(value, style: const TextStyle(color: AppColors.textSecondaryLight)),
         ],
       ),
     );
@@ -215,20 +253,26 @@ class _ApplyFormState extends State<ApplyForm> {
 
   Widget _buildQuestionInput(ScreeningQuestionModel q) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "${q.question}${q.required ? ' *' : ''}",
-            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+          RichText(
+            text: TextSpan(
+              text: q.question,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.textPrimaryLight),
+              children: [
+                if (q.required)
+                  const TextSpan(text: ' *', style: TextStyle(color: AppColors.error)),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
 
           if (q.type == 'text')
             TextFormField(
               decoration: _inputDecoration("Your answer"),
-              validator: (v) => q.required && (v == null || v.isEmpty)
+              validator: (v) => q.required && (v == null || v.trim().isEmpty)
                   ? "This field is required"
                   : null,
               onChanged: (val) => _answers[q.question] = val,
@@ -237,14 +281,14 @@ class _ApplyFormState extends State<ApplyForm> {
             Row(
               children: [
                 _answerChip(q.question, "Yes"),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSpacing.sm),
                 _answerChip(q.question, "No"),
               ],
             )
           else if (q.type == 'multiple_choice' && q.options != null)
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
                 children: q.options!.map((opt) => _answerChip(q.question, opt)).toList(),
               ),
         ],
@@ -257,6 +301,16 @@ class _ApplyFormState extends State<ApplyForm> {
     return ChoiceChip(
       label: Text(value),
       selected: isSelected,
+      selectedColor: AppColors.primary.withValues(alpha: 0.1),
+      backgroundColor: AppColors.surfaceLight,
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.primary : AppColors.textSecondaryLight,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      side: BorderSide(
+        color: isSelected ? AppColors.primary : AppColors.borderLight,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
       onSelected: (selected) {
         setState(() => _answers[question] = value);
       },
@@ -266,7 +320,22 @@ class _ApplyFormState extends State<ApplyForm> {
   InputDecoration _inputDecoration(String hint) => InputDecoration(
     hintText: hint,
     filled: true,
-    fillColor: Colors.grey[50],
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    fillColor: AppColors.surfaceLight,
+    border: OutlineInputBorder(
+      borderRadius: AppSpacing.roundedMd,
+      borderSide: const BorderSide(color: AppColors.borderLight),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: AppSpacing.roundedMd,
+      borderSide: const BorderSide(color: AppColors.borderLight),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: AppSpacing.roundedMd,
+      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: AppSpacing.roundedMd,
+      borderSide: const BorderSide(color: AppColors.error),
+    ),
   );
 }

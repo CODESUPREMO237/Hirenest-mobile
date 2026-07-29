@@ -47,9 +47,11 @@ class MessagesNotifier
       if (paginated.items.length < 20) _hasMore = false;
       _page++;
 
-      // Apply user context (left/right alignment)
-      return paginated.items.map((m) => _applyUserContext(m)).toList();
-    } catch (e, st) {
+      // Apply user context (left/right alignment) and sort newest first
+      final messages = paginated.items.map((m) => _applyUserContext(m)).toList();
+      messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return messages;
+    } catch (e) {
       AppLogger.error('Error fetching initial messages', error: e);
       rethrow;
     }
@@ -82,8 +84,14 @@ class MessagesNotifier
           .map((m) => _applyUserContext(MessageModel.fromJson(m)))
           .toList();
 
-      final displayOrder = messages.reversed.toList();
-      state = AsyncData(displayOrder);
+      // Sort by timestamp descending (newest first) for reverse ListView
+      messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      
+      // Only use socket messages if we don't already have messages from API
+      final current = state.value ?? [];
+      if (current.isEmpty || messages.length > current.length) {
+        state = AsyncData(messages);
+      }
 
       _page = 2;
       _hasMore = messages.length >= 20;
@@ -109,7 +117,7 @@ class MessagesNotifier
       state = AsyncData([...current, ...newMessages]);
 
       if (newMessages.length < 20) _hasMore = false;
-    } catch (e, st) {
+    } catch (e) {
       AppLogger.error('Error loading more messages', error: e);
     }
   }
@@ -135,7 +143,7 @@ class MessagesNotifier
       await _repository.deleteMessage(messageId);
       final current = state.value ?? [];
       state = AsyncData(current.where((m) => m.id != messageId).toList());
-    } catch (e, st) {
+    } catch (e) {
       AppLogger.error('Error deleting message', error: e);
     }
   }

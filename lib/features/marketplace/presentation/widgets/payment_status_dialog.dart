@@ -3,6 +3,7 @@
 // lib/features/marketplace/presentation/widgets/payment_status_dialog.dart
 // =====================================================
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class PaymentStatusDialog extends StatelessWidget {
   final bool success;
@@ -24,7 +25,7 @@ class PaymentStatusDialog extends StatelessWidget {
         children: [
           Icon(
             success ? Icons.check_circle : Icons.error,
-            color: success ? Colors.green : Colors.red,
+            color: success ? AppColors.success : AppColors.error,
             size: 64,
           ),
           const SizedBox(height: 16),

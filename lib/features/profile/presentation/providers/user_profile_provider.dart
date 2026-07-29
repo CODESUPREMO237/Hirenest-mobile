@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../marketplace/data/models/product_model.dart';
 import '../../../marketplace/data/repositories/marketplace_repository.dart';
 // Assuming SellerModel or a similar PublicUser model exists
-import '../../../marketplace/data/models/product_model.dart';
 
 /// Fetches only the products belonging to a specific user
 final userProfileProductsProvider = FutureProvider.family<List<ProductModel>, String>((ref, userId) async {

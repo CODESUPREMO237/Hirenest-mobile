@@ -35,9 +35,9 @@
     </queries>
 
     <application
-        android:label="jobconnect"
+        android:label="HireNest"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon"
+        android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
 
         <activity
@@ -73,7 +73,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="com.jobconnect"
+                    android:scheme="com.hirenest"
                     android:host="auth"
                     android:path="/github/callback" />
             </intent-filter>
@@ -84,7 +84,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="com.jobconnect"
+                    android:scheme="com.hirenest"
                     android:host="auth"
                     android:path="/microsoft/callback" />
             </intent-filter>
@@ -95,7 +95,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="com.jobconnect"
+                    android:scheme="com.hirenest"
                     android:host="auth" />
             </intent-filter>
         </activity>
@@ -112,7 +112,7 @@
         <!-- ✅ DEFAULT NOTIFICATION ICON (Optional but recommended) -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@mipmap/launcher_icon" />
+            android:resource="@mipmap/ic_launcher_new" />
 
         <!-- ✅ DEFAULT NOTIFICATION COLOR (Optional) -->
         <meta-data

@@ -3,13 +3,12 @@
 // lib/features/applications/presentation/providers/applications_provider.dart
 // ============================================================================
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:dio/dio.dart';
 
 import '../../../../core/network/api_client.dart';
-import '../../../../core/services/auth_service.dart';
 import '../../../../core/constants/storage_keys.dart';
 import '../../data/models/application_model.dart';
 import '../../data/repositories/applications_repository.dart';
@@ -26,31 +25,31 @@ final applicationsRepositoryProvider = Provider<ApplicationsRepository>((ref) {
 // USER ROLE PROVIDER - ALWAYS FRESH FROM STORAGE
 // =====================================================
 final userRoleProvider = FutureProvider<String>((ref) async {
-  print('');
-  print('═══════════════════════════════════════════════════');
-  print('👤 [UserRoleProvider] FETCHING USER ROLE');
-  print('═══════════════════════════════════════════════════');
+  debugPrint('');
+  debugPrint('═══════════════════════════════════════════════════');
+  debugPrint('👤 [UserRoleProvider] FETCHING USER ROLE');
+  debugPrint('═══════════════════════════════════════════════════');
 
   const storage = FlutterSecureStorage();
 
   // ✅ Get role from storage (this is the source of truth)
   final role = await storage.read(key: StorageKeys.userRole);
 
-  print('   Stored Role: ${role ?? "NULL"}');
+  debugPrint('   Stored Role: ${role ?? "NULL"}');
 
   if (role == null || role.isEmpty) {
-    print('❌ [UserRoleProvider] No role found in storage!');
-    print('   This usually means:');
-    print('   1. User is not logged in');
-    print('   2. Logout didn\'t clear properly');
-    print('   3. Login didn\'t save role correctly');
-    print('═══════════════════════════════════════════════════');
+    debugPrint('❌ [UserRoleProvider] No role found in storage!');
+    debugPrint('   This usually means:');
+    debugPrint('   1. User is not logged in');
+    debugPrint('   2. Logout didn\'t clear properly');
+    debugPrint('   3. Login didn\'t save role correctly');
+    debugPrint('═══════════════════════════════════════════════════');
     throw Exception('User role not found. Please login again.');
   }
 
-  print('✅ [UserRoleProvider] Role retrieved: $role');
-  print('═══════════════════════════════════════════════════');
-  print('');
+  debugPrint('✅ [UserRoleProvider] Role retrieved: $role');
+  debugPrint('═══════════════════════════════════════════════════');
+  debugPrint('');
 
   return role;
 });
@@ -59,13 +58,13 @@ final userRoleProvider = FutureProvider<String>((ref) async {
 // APPLICATIONS PROVIDER (ROLE-AWARE)
 // =====================================================
 final myApplicationsProvider = FutureProvider.autoDispose<List<ApplicationModel>>((ref) async {
-  print('');
-  print('═══════════════════════════════════════════════════');
-  print('📋 [Applications] Fetching applications...');
+  debugPrint('');
+  debugPrint('═══════════════════════════════════════════════════');
+  debugPrint('📋 [Applications] Fetching applications...');
 
   // ✅ Wait for role to be determined
   final role = await ref.watch(userRoleProvider.future);
-  print('📋 [Applications] User role: $role');
+  debugPrint('📋 [Applications] User role: $role');
 
   final repository = ref.read(applicationsRepositoryProvider);
 
@@ -73,8 +72,8 @@ final myApplicationsProvider = FutureProvider.autoDispose<List<ApplicationModel>
     List<ApplicationModel> applications;
 
     if (role == 'employer') {
-      print('📋 [Applications] Calling getEmployerApplications() for employer');
-      print('   This will fetch applications across all posted jobs');
+      debugPrint('📋 [Applications] Calling getEmployerApplications() for employer');
+      debugPrint('   This will fetch applications across all posted jobs');
 
       final rawList = await repository.getEmployerApplications();
       applications = rawList
@@ -82,8 +81,8 @@ final myApplicationsProvider = FutureProvider.autoDispose<List<ApplicationModel>
           .toList();
 
     } else if (role == 'jobseeker') {
-      print('📋 [Applications] Calling getMyApplications() for jobseeker');
-      print('   Endpoint: /applications/my-applications');
+      debugPrint('📋 [Applications] Calling getMyApplications() for jobseeker');
+      debugPrint('   Endpoint: /applications/my-applications');
 
       final response = await repository.getMyApplications();
       final applicationsList = response['applications'] as List;
@@ -91,22 +90,22 @@ final myApplicationsProvider = FutureProvider.autoDispose<List<ApplicationModel>
           .map((json) => ApplicationModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } else {
-      print('❌ [Applications] Unknown role: $role');
-      print('═══════════════════════════════════════════════════');
-      print('');
+      debugPrint('❌ [Applications] Unknown role: $role');
+      debugPrint('═══════════════════════════════════════════════════');
+      debugPrint('');
       throw Exception('Unknown role: $role');
     }
 
-    print('✅ [Applications] Successfully fetched ${applications.length} applications');
-    print('═══════════════════════════════════════════════════');
-    print('');
+    debugPrint('✅ [Applications] Successfully fetched ${applications.length} applications');
+    debugPrint('═══════════════════════════════════════════════════');
+    debugPrint('');
 
     return applications;
   } catch (e, stackTrace) {
-    print('❌ [Applications] Error fetching applications: $e');
-    print('   Stack trace: $stackTrace');
-    print('═══════════════════════════════════════════════════');
-    print('');
+    debugPrint('❌ [Applications] Error fetching applications: $e');
+    debugPrint('   Stack trace: $stackTrace');
+    debugPrint('═══════════════════════════════════════════════════');
+    debugPrint('');
     rethrow;
   }
 });
@@ -118,7 +117,7 @@ final applicationStatsProvider = FutureProvider.autoDispose<Map<String, int>>((r
   final role = await ref.watch(userRoleProvider.future);
   final repository = ref.read(applicationsRepositoryProvider);
 
-  print('📊 [Stats] Fetching stats for role: $role');
+  debugPrint('📊 [Stats] Fetching stats for role: $role');
 
   if (role == 'jobseeker') {
     // For job seekers, calculate stats from their applications
@@ -140,7 +139,7 @@ final applicationStatsProvider = FutureProvider.autoDispose<Map<String, int>>((r
       'interviewing': countByStatus('interviewing'),
     };
 
-    print('✅ [Stats] Job seeker stats: $stats');
+    debugPrint('✅ [Stats] Job seeker stats: $stats');
     return stats;
 
   } else if (role == 'employer') {
@@ -163,10 +162,10 @@ final applicationStatsProvider = FutureProvider.autoDispose<Map<String, int>>((r
         return MapEntry(key, intValue);
       });
 
-      print('✅ [Stats] Employer stats: $convertedStats');
+      debugPrint('✅ [Stats] Employer stats: $convertedStats');
       return convertedStats;
     } catch (e) {
-      print('❌ [Stats] Error fetching employer stats: $e');
+      debugPrint('❌ [Stats] Error fetching employer stats: $e');
       rethrow;
     }
 

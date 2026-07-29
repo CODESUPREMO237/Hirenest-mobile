@@ -6,7 +6,7 @@ part of 'chats_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$chatDetailHash() => r'3f99b6f50c578b50ae14717087e10a256b9aa77a';
+String _$chatDetailHash() => r'25645aeeb1c2e6d317165aa26ee8112a252f803b';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -167,7 +167,7 @@ class _ChatDetailProviderElement
   String get chatId => (origin as ChatDetailProvider).chatId;
 }
 
-String _$chatByIdHash() => r'c3a38131316768ad9c1a7f1289e9902b1153b234';
+String _$chatByIdHash() => r'259647a44de40f5c76a8dd6e580784a958159475';
 
 /// Helper provider: Get chat by ID
 ///
@@ -306,7 +306,7 @@ class _ChatByIdProviderElement extends AutoDisposeProviderElement<ChatModel?>
   String get chatId => (origin as ChatByIdProvider).chatId;
 }
 
-String _$totalUnreadCountHash() => r'33154fa47b00f35eeb224a01918c6a67a437dfc9';
+String _$totalUnreadCountHash() => r'0be6e1663d4cef5571fd372b9a1e2de55fae1ae7';
 
 /// Helper provider: Total unread messages count
 ///
@@ -323,7 +323,7 @@ final totalUnreadCountProvider = AutoDisposeProvider<int>.internal(
 );
 
 typedef TotalUnreadCountRef = AutoDisposeProviderRef<int>;
-String _$chatsHash() => r'6cf39870f26886109c429db63cadcf384290b5b2';
+String _$chatsHash() => r'568874cf6a388bcc8f7bd8de64cb274e805db936';
 
 /// Chats list provider with auto-refresh on page return
 ///

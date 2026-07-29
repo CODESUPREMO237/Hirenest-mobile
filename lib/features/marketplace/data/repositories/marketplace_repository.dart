@@ -3,7 +3,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/api_client.dart';
@@ -50,15 +49,15 @@ class MarketplaceRepository {
         if (sortOrder != null) 'sortOrder': sortOrder,
       };
 
-      print('Fetching products with params: $queryParams');
+      debugPrint('Fetching products with params: $queryParams');
 
       final response = await dio.get(
         ApiEndpoints.products,
         queryParameters: queryParams,
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response data structure: ${response.data?.keys}');
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response data structure: ${response.data?.keys}');
 
       if (response.data == null) {
         return PaginatedResponse.empty();
@@ -78,9 +77,9 @@ class MarketplaceRepository {
             (json) => ProductModel.fromJson(json),
       );
     } on DioException catch (e) {
-      print('DioException: ${e.type}');
-      print('DioException message: ${e.message}');
-      print('DioException response: ${e.response?.data}');
+      debugPrint('DioException: ${e.type}');
+      debugPrint('DioException message: ${e.message}');
+      debugPrint('DioException response: ${e.response?.data}');
 
       if (e.response?.statusCode == 500) {
         return PaginatedResponse.empty();
@@ -97,7 +96,7 @@ class MarketplaceRepository {
 
       rethrow;
     } catch (e) {
-      print('General error in getProducts: $e');
+      debugPrint('General error in getProducts: $e');
       return PaginatedResponse.empty();
     }
   }
@@ -189,12 +188,12 @@ class MarketplaceRepository {
             MapEntry('latitude', latitude.toString()),
           ]);
 
-          print('✅ Sending coordinates: longitude=$longitude, latitude=$latitude');
+          debugPrint('✅ Sending coordinates: longitude=$longitude, latitude=$latitude');
         } else {
-          print('⚠️ Invalid coordinates format: $coordinates');
+          debugPrint('⚠️ Invalid coordinates format: $coordinates');
         }
       } else {
-        print('⚠️ No coordinates provided');
+        debugPrint('⚠️ No coordinates provided');
       }
 
       // Add images
@@ -211,11 +210,11 @@ class MarketplaceRepository {
       }
 
       // Debug log
-      print('📤 Creating product with fields:');
+      debugPrint('📤 Creating product with fields:');
       for (var field in formData.fields) {
-        print('  ${field.key} = ${field.value}');
+        debugPrint('  ${field.key} = ${field.value}');
       }
-      print('  images count: ${formData.files.length}');
+      debugPrint('  images count: ${formData.files.length}');
 
       final response = await dio.post(
         ApiEndpoints.products,
@@ -231,12 +230,12 @@ class MarketplaceRepository {
 
       return ProductModel.fromJson(response.data['data']['product']);
     } on DioException catch (e) {
-      print('DioException in createProduct: ${e.message}');
-      print('Response: ${e.response?.data}');
+      debugPrint('DioException in createProduct: ${e.message}');
+      debugPrint('Response: ${e.response?.data}');
       throw Exception('Error creating product: ${e.response?.data['message'] ?? e.message}');
     } catch (e, stackTrace) {
-      print('Error creating product: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('Error creating product: $e');
+      debugPrint('Stack trace: $stackTrace');
       throw Exception('Error creating product: $e');
     }
   }
@@ -265,14 +264,14 @@ class MarketplaceRepository {
 
   // Get order by ID
   Future<OrderModel> getOrder(String orderId) async {
-    final response = await dio.get('/orders/$orderId');
+    final response = await dio.get(ApiEndpoints.order(orderId));
     return OrderModel.fromJson(response.data['data']['order']);
   }
 
   // Get my orders
   Future<List<OrderModel>> getMyOrders({String? status}) async {
     final response = await dio.get(
-      '/orders/my-orders',
+      ApiEndpoints.myOrders,
       queryParameters: {
         if (status != null) 'status': status,
       },
@@ -282,6 +281,48 @@ class MarketplaceRepository {
     return orders.map((json) => OrderModel.fromJson(json)).toList();
   }
 
+  // Get my sales
+  Future<List<OrderModel>> getMySales({String? status}) async {
+    final response = await dio.get(
+      ApiEndpoints.mySales,
+      queryParameters: {
+        if (status != null) 'status': status,
+      },
+    );
+
+    final orders = response.data['data']['orders'] as List;
+    return orders.map((json) => OrderModel.fromJson(json)).toList();
+  }
+
+  // Delivery OTP Methods
+  Future<String> getDeliveryOtp(String orderId) async {
+    final response = await dio.get(ApiEndpoints.orderDeliveryOtp(orderId));
+    return response.data['data']['rawCode'] as String;
+  }
+
+  Future<void> verifyDeliveryOtp(String orderId, String otp) async {
+    await dio.post(
+      ApiEndpoints.verifyDeliveryOtp(orderId),
+      data: {'code': otp},
+    );
+  }
+
+  Future<void> rejectDelivery(String orderId, String reason) async {
+    await dio.post(
+      ApiEndpoints.rejectDelivery(orderId),
+      data: {'reason': reason},
+    );
+  }
+
+  Future<OrderModel> markAsShipped(String orderId) async {
+    final response = await dio.post(ApiEndpoints.shipOrder(orderId));
+    return OrderModel.fromJson(response.data['data']['order']);
+  }
+
+  Future<String> nudgeSeller(String orderId) async {
+    final response = await dio.post(ApiEndpoints.nudgeSeller(orderId));
+    return response.data['message'] as String;
+  }
 
   // Get category by ID
   Future<CategoryModel> getCategory(String id) async {
@@ -312,7 +353,7 @@ class MarketplaceRepository {
       // YOUR BACKEND RETURN: { status: 'success', data: { products: [], pagination: {} } }
       // So we must pass response.data['data'] which contains 'products' and 'pagination'
       if (response.data != null && response.data['data'] != null) {
-        print("Raw Response Data: ${response.data}");
+        debugPrint("Raw Response Data: ${response.data}");
         return PaginatedResponse.fromJson(
           response.data['data'],
               (json) => ProductModel.fromJson(json),
@@ -321,7 +362,7 @@ class MarketplaceRepository {
 
       return PaginatedResponse.empty();
     } catch (e) {
-      print('Repository Error: $e');
+      debugPrint('Repository Error: $e');
       return PaginatedResponse.empty();
     }
   }
@@ -377,7 +418,7 @@ class MarketplaceRepository {
       }
       throw Exception('Failed to load seller profile');
     } catch (e) {
-      print('Error in getSellerPublicProfile: $e');
+      debugPrint('Error in getSellerPublicProfile: $e');
       rethrow;
     }
   }
@@ -402,7 +443,7 @@ class MarketplaceRepository {
           compressed.add(image);
         }
       } catch (e) {
-        print('Error compressing image: $e');
+        debugPrint('Error compressing image: $e');
         compressed.add(image);
       }
     }

@@ -4,19 +4,27 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_animations.dart';
+import '../theme/app_spacing.dart';
 
 class LoadingIndicator extends StatelessWidget {
   final String? message;
   final double size;
+  final Color? color;
 
   const LoadingIndicator({
     super.key,
     this.message,
     this.size = 40,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -27,17 +35,16 @@ class LoadingIndicator extends StatelessWidget {
             child: CircularProgressIndicator(
               strokeWidth: 3,
               valueColor: AlwaysStoppedAnimation(
-                Theme.of(context).primaryColor,
+                color ?? theme.colorScheme.primary,
               ),
             ),
           ),
           if (message != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               message!,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
               ),
             ),
           ],
@@ -71,7 +78,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: AppAnimations.shimmer,
       vsync: this,
     )..repeat();
   }
@@ -84,6 +91,10 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? AppColors.surfaceVariantDark : AppColors.surfaceVariantLight;
+    final highlightColor = isDark ? AppColors.borderDark : AppColors.white;
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -95,20 +106,28 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               colors: [
-                Colors.grey[300]!,
-                Colors.grey[100]!,
-                Colors.grey[300]!,
+                baseColor,
+                highlightColor,
+                baseColor,
               ],
-              stops: [
-                _controller.value - 0.3,
-                _controller.value,
-                _controller.value + 0.3,
-              ].map((e) => e.clamp(0.0, 1.0)).toList(),
+              stops: const [0.0, 0.5, 1.0],
+              transform: _SlidingGradientTransform(_controller.value),
             ),
-            borderRadius: widget.borderRadius,
+            borderRadius: widget.borderRadius ?? AppSpacing.roundedMd,
           ),
         );
       },
     );
+  }
+}
+
+/// Translates the gradient across the widget for a smooth shimmer effect.
+class _SlidingGradientTransform extends GradientTransform {
+  final double progress;
+  const _SlidingGradientTransform(this.progress);
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * (progress * 2 - 1), 0, 0);
   }
 }

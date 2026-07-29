@@ -5,6 +5,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../../../../../core/theme/app_colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class CustomCachedImage extends StatelessWidget {
@@ -33,7 +34,7 @@ fit: fit,
 placeholder: (context, url) => Container(
 width: width,
 height: height,
-color: Colors.grey[200],
+color: AppColors.grey200,
 child: const Center(
 child: CircularProgressIndicator(),
 ),
@@ -41,10 +42,10 @@ child: CircularProgressIndicator(),
 errorWidget: (context, url, error) => Container(
 width: width,
 height: height,
-color: Colors.grey[200],
+color: AppColors.grey200,
 child: Icon(
 Icons.image_not_supported,
-color: Colors.grey[400],
+color: AppColors.grey400,
 size: 40,
 ),
 ),

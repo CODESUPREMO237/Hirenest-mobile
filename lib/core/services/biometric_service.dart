@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 // ============================================================================
 // BIOMETRIC AUTHENTICATION SERVICE - WITH LOGOUT SUPPORT
 // lib/core/services/biometric_service.dart
@@ -26,10 +27,10 @@ class BiometricService {
   Future<bool> isDeviceSupported() async {
     try {
       final supported = await auth.isDeviceSupported();
-      print('📱 [BiometricService] Device supported: $supported');
+      debugPrint('📱 [BiometricService] Device supported: $supported');
       return supported;
     } catch (e) {
-      print('❌ [BiometricService] Error checking device support: $e');
+      debugPrint('❌ [BiometricService] Error checking device support: $e');
       AppLogger.error('Error checking device support', error: e);
       return false;
     }
@@ -41,33 +42,33 @@ class BiometricService {
 
   Future<bool> isBiometricAvailable() async {
     try {
-      print('🔍 [BiometricService] Checking biometric availability...');
+      debugPrint('🔍 [BiometricService] Checking biometric availability...');
 
       final deviceSupported = await isDeviceSupported();
-      print('   - Device supported: $deviceSupported');
+      debugPrint('   - Device supported: $deviceSupported');
 
       if (!deviceSupported) {
-        print('❌ [BiometricService] Device not supported');
+        debugPrint('❌ [BiometricService] Device not supported');
         return false;
       }
 
       final canCheck = await auth.canCheckBiometrics;
-      print('   - Can check biometrics: $canCheck');
+      debugPrint('   - Can check biometrics: $canCheck');
 
       if (!canCheck) {
-        print('❌ [BiometricService] Cannot check biometrics');
+        debugPrint('❌ [BiometricService] Cannot check biometrics');
         return false;
       }
 
       final biometrics = await getAvailableBiometrics();
-      print('   - Available biometrics: $biometrics');
+      debugPrint('   - Available biometrics: $biometrics');
 
       final available = biometrics.isNotEmpty;
-      print('✅ [BiometricService] Biometric available: $available');
+      debugPrint('✅ [BiometricService] Biometric available: $available');
 
       return available;
     } catch (e) {
-      print('❌ [BiometricService] Error checking availability: $e');
+      debugPrint('❌ [BiometricService] Error checking availability: $e');
       AppLogger.error('Error checking biometric availability', error: e);
       return false;
     }
@@ -80,10 +81,10 @@ class BiometricService {
   Future<List<BiometricType>> getAvailableBiometrics() async {
     try {
       final types = await auth.getAvailableBiometrics();
-      print('📋 [BiometricService] Available types: $types');
+      debugPrint('📋 [BiometricService] Available types: $types');
       return types;
     } catch (e) {
-      print('❌ [BiometricService] Error getting biometrics list: $e');
+      debugPrint('❌ [BiometricService] Error getting biometrics list: $e');
       AppLogger.error('Error getting biometrics list', error: e);
       return [];
     }
@@ -98,20 +99,20 @@ class BiometricService {
     bool biometricOnly = true,
   }) async {
     try {
-      print('🔐 [BiometricService] Starting authentication...');
-      print('   - Reason: $reason');
-      print('   - Biometric only: $biometricOnly');
+      debugPrint('🔐 [BiometricService] Starting authentication...');
+      debugPrint('   - Reason: $reason');
+      debugPrint('   - Biometric only: $biometricOnly');
 
       AppLogger.info("Starting biometric authentication…");
 
       final available = await isBiometricAvailable();
       if (!available) {
-        print('❌ [BiometricService] Biometric not available');
+        debugPrint('❌ [BiometricService] Biometric not available');
         AppLogger.warning("Biometric not available on this device");
         return false;
       }
 
-      print('🔓 [BiometricService] Showing biometric prompt...');
+      debugPrint('🔓 [BiometricService] Showing biometric prompt...');
 
       final authenticated = await auth.authenticate(
         localizedReason: "Please authenticate to enable biometric login",
@@ -120,16 +121,16 @@ class BiometricService {
       );
 
       if (authenticated) {
-        print('✅ [BiometricService] Authentication successful');
+        debugPrint('✅ [BiometricService] Authentication successful');
         AppLogger.info("Biometric auth success");
       } else {
-        print('❌ [BiometricService] Authentication failed or cancelled');
+        debugPrint('❌ [BiometricService] Authentication failed or cancelled');
         AppLogger.warning("Biometric auth failed");
       }
 
       return authenticated;
     } on PlatformException catch (e) {
-      print('❌ [BiometricService] Platform exception: ${e.code} - ${e.message}');
+      debugPrint('❌ [BiometricService] Platform exception: ${e.code} - ${e.message}');
       AppLogger.error("Platform biometric error", error: e);
 
       switch (e.code) {
@@ -145,7 +146,7 @@ class BiometricService {
           throw BiometricException('Biometric error: ${e.message}');
       }
     } catch (e) {
-      print('❌ [BiometricService] Unknown error: $e');
+      debugPrint('❌ [BiometricService] Unknown error: $e');
       AppLogger.error("Unknown biometric error", error: e);
       throw BiometricException('Authentication error');
     }
@@ -159,20 +160,20 @@ class BiometricService {
   /// Returns credentials map if successful, null if failed or no credentials
   Future<Map<String, String>?> authenticateForLogin() async {
     try {
-      print('🔐 [BiometricService] Authenticating for login...');
+      debugPrint('🔐 [BiometricService] Authenticating for login...');
 
       // Check if biometric login is enabled
       final isEnabled = await isBiometricLoginEnabled();
       if (!isEnabled) {
-        print('⚠️ [BiometricService] Biometric login not enabled');
+        debugPrint('⚠️ [BiometricService] Biometric login not enabled');
         return null;
       }
 
       // ✅ Check if we have saved credentials
       final credentials = await _storage.read(key: StorageKeys.biometricCredentials);
       if (credentials == null || !credentials.contains('::')) {
-        print('⚠️ [BiometricService] No saved credentials found');
-        print('ℹ️ [BiometricService] User needs to login normally first');
+        debugPrint('⚠️ [BiometricService] No saved credentials found');
+        debugPrint('ℹ️ [BiometricService] User needs to login normally first');
 
         // The preference is still enabled, but credentials are missing
         // This happens after logout
@@ -180,7 +181,7 @@ class BiometricService {
         return null;
       }
 
-      print('✅ [BiometricService] Credentials found, prompting for biometric...');
+      debugPrint('✅ [BiometricService] Credentials found, prompting for biometric...');
 
       // Authenticate with biometric
       final authenticated = await authenticate(
@@ -189,16 +190,16 @@ class BiometricService {
       );
 
       if (!authenticated) {
-        print('❌ [BiometricService] Biometric authentication failed');
+        debugPrint('❌ [BiometricService] Biometric authentication failed');
         return null;
       }
 
-      print('✅ [BiometricService] Biometric authentication successful');
+      debugPrint('✅ [BiometricService] Biometric authentication successful');
 
       // Return the saved credentials
       return await getSavedCredentials();
     } catch (e) {
-      print('❌ [BiometricService] authenticateForLogin error: $e');
+      debugPrint('❌ [BiometricService] authenticateForLogin error: $e');
       AppLogger.error('Biometric login failed', error: e);
       return null;
     }
@@ -213,12 +214,12 @@ class BiometricService {
       final enabled = await _storage.read(key: StorageKeys.biometricEnabled);
       final isEnabled = enabled == 'true';
 
-      print('📦 [BiometricService] isBiometricLoginEnabled: $isEnabled');
-      print('   - Raw value: $enabled');
+      debugPrint('📦 [BiometricService] isBiometricLoginEnabled: $isEnabled');
+      debugPrint('   - Raw value: $enabled');
 
       return isEnabled;
     } catch (e) {
-      print('❌ [BiometricService] Error reading enabled status: $e');
+      debugPrint('❌ [BiometricService] Error reading enabled status: $e');
       AppLogger.error("Error reading biometric login setting", error: e);
       return false;
     }
@@ -229,13 +230,13 @@ class BiometricService {
       final credentials = await _storage.read(key: StorageKeys.biometricCredentials);
       final hasCredentials = credentials != null && credentials.contains("::");
 
-      print('📦 [BiometricService] hasSavedCredentials: $hasCredentials');
-      print('   - Raw value exists: ${credentials != null}');
-      print('   - Contains separator: ${credentials?.contains("::") ?? false}');
+      debugPrint('📦 [BiometricService] hasSavedCredentials: $hasCredentials');
+      debugPrint('   - Raw value exists: ${credentials != null}');
+      debugPrint('   - Contains separator: ${credentials?.contains("::") ?? false}');
 
       return hasCredentials;
     } catch (e) {
-      print('❌ [BiometricService] Error checking saved credentials: $e');
+      debugPrint('❌ [BiometricService] Error checking saved credentials: $e');
       AppLogger.error("Error checking saved credentials", error: e);
       return false;
     }
@@ -249,31 +250,31 @@ class BiometricService {
 
       final isReady = enabled && hasCredentials;
 
-      print('📦 [BiometricService] isBiometricLoginReady: $isReady');
-      print('   - Enabled: $enabled');
-      print('   - Has credentials: $hasCredentials');
+      debugPrint('📦 [BiometricService] isBiometricLoginReady: $isReady');
+      debugPrint('   - Enabled: $enabled');
+      debugPrint('   - Has credentials: $hasCredentials');
 
       return isReady;
     } catch (e) {
-      print('❌ [BiometricService] Error checking ready status: $e');
+      debugPrint('❌ [BiometricService] Error checking ready status: $e');
       return false;
     }
   }
 
   Future<void> enableBiometricLogin() async {
     try {
-      print('📦 [BiometricService] Enabling biometric login...');
+      debugPrint('📦 [BiometricService] Enabling biometric login...');
 
       await _storage.write(key: StorageKeys.biometricEnabled, value: 'true');
 
       // Verify
       final verified = await _storage.read(key: StorageKeys.biometricEnabled);
-      print('✅ [BiometricService] Biometric login enabled');
-      print('   - Verification: ${verified == 'true'}');
+      debugPrint('✅ [BiometricService] Biometric login enabled');
+      debugPrint('   - Verification: ${verified == 'true'}');
 
       AppLogger.info("Biometric login turned ON");
     } catch (e) {
-      print('❌ [BiometricService] Enable failed: $e');
+      debugPrint('❌ [BiometricService] Enable failed: $e');
       AppLogger.error("Enable biometric login failed", error: e);
       throw BiometricException("Could not enable");
     }
@@ -281,16 +282,16 @@ class BiometricService {
 
   Future<void> disableBiometricLogin() async {
     try {
-      print('📦 [BiometricService] Disabling biometric login...');
+      debugPrint('📦 [BiometricService] Disabling biometric login...');
 
       await _storage.write(key: StorageKeys.biometricEnabled, value: 'false');
       await _storage.delete(key: StorageKeys.biometricCredentials);
 
-      print('✅ [BiometricService] Biometric login disabled');
+      debugPrint('✅ [BiometricService] Biometric login disabled');
 
       AppLogger.info("Biometric login turned OFF");
     } catch (e) {
-      print('❌ [BiometricService] Disable failed: $e');
+      debugPrint('❌ [BiometricService] Disable failed: $e');
       AppLogger.error("Disable biometric login failed", error: e);
       throw BiometricException("Could not disable");
     }
@@ -305,9 +306,9 @@ class BiometricService {
       String password,
       ) async {
     try {
-      print('📦 [BiometricService] Saving credentials...');
-      print('   - Email: $email');
-      print('   - Password length: ${password.length}');
+      debugPrint('📦 [BiometricService] Saving credentials...');
+      debugPrint('   - Email: $email');
+      debugPrint('   - Password length: ${password.length}');
 
       final combined = "$email::$password";
 
@@ -320,13 +321,13 @@ class BiometricService {
       final saved = await _storage.read(key: StorageKeys.biometricCredentials);
       final verified = saved == combined;
 
-      print('✅ [BiometricService] Credentials saved');
-      print('   - Verification: $verified');
-      print('   - Saved length: ${saved?.length ?? 0}');
+      debugPrint('✅ [BiometricService] Credentials saved');
+      debugPrint('   - Verification: $verified');
+      debugPrint('   - Saved length: ${saved?.length ?? 0}');
 
       AppLogger.info("Biometric credentials saved");
     } catch (e) {
-      print('❌ [BiometricService] Save credentials failed: $e');
+      debugPrint('❌ [BiometricService] Save credentials failed: $e');
       AppLogger.error("Saving credentials failed", error: e);
       throw BiometricException("Could not save credentials");
     }
@@ -338,33 +339,33 @@ class BiometricService {
 
   Future<Map<String, String>?> getSavedCredentials() async {
     try {
-      print('📦 [BiometricService] Getting saved credentials...');
+      debugPrint('📦 [BiometricService] Getting saved credentials...');
 
       final raw = await _storage.read(key: StorageKeys.biometricCredentials);
 
       if (raw == null) {
-        print('❌ [BiometricService] No credentials found');
+        debugPrint('❌ [BiometricService] No credentials found');
         return null;
       }
 
-      print('   - Raw data exists: ${raw.length} chars');
+      debugPrint('   - Raw data exists: ${raw.length} chars');
 
       final parts = raw.split("::");
       if (parts.length != 2) {
-        print('❌ [BiometricService] Invalid credential format');
+        debugPrint('❌ [BiometricService] Invalid credential format');
         return null;
       }
 
-      print('✅ [BiometricService] Credentials retrieved');
-      print('   - Email: ${parts[0]}');
-      print('   - Password length: ${parts[1].length}');
+      debugPrint('✅ [BiometricService] Credentials retrieved');
+      debugPrint('   - Email: ${parts[0]}');
+      debugPrint('   - Password length: ${parts[1].length}');
 
       return {
         "email": parts[0],
         "password": parts[1],
       };
     } catch (e) {
-      print('❌ [BiometricService] Get credentials failed: $e');
+      debugPrint('❌ [BiometricService] Get credentials failed: $e');
       AppLogger.error("Get credentials failed", error: e);
       return null;
     }
@@ -378,18 +379,18 @@ class BiometricService {
   /// This is called during logout
   Future<void> clearCredentials() async {
     try {
-      print('🧹 [BiometricService] Clearing credentials (keeping preference)...');
+      debugPrint('🧹 [BiometricService] Clearing credentials (keeping preference)...');
 
       await _storage.delete(key: StorageKeys.biometricCredentials);
 
-      print('✅ [BiometricService] Credentials cleared');
+      debugPrint('✅ [BiometricService] Credentials cleared');
 
       // The biometric_login_enabled preference is NOT cleared
       // So user still sees biometric as "enabled" in settings
 
       AppLogger.info("Biometric credentials cleared (preference kept)");
     } catch (e) {
-      print('❌ [BiometricService] Clear credentials failed: $e');
+      debugPrint('❌ [BiometricService] Clear credentials failed: $e');
       AppLogger.error("Clear credentials failed", error: e);
     }
   }
@@ -400,11 +401,11 @@ class BiometricService {
 
   Future<void> stopAuthentication() async {
     try {
-      print('🛑 [BiometricService] Stopping authentication...');
+      debugPrint('🛑 [BiometricService] Stopping authentication...');
       await auth.stopAuthentication();
-      print('✅ [BiometricService] Authentication stopped');
+      debugPrint('✅ [BiometricService] Authentication stopped');
     } catch (e) {
-      print('❌ [BiometricService] Stop auth error: $e');
+      debugPrint('❌ [BiometricService] Stop auth error: $e');
       AppLogger.error("Stop auth error", error: e);
     }
   }
@@ -415,26 +416,26 @@ class BiometricService {
 
   String getTypeName(List<BiometricType> types) {
     if (types.contains(BiometricType.face)) {
-      print('📱 [BiometricService] Type: Face ID');
+      debugPrint('📱 [BiometricService] Type: Face ID');
       return "Face ID";
     }
     if (types.contains(BiometricType.fingerprint)) {
-      print('📱 [BiometricService] Type: Fingerprint');
+      debugPrint('📱 [BiometricService] Type: Fingerprint');
       return "Fingerprint";
     }
     if (types.contains(BiometricType.iris)) {
-      print('📱 [BiometricService] Type: Iris');
+      debugPrint('📱 [BiometricService] Type: Iris');
       return "Iris";
     }
     if (types.contains(BiometricType.strong)) {
-      print('📱 [BiometricService] Type: Strong Biometric');
+      debugPrint('📱 [BiometricService] Type: Strong Biometric');
       return "Biometric";
     }
     if (types.contains(BiometricType.weak)) {
-      print('📱 [BiometricService] Type: Weak Biometric');
+      debugPrint('📱 [BiometricService] Type: Weak Biometric');
       return "Biometric";
     }
-    print('📱 [BiometricService] Type: Generic Biometric');
+    debugPrint('📱 [BiometricService] Type: Generic Biometric');
     return "Biometric";
   }
 
@@ -444,33 +445,33 @@ class BiometricService {
 
   Future<void> debugStorageContents() async {
     try {
-      print('');
-      print('🔍 ========================================');
-      print('🔍 BIOMETRIC STORAGE DEBUG');
-      print('🔍 ========================================');
+      debugPrint('');
+      debugPrint('🔍 ========================================');
+      debugPrint('🔍 BIOMETRIC STORAGE DEBUG');
+      debugPrint('🔍 ========================================');
 
       final enabled = await _storage.read(key: StorageKeys.biometricEnabled);
       final credentials = await _storage.read(key: StorageKeys.biometricCredentials);
 
-      print('📦 Enabled status: $enabled');
-      print('📦 Has credentials: ${credentials != null}');
+      debugPrint('📦 Enabled status: $enabled');
+      debugPrint('📦 Has credentials: ${credentials != null}');
 
       if (credentials != null) {
         final parts = credentials.split('::');
-        print('📦 Credential format valid: ${parts.length == 2}');
+        debugPrint('📦 Credential format valid: ${parts.length == 2}');
         if (parts.length == 2) {
-          print('📦 Email: ${parts[0]}');
-          print('📦 Password length: ${parts[1].length} chars');
+          debugPrint('📦 Email: ${parts[0]}');
+          debugPrint('📦 Password length: ${parts[1].length} chars');
         }
       }
 
       final isReady = await isBiometricLoginReady();
-      print('📦 Ready for login: $isReady');
+      debugPrint('📦 Ready for login: $isReady');
 
-      print('🔍 ========================================');
-      print('');
+      debugPrint('🔍 ========================================');
+      debugPrint('');
     } catch (e) {
-      print('❌ Debug failed: $e');
+      debugPrint('❌ Debug failed: $e');
     }
   }
 }

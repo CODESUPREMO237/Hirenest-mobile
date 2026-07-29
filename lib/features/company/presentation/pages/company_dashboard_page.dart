@@ -1,18 +1,12 @@
-// ============================================================================
-// FIXED COMPANY DASHBOARD PAGE
 // lib/features/company/presentation/pages/company_dashboard_page.dart
-// ============================================================================
-
-// ============================================================================
-// UPDATED COMPANY DASHBOARD PAGE WITH CUSTOM ERROR WIDGET
-// lib/features/company/presentation/pages/company_dashboard_page.dart
-// ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/logger.dart';
-import '../../../../core/widgets/error_widget.dart'; // Ensure this matches your path
+import '../../../../core/widgets/error_widget.dart';
 import '../providers/company_provider.dart';
 import '../../data/models/company_model.dart';
 
@@ -24,60 +18,69 @@ class CompanyDashboardPage extends ConsumerWidget {
     final companyAsync = ref.watch(myCompanyProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text('Company Dashboard'),
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          'Company Dashboard',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimaryLight,
+              ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+            icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimaryLight),
             onPressed: () => context.push('/profile/notifications'),
           ),
         ],
       ),
       body: companyAsync.when(
         data: (company) {
-          if (company == null) {
-            return _buildNoCompanyView(context, ref);
-          }
-
           return RefreshIndicator(
+            color: AppColors.primary,
+            backgroundColor: AppColors.surfaceLight,
             onRefresh: () => ref.refresh(myCompanyProvider.future),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _CompanyHeaderCard(company: company),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xl),
                   Text(
                     'Company Stats',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimaryLight,
+                        ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   _buildStatsGrid(company),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xl),
                   Text(
                     'Quick Actions',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimaryLight,
+                        ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   _buildQuickActions(context),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xl),
                   _CompanyInfoCard(company: company),
+                  const SizedBox(height: AppSpacing.xxl),
                 ],
               ),
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (error, stack) {
           AppLogger.error('Dashboard Error', error: error, stackTrace: stack);
-
-          // Using your CustomErrorWidget here
           return CustomErrorWidget(
             message: 'Failed to load dashboard: ${error.toString()}',
             onRetry: () => ref.invalidate(myCompanyProvider),
@@ -85,63 +88,14 @@ class CompanyDashboardPage extends ConsumerWidget {
         },
       ),
       floatingActionButton: companyAsync.maybeWhen(
-        data: (company) => company != null
-            ? FloatingActionButton.extended(
+        data: (company) => FloatingActionButton.extended(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.white,
           onPressed: () => context.push('/company/edit'),
-          icon: const Icon(Icons.edit),
-          label: const Text('Edit Profile'),
-        )
-            : null,
+          icon: const Icon(Icons.edit, size: 20),
+          label: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.w600)),
+        ),
         orElse: () => null,
-      ),
-    );
-  }
-
-
-
-  Widget _buildNoCompanyView(BuildContext context, WidgetRef ref) {
-    return RefreshIndicator(
-      onRefresh: () async => ref.refresh(myCompanyProvider.future),
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-          const Icon(Icons.business_outlined, size: 80, color: Colors.grey),
-          const SizedBox(height: 16),
-          Center(
-            child: Text(
-              'No company profile found',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              'Create a company profile to manage jobs and teams',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: ElevatedButton.icon(
-              onPressed: () => context.push('/company/create'),
-              icon: const Icon(Icons.add),
-              label: const Text('Create Company Profile'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -151,33 +105,33 @@ class CompanyDashboardPage extends ConsumerWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
+      crossAxisSpacing: AppSpacing.md,
+      mainAxisSpacing: AppSpacing.md,
       childAspectRatio: 1.5,
       children: [
         _StatCard(
           icon: Icons.work_outline,
           title: 'Active Jobs',
           value: '${company.stats?.activeJobs ?? 0}',
-          color: Colors.blue,
+          color: AppColors.primary,
         ),
         _StatCard(
           icon: Icons.people_outline,
           title: 'Size',
           value: company.companySize ?? 'N/A',
-          color: Colors.green,
+          color: AppColors.success,
         ),
         _StatCard(
           icon: Icons.location_on_outlined,
           title: 'Locations',
           value: '${company.locations?.length ?? 0}',
-          color: Colors.purple,
+          color: AppColors.accent,
         ),
         _StatCard(
           icon: Icons.star_outline,
           title: 'Rating',
           value: company.stats?.averageRating?.toStringAsFixed(1) ?? '0.0',
-          color: Colors.orange,
+          color: AppColors.warning,
         ),
       ],
     );
@@ -192,41 +146,41 @@ class CompanyDashboardPage extends ConsumerWidget {
               child: _ActionButton(
                 icon: Icons.work_outline,
                 label: 'Post Job',
-                color: Colors.blue,
+                color: AppColors.primary,
                 onPressed: () => context.push('/jobs/create'),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: _ActionButton(
                 icon: Icons.list_alt,
                 label: 'View Jobs',
-                color: Colors.green,
+                color: AppColors.success,
                 onPressed: () => context.push('/jobs'),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Row(
           children: [
             Expanded(
               child: _ActionButton(
                 icon: Icons.person_add_outlined,
                 label: 'Admins',
-                color: Colors.purple,
+                color: AppColors.accent,
                 onPressed: () {
                   AppLogger.debug('Navigating to manage admins');
                   context.push('/company/manage-admins');
                 },
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: _ActionButton(
                 icon: Icons.bar_chart_outlined,
                 label: 'Analytics',
-                color: Colors.orange,
+                color: AppColors.warning,
                 onPressed: () => context.push('/analytics'),
               ),
             ),
@@ -243,52 +197,64 @@ class _CompanyHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedXl,
+        boxShadow: AppSpacing.cardShadow,
+      ),
       child: Column(
         children: [
           if (company.banner != null)
             ClipRRect(
-              borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusXl)),
               child: Image.network(
                 company.banner!,
                 height: 120,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Container(height: 120, color: Colors.grey[300]),
+                errorBuilder: (context, error, stackTrace) =>
+                    Container(height: 120, color: AppColors.borderLight),
               ),
             ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: 64,
+                  height: 64,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
+                    color: AppColors.backgroundLight,
+                    borderRadius: AppSpacing.roundedLg,
+                    border: Border.all(color: AppColors.borderLight),
                   ),
                   child: company.logo != null
                       ? ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(company.logo!, fit: BoxFit.cover),
-                  )
-                      : const Icon(Icons.business, color: Colors.grey),
+                          borderRadius: AppSpacing.roundedLg,
+                          child: Image.network(company.logo!, fit: BoxFit.cover),
+                        )
+                      : const Icon(Icons.business, color: AppColors.textMutedLight, size: 32),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(company.name,
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text(company.industry ?? 'General',
-                          style: TextStyle(color: Colors.grey[600])),
+                      Text(
+                        company.name,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimaryLight,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        company.industry ?? 'General',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondaryLight,
+                            ),
+                      ),
                     ],
                   ),
                 ),
@@ -307,27 +273,30 @@ class _CompanyInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _InfoRow(
-                icon: Icons.description,
-                label: 'About',
-                value: company.description ?? 'No description'),
-            const Divider(),
-            _InfoRow(
-                icon: Icons.language,
-                label: 'Website',
-                value: company.website ?? 'N/A'),
-            const Divider(),
-            _InfoRow(
-                icon: Icons.email,
-                label: 'Contact',
-                value: company.email ?? 'N/A'),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedXl,
+        boxShadow: AppSpacing.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Company Information',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimaryLight,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _InfoRow(icon: Icons.description_outlined, label: 'About', value: company.description ?? 'No description'),
+          const Divider(height: AppSpacing.xl, color: AppColors.borderLight),
+          _InfoRow(icon: Icons.language, label: 'Website', value: company.website ?? 'N/A'),
+          const Divider(height: AppSpacing.xl, color: AppColors.borderLight),
+          _InfoRow(icon: Icons.email_outlined, label: 'Contact', value: company.email ?? 'N/A'),
+        ],
       ),
     );
   }
@@ -337,22 +306,37 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _InfoRow(
-      {required this.icon, required this.label, required this.value});
+  const _InfoRow({required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.blueGrey),
-          const SizedBox(width: 12),
-          Expanded(
-              child: Text(value,
-                  style: const TextStyle(fontWeight: FontWeight.w500))),
-        ],
-      ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: AppColors.textMutedLight),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textMutedLight,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -363,29 +347,35 @@ class _StatCard extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _StatCard(
-      {required this.icon,
-        required this.title,
-        required this.value,
-        required this.color});
+  const _StatCard({required this.icon, required this.title, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        color: color.withValues(alpha: 0.05),
+        borderRadius: AppSpacing.roundedLg,
+        border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 4),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-          Text(title, style: const TextStyle(fontSize: 11)),
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+          ),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: color.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
         ],
       ),
     );
@@ -398,31 +388,33 @@ class _ActionButton extends StatelessWidget {
   final Color color;
   final VoidCallback onPressed;
 
-  const _ActionButton(
-      {required this.icon,
-        required this.label,
-        required this.color,
-        required this.onPressed});
+  const _ActionButton({required this.icon, required this.label, required this.color, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color,
-      borderRadius: BorderRadius.circular(12),
+      color: color.withValues(alpha: 0.1),
+      borderRadius: AppSpacing.roundedLg,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        borderRadius: AppSpacing.roundedLg,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+          decoration: BoxDecoration(
+            border: Border.all(color: color.withValues(alpha: 0.2)),
+            borderRadius: AppSpacing.roundedLg,
+          ),
           child: Column(
             children: [
-              Icon(icon, color: Colors.white),
-              const SizedBox(height: 4),
-              Text(label,
-                  style: const TextStyle(
-                      color: Colors.white,
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: color,
                       fontWeight: FontWeight.bold,
-                      fontSize: 12)),
+                    ),
+              ),
             ],
           ),
         ),

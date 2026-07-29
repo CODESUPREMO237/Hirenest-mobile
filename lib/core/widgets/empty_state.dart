@@ -1,11 +1,11 @@
-
-
 // ============================================================================
 // empty_state.dart
 // lib/core/widgets/empty_state.dart
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
 class EmptyState extends StatelessWidget {
   final IconData icon;
@@ -23,39 +23,55 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 80,
-              color: Colors.grey[300],
+            // Icon in a subtle circular background
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 48,
+                color: theme.colorScheme.primary,
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
+            
+            // Title
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
+            
+            // Subtitle
             if (subtitle != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 subtitle!,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
                 ),
                 textAlign: TextAlign.center,
               ),
             ],
+            
+            // Action CTA
             if (action != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xl),
               action!,
             ],
           ],

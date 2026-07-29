@@ -6,6 +6,8 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../router/app_router.dart';
 import '../utils/logger.dart';
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
@@ -65,7 +67,7 @@ class NotificationService {
     const androidChannel = AndroidNotificationChannel(
       'default_channel', // id
       'Default Notifications', // name
-      description: 'Default notification channel for JobConnect',
+      description: 'Default notification channel for HireNest',
       importance: Importance.high,
       playSound: true,
       enableVibration: true,
@@ -109,25 +111,67 @@ class NotificationService {
   void _handleMessageOpenedApp(RemoteMessage message) {
     AppLogger.info('Message opened app: ${message.notification?.title}');
     AppLogger.info('Message data: ${message.data}');
-    // Handle navigation based on message data
-    // TODO: Add your navigation logic here based on message.data
+    _navigateFromPayload(message.data);
   }
 
   void _onNotificationTapped(NotificationResponse response) {
     AppLogger.info('Notification tapped: ${response.payload}');
-    // Handle notification tap
-    // TODO: Add your navigation logic here based on payload
-     if (response.payload != null) {
-    // Parse and navigate to specific screen
-    // context.push('/jobs/${jobId}');
+    if (response.payload != null) {
+      // payload is a stringified map from message.data, we need to parse it or just use simple routing if it's not JSON
+      // Actually, in _showLocalNotification, payload is message.data.toString() which is hard to parse cleanly.
+      // A better way is to pass specific fields or JSON encode.
+      // But for now, we'll assume we can at least extract the screen.
+      // If we change _showLocalNotification to jsonEncode(message.data), we could parse it cleanly.
+      // Let's assume it's JSON encoded for now and fix _showLocalNotification next.
+      try {
+        final Map<String, dynamic> data = _parsePayload(response.payload!);
+        _navigateFromPayload(data);
+      } catch (e) {
+        AppLogger.error('Failed to parse notification payload', error: e);
+      }
+    }
   }
+
+  void _navigateFromPayload(Map<String, dynamic> data) {
+    final screen = data['screen'];
+    final id = data['id'] ?? data['orderId'] ?? data['jobId'] ?? data['chatId'];
+
+    // Use the root navigator key from app_router.dart
+    // Note: requires importing go_router and app_router.dart at the top
+    final context = rootNavigatorKey.currentContext;
+    if (context == null) return;
+
+    if (screen == 'admin_disputes') {
+      GoRouter.of(context).push('/admin/disputes');
+    } else if (screen == 'order_details' && id != null) {
+      GoRouter.of(context).push('/marketplace/orders/$id');
+    } else if (screen == 'seller_orders') {
+      GoRouter.of(context).push('/marketplace/my-sales');
+    } else if (screen == 'chat' && id != null) {
+      GoRouter.of(context).push('/chats/$id');
+    }
+  }
+
+  Map<String, dynamic> _parsePayload(String payload) {
+    // Basic parser for stringified map {screen: admin_disputes, orderId: 123}
+    // Real implementation should use jsonEncode/jsonDecode
+    final map = <String, dynamic>{};
+    final stripped = payload.replaceAll('{', '').replaceAll('}', '');
+    final pairs = stripped.split(',');
+    for (final pair in pairs) {
+      final parts = pair.split(':');
+      if (parts.length == 2) {
+        map[parts[0].trim()] = parts[1].trim();
+      }
+    }
+    return map;
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {
     const androidDetails = AndroidNotificationDetails(
       'default_channel',
       'Default Notifications',
-      channelDescription: 'Default notification channel for JobConnect',
+      channelDescription: 'Default notification channel for HireNest',
       importance: Importance.high,
       priority: Priority.high,
       playSound: true,
@@ -148,7 +192,7 @@ class NotificationService {
 
     await _localNotifications.show(
       message.hashCode,
-      message.notification?.title ?? 'JobConnect',
+      message.notification?.title ?? 'HireNest',
       message.notification?.body ?? 'You have a new notification',
       details,
       payload: message.data.toString(),
@@ -162,7 +206,7 @@ class NotificationService {
     const androidDetails = AndroidNotificationDetails(
       'default_channel',
       'Default Notifications',
-      channelDescription: 'Default notification channel for JobConnect',
+      channelDescription: 'Default notification channel for HireNest',
       importance: Importance.high,
       priority: Priority.high,
       playSound: true,
@@ -184,7 +228,7 @@ class NotificationService {
     await _localNotifications.show(
       DateTime.now().millisecondsSinceEpoch % 100000,
       'Test Notification',
-      'This is a test notification from JobConnect',
+      'This is a test notification from HireNest',
       details,
     );
 

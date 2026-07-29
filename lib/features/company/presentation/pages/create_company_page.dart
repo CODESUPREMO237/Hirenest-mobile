@@ -1,8 +1,9 @@
-// Create Company Page
 // lib/features/company/presentation/pages/create_company_page.dart
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -36,25 +37,12 @@ class _CreateCompanyPageState extends ConsumerState<CreateCompanyPage> {
   bool _isLoading = false;
 
   final List<String> _industries = [
-    'Technology',
-    'Healthcare',
-    'Finance',
-    'Education',
-    'Retail',
-    'Manufacturing',
-    'Construction',
-    'Hospitality',
-    'Transportation',
-    'Other',
+    'Technology', 'Healthcare', 'Finance', 'Education', 'Retail',
+    'Manufacturing', 'Construction', 'Hospitality', 'Transportation', 'Other',
   ];
 
   final List<String> _companySizes = [
-    '1-10',
-    '11-50',
-    '51-200',
-    '201-500',
-    '501-1000',
-    '1000+',
+    '1-10', '11-50', '51-200', '201-500', '501-1000', '1000+',
   ];
 
   @override
@@ -93,44 +81,31 @@ class _CreateCompanyPageState extends ConsumerState<CreateCompanyPage> {
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
 
     try {
-      // Create the base map for the data
       final Map<String, dynamic> data = {
         'name': _nameController.text,
         'description': _descriptionController.text,
         'industry': _selectedIndustry,
         'companySize': _selectedCompanySize,
         'website': _websiteController.text,
-        'email': _emailController.text, // CHANGED from 'contactEmail' to 'email' to match backend
+        'email': _emailController.text,
         'contactPhone': _phoneController.text,
       };
 
       final formData = FormData.fromMap(data);
 
-      // FIX: Add locations as actual JSON fields, not a string
-      // This allows the backend to parse it correctly as an array/object
       formData.fields.add(MapEntry('locations[0][city]', _cityController.text));
       formData.fields.add(MapEntry('locations[0][state]', _stateController.text));
       formData.fields.add(MapEntry('locations[0][country]', _countryController.text));
       formData.fields.add(MapEntry('locations[0][address]', _addressController.text));
 
-      // Handle files (Existing logic is fine)
       if (_logoFile != null) {
-        formData.files.add(MapEntry(
-          'logo',
-          await MultipartFile.fromFile(_logoFile!.path),
-        ));
+        formData.files.add(MapEntry('logo', await MultipartFile.fromFile(_logoFile!.path)));
       }
-
-
       if (_bannerFile != null) {
-        formData.files.add(MapEntry(
-          'banner',
-          await MultipartFile.fromFile(_bannerFile!.path),
-        ));
+        formData.files.add(MapEntry('banner', await MultipartFile.fromFile(_bannerFile!.path)));
       }
 
       final repository = ref.read(companyRepositoryProvider);
@@ -139,41 +114,60 @@ class _CreateCompanyPageState extends ConsumerState<CreateCompanyPage> {
       if (mounted) {
         ref.invalidate(myCompanyProvider);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Company created successfully!'),
-            backgroundColor: Colors.green,
-          ),
+          const SnackBar(content: Text('Company created successfully!'), backgroundColor: AppColors.success),
         );
         context.go('/company/dashboard');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppColors.error),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final inputDecoration = InputDecoration(
+      filled: true,
+      fillColor: AppColors.backgroundLight,
+      border: OutlineInputBorder(
+        borderRadius: AppSpacing.roundedMd,
+        borderSide: const BorderSide(color: AppColors.borderLight),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: AppSpacing.roundedMd,
+        borderSide: const BorderSide(color: AppColors.borderLight),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppSpacing.roundedMd,
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+    );
+
     return Scaffold(
+      backgroundColor: AppColors.surfaceLight,
       appBar: AppBar(
-        title: const Text('Create Company Profile'),
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
+        title: Text(
+          'Create Company Profile',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimaryLight,
+              ),
+        ),
+        iconTheme: const IconThemeData(color: AppColors.textPrimaryLight),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            // Logo Upload
             Center(
               child: Column(
                 children: [
@@ -183,216 +177,187 @@ class _CreateCompanyPageState extends ConsumerState<CreateCompanyPage> {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        color: AppColors.backgroundLight,
+                        borderRadius: AppSpacing.roundedLg,
+                        border: Border.all(color: AppColors.borderLight),
                       ),
                       child: _logoFile != null
                           ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.file(_logoFile!, fit: BoxFit.cover),
-                      )
+                              borderRadius: AppSpacing.roundedLg,
+                              child: Image.file(_logoFile!, fit: BoxFit.cover),
+                            )
                           : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.business, size: 40, color: Colors.grey[400]),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Upload Logo',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ],
-                      ),
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.business, size: 40, color: AppColors.textMutedLight),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  'Upload Logo',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondaryLight),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.md),
                   TextButton.icon(
                     onPressed: () => _pickImage(false),
-                    icon: const Icon(Icons.image),
-                    label: Text(_bannerFile != null ? 'Banner Selected' : 'Upload Banner'),
+                    icon: const Icon(Icons.image, color: AppColors.primary),
+                    label: Text(_bannerFile != null ? 'Banner Selected' : 'Upload Banner', style: const TextStyle(color: AppColors.primary)),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
 
-            // Company Name
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(
+              decoration: inputDecoration.copyWith(
                 labelText: 'Company Name *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.business),
+                prefixIcon: const Icon(Icons.business, color: AppColors.textMutedLight),
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter company name';
-                }
-                return null;
-              },
+              validator: (value) => value == null || value.isEmpty ? 'Please enter company name' : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
-            // Description
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
+              decoration: inputDecoration.copyWith(
                 labelText: 'Description *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.description),
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.only(bottom: 60),
+                  child: Icon(Icons.description_outlined, color: AppColors.textMutedLight),
+                ),
               ),
               maxLines: 4,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter description';
-                }
-                return null;
-              },
+              validator: (value) => value == null || value.isEmpty ? 'Please enter description' : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
-            // Industry Dropdown
             DropdownButtonFormField<String>(
-              value: _selectedIndustry,
-              decoration: const InputDecoration(
+              initialValue: _selectedIndustry,
+              decoration: inputDecoration.copyWith(
                 labelText: 'Industry *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.category),
+                prefixIcon: const Icon(Icons.category_outlined, color: AppColors.textMutedLight),
               ),
-              items: _industries.map((industry) {
-                return DropdownMenuItem(value: industry, child: Text(industry));
-              }).toList(),
+              items: _industries.map((industry) => DropdownMenuItem(value: industry, child: Text(industry))).toList(),
               onChanged: (value) => setState(() => _selectedIndustry = value),
               validator: (value) => value == null ? 'Please select industry' : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
-            // Company Size
             DropdownButtonFormField<String>(
-              value: _selectedCompanySize,
-              decoration: const InputDecoration(
+              initialValue: _selectedCompanySize,
+              decoration: inputDecoration.copyWith(
                 labelText: 'Company Size *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.people),
+                prefixIcon: const Icon(Icons.people_outline, color: AppColors.textMutedLight),
               ),
-              items: _companySizes.map((size) {
-                return DropdownMenuItem(value: size, child: Text('$size employees'));
-              }).toList(),
+              items: _companySizes.map((size) => DropdownMenuItem(value: size, child: Text('$size employees'))).toList(),
               onChanged: (value) => setState(() => _selectedCompanySize = value),
               validator: (value) => value == null ? 'Please select company size' : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
-            // Website
             TextFormField(
               controller: _websiteController,
-              decoration: const InputDecoration(
+              decoration: inputDecoration.copyWith(
                 labelText: 'Website',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.language),
+                prefixIcon: const Icon(Icons.language, color: AppColors.textMutedLight),
               ),
               keyboardType: TextInputType.url,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
-            // Contact Email
             TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(
+              decoration: inputDecoration.copyWith(
                 labelText: 'Contact Email *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
+                prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textMutedLight),
               ),
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter email';
-                }
-                if (!value.contains('@')) {
-                  return 'Please enter valid email';
-                }
+                if (value == null || value.isEmpty) return 'Please enter email';
+                if (!value.contains('@')) return 'Please enter valid email';
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
-            // Contact Phone
             TextFormField(
               controller: _phoneController,
-              decoration: const InputDecoration(
+              decoration: inputDecoration.copyWith(
                 labelText: 'Contact Phone',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.phone),
+                prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.textMutedLight),
               ),
               keyboardType: TextInputType.phone,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
 
-            // Location Section
             Text(
               'Location',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimaryLight,
+                  ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             TextFormField(
               controller: _cityController,
-              decoration: const InputDecoration(
+              decoration: inputDecoration.copyWith(
                 labelText: 'City *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_city),
+                prefixIcon: const Icon(Icons.location_city_outlined, color: AppColors.textMutedLight),
               ),
               validator: (value) => value?.isEmpty ?? true ? 'Please enter city' : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             TextFormField(
               controller: _stateController,
-              decoration: const InputDecoration(
+              decoration: inputDecoration.copyWith(
                 labelText: 'State/Province',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.map),
+                prefixIcon: const Icon(Icons.map_outlined, color: AppColors.textMutedLight),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             TextFormField(
               controller: _countryController,
-              decoration: const InputDecoration(
+              decoration: inputDecoration.copyWith(
                 labelText: 'Country *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.public),
+                prefixIcon: const Icon(Icons.public_outlined, color: AppColors.textMutedLight),
               ),
               validator: (value) => value?.isEmpty ?? true ? 'Please enter country' : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             TextFormField(
               controller: _addressController,
-              decoration: const InputDecoration(
+              decoration: inputDecoration.copyWith(
                 labelText: 'Full Address',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_on),
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.only(bottom: 24),
+                  child: Icon(Icons.location_on_outlined, color: AppColors.textMutedLight),
+                ),
               ),
               maxLines: 2,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xxl),
 
-            // Submit Button
-            ElevatedButton(
+            FilledButton(
               onPressed: _isLoading ? null : _submitForm,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedLg),
               ),
               child: _isLoading
                   ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-                  : const Text('Create Company', style: TextStyle(fontSize: 16)),
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
+                    )
+                  : const Text('Create Company', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ],
         ),

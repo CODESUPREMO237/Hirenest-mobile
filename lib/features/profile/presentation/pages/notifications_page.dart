@@ -1,6 +1,8 @@
 // lib/features/profile/presentation/pages/notifications_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -17,11 +19,21 @@ class NotificationsPage extends ConsumerWidget {
     final profileAsync = ref.watch(profileProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(
+          'Notifications',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimaryLight,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        backgroundColor: AppColors.surfaceLight,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.textPrimaryLight),
         actions: [
           IconButton(
-            icon: const Icon(Icons.done_all),
+            icon: const Icon(Icons.done_all, color: AppColors.textPrimaryLight),
             tooltip: 'Mark all as read',
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -36,33 +48,43 @@ class NotificationsPage extends ConsumerWidget {
           final prefs = profile.notificationPreferences;
 
           return ListView(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             children: [
               // Notification Settings Section
               _buildSectionHeader(context, 'Notification Settings'),
-              Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: AppSpacing.roundedLg,
+                  border: Border.all(color: AppColors.borderLight),
+                  boxShadow: AppSpacing.cardShadow,
+                ),
                 child: Column(
                   children: [
-                    SwitchListTile(
-                      secondary: const Icon(Icons.notifications_active),
-                      title: const Text('Push Notifications'),
-                      subtitle: const Text('Receive push notifications on this device'),
+                    _buildSwitchTile(
+                      context,
+                      icon: Icons.notifications_active,
+                      title: 'Push Notifications',
+                      subtitle: 'Receive push notifications on this device',
                       value: prefs?.push ?? true,
                       onChanged: (value) async => await _updatePreference(ref, 'push', value),
                     ),
-                    const Divider(height: 1),
-                    SwitchListTile(
-                      secondary: const Icon(Icons.email_outlined),
-                      title: const Text('Email Notifications'),
-                      subtitle: const Text('Receive notifications via email'),
+                    const Divider(height: 1, color: AppColors.borderLight),
+                    _buildSwitchTile(
+                      context,
+                      icon: Icons.email_outlined,
+                      title: 'Email Notifications',
+                      subtitle: 'Receive notifications via email',
                       value: prefs?.email ?? true,
                       onChanged: (value) async => await _updatePreference(ref, 'email', value),
                     ),
-                    const Divider(height: 1),
-                    SwitchListTile(
-                      secondary: const Icon(Icons.sms_outlined),
-                      title: const Text('SMS Notifications'),
-                      subtitle: const Text('Receive notifications via SMS'),
+                    const Divider(height: 1, color: AppColors.borderLight),
+                    _buildSwitchTile(
+                      context,
+                      icon: Icons.sms_outlined,
+                      title: 'SMS Notifications',
+                      subtitle: 'Receive notifications via SMS',
                       value: prefs?.sms ?? false,
                       onChanged: (value) async => await _updatePreference(ref, 'sms', value),
                     ),
@@ -70,32 +92,42 @@ class NotificationsPage extends ConsumerWidget {
                 ),
               ),
 
+              const SizedBox(height: AppSpacing.md),
               // Notification Categories
               _buildSectionHeader(context, 'Categories'),
-              Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: AppSpacing.roundedLg,
+                  border: Border.all(color: AppColors.borderLight),
+                  boxShadow: AppSpacing.cardShadow,
+                ),
                 child: Column(
                   children: [
-                    SwitchListTile(
-                      secondary: const Icon(Icons.work_outline),
-                      title: const Text('Job Alerts'),
-                      subtitle: const Text('New jobs matching your profile'),
+                    _buildSwitchTile(
+                      context,
+                      icon: Icons.work_outline,
+                      title: 'Job Alerts',
+                      subtitle: 'New jobs matching your profile',
                       value: prefs?.jobAlerts ?? true,
                       onChanged: (value) async => await _updatePreference(ref, 'jobAlerts', value),
                     ),
-                    const Divider(height: 1),
-                    SwitchListTile(
-                      secondary: const Icon(Icons.chat_bubble_outline),
-                      title: const Text('Chat Messages'),
-                      subtitle: const Text('New messages from buyers/sellers'),
+                    const Divider(height: 1, color: AppColors.borderLight),
+                    _buildSwitchTile(
+                      context,
+                      icon: Icons.chat_bubble_outline,
+                      title: 'Chat Messages',
+                      subtitle: 'New messages from buyers/sellers',
                       value: prefs?.chatMessages ?? true,
                       onChanged: (value) async => await _updatePreference(ref, 'chatMessages', value),
                     ),
-                    const Divider(height: 1),
-                    SwitchListTile(
-                      secondary: const Icon(Icons.mail_outline),
-                      title: const Text('Marketing Emails'),
-                      subtitle: const Text('Promotional offers and updates'),
+                    const Divider(height: 1, color: AppColors.borderLight),
+                    _buildSwitchTile(
+                      context,
+                      icon: Icons.mail_outline,
+                      title: 'Marketing Emails',
+                      subtitle: 'Promotional offers and updates',
                       value: prefs?.marketingEmails ?? false,
                       onChanged: (value) async => await _updatePreference(ref, 'marketingEmails', value),
                     ),
@@ -103,24 +135,30 @@ class NotificationsPage extends ConsumerWidget {
                 ),
               ),
 
+              const SizedBox(height: AppSpacing.md),
               // Recent Notifications Section
               _buildSectionHeader(context, 'Recent'),
               _buildNotificationsList(ref),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xxl),
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error: $error'),
-              const SizedBox(height: 16),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+              const SizedBox(height: AppSpacing.lg),
+              Text('Error: $error', style: const TextStyle(color: AppColors.textSecondaryLight)),
+              const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
                 onPressed: () => ref.refresh(profileProvider),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
+                ),
                 child: const Text('Retry'),
               ),
             ],
@@ -130,22 +168,45 @@ class NotificationsPage extends ConsumerWidget {
     );
   }
 
+  Widget _buildSwitchTile(BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required Function(bool) onChanged,
+  }) {
+    return SwitchListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
+      secondary: Icon(icon, color: AppColors.primary),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight)),
+      subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 12)),
+      value: value,
+      activeThumbColor: AppColors.primary,
+      onChanged: onChanged,
+    );
+  }
+
   Widget _buildNotificationsList(WidgetRef ref) {
     final activities = ref.watch(recentActivityProvider);
 
     if (activities.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
-        child: Center(child: Text('No recent activity found')),
+      return Padding(
+        padding: const EdgeInsets.all(AppSpacing.xxl),
+        child: Center(
+          child: Text(
+            'No recent activity found',
+            style: Theme.of(ref.context).textTheme.bodyLarge?.copyWith(color: AppColors.textMutedLight),
+          ),
+        ),
       );
     }
 
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       itemCount: activities.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
         final item = activities[index];
 
@@ -164,22 +225,29 @@ class NotificationsPage extends ConsumerWidget {
           direction: DismissDirection.endToStart,
           background: Container(
             alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 20),
+            padding: const EdgeInsets.only(right: AppSpacing.xl),
             decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.error,
+              borderRadius: AppSpacing.roundedLg,
             ),
-            child: const Icon(Icons.delete, color: Colors.white),
+            child: const Icon(Icons.delete, color: AppColors.white),
           ),
           confirmDismiss: (direction) async {
             return await showDialog(
               context: context,
               builder: (context) => AlertDialog(
-                title: const Text('Clear Notification'),
-                content: const Text('Are you sure you want to remove this alert?'),
+                backgroundColor: AppColors.surfaceLight,
+                title: const Text('Clear Notification', style: TextStyle(color: AppColors.textPrimaryLight)),
+                content: const Text('Are you sure you want to remove this alert?', style: TextStyle(color: AppColors.textSecondaryLight)),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                  TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Clear', style: TextStyle(color: Colors.red))),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondaryLight)),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Clear', style: TextStyle(color: AppColors.error)),
+                  ),
                 ],
               ),
             );
@@ -199,35 +267,46 @@ class NotificationsPage extends ConsumerWidget {
   }
 
   Widget _buildNotificationCard(BuildContext context, _NotificationItem notification) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      decoration: BoxDecoration(
+        color: notification.isRead ? AppColors.surfaceLight : AppColors.primary.withValues(alpha: 0.05),
+        borderRadius: AppSpacing.roundedLg,
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: AppSpacing.cardShadow,
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.all(AppSpacing.md),
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            color: notification.iconColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: notification.iconColor.withValues(alpha: 0.1),
+            borderRadius: AppSpacing.roundedMd,
           ),
           child: Icon(notification.icon, color: notification.iconColor),
         ),
         title: Text(
           notification.title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimaryLight,
+              ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
-            Text(notification.message),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              notification.message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               timeago.format(notification.time),
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.textMutedLight,
+                  ),
             ),
           ],
         ),
@@ -252,13 +331,14 @@ class NotificationsPage extends ConsumerWidget {
 
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Colors.grey[600],
-        ),
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textMutedLight,
+              letterSpacing: 1.2,
+            ),
       ),
     );
   }

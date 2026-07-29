@@ -4,6 +4,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,7 +32,7 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
   // Inside _PrivacySecurityPageState class
   final _storage = const FlutterSecureStorage(); // Define storage here
 
-  bool _twoFactorEnabled = false;
+
   bool _biometricEnabled = false;
 
   bool _loading = true;
@@ -83,7 +84,7 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Biometric login disabled"),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
@@ -93,11 +94,11 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
     setState(() => _pageError = null);
 
     try {
-      print("========== BIOMETRIC DEBUG START ==========");
+      debugPrint("========== BIOMETRIC DEBUG START ==========");
 
       // Step 1: Check if device supports biometrics
       final bool isDeviceSupported = await auth.isDeviceSupported();
-      print("✅ Step 1 - Device Supported: $isDeviceSupported");
+      debugPrint("✅ Step 1 - Device Supported: $isDeviceSupported");
 
       if (!isDeviceSupported) {
         throw Exception("DEVICE_NOT_SUPPORTED: Your device does not support biometric authentication");
@@ -105,7 +106,7 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
 
       // Step 2: Check if biometrics can be checked
       final bool canCheckBiometrics = await auth.canCheckBiometrics;
-      print("✅ Step 2 - Can Check Biometrics: $canCheckBiometrics");
+      debugPrint("✅ Step 2 - Can Check Biometrics: $canCheckBiometrics");
 
       if (!canCheckBiometrics) {
         throw Exception("BIOMETRICS_DISABLED: Biometric authentication is disabled on this device. Please enable it in your device settings.");
@@ -113,7 +114,7 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
 
       // Step 3: Get available biometric types
       final List<BiometricType> availableBiometrics = await auth.getAvailableBiometrics();
-      print("✅ Step 3 - Available Biometrics: $availableBiometrics");
+      debugPrint("✅ Step 3 - Available Biometrics: $availableBiometrics");
 
       if (availableBiometrics.isEmpty) {
         throw Exception("NO_BIOMETRICS_ENROLLED: No fingerprint or face data enrolled. Please add biometric data in your device settings.");
@@ -135,10 +136,10 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
         }
       }).join(", ");
 
-      print("✅ Available types: $biometricTypes");
+      debugPrint("✅ Available types: $biometricTypes");
 
       // Step 5: Attempt authentication
-      print("🔐 Attempting biometric authentication...");
+      debugPrint("🔐 Attempting biometric authentication...");
 
       final authenticated = await auth.authenticate(
         localizedReason: "Please authenticate to enable biometric login",
@@ -146,8 +147,8 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
         sensitiveTransaction: true,
       );
 
-      print("✅ Step 5 - Authentication Result: $authenticated");
-      print("========== BIOMETRIC DEBUG END ==========");
+      debugPrint("✅ Step 5 - Authentication Result: $authenticated");
+      debugPrint("========== BIOMETRIC DEBUG END ==========");
 
       if (!mounted) return;
 
@@ -157,10 +158,12 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
         // Save to backend
         await _updatePrivacy(biometricLogin: true);
 
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Biometric login enabled using $biometricTypes"),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       } else {
@@ -170,15 +173,15 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Authentication cancelled"),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppColors.warning,
           ),
         );
       }
 
     } on PlatformException catch (e) {
-      print("❌ PLATFORM EXCEPTION: ${e.code} - ${e.message}");
-      print("❌ Details: ${e.details}");
-      print("❌ Stack trace: ${e.stacktrace}");
+      debugPrint("❌ PLATFORM EXCEPTION: ${e.code} - ${e.message}");
+      debugPrint("❌ Details: ${e.details}");
+      debugPrint("❌ Stack trace: ${e.stacktrace}");
 
       if (!mounted) return;
 
@@ -212,11 +215,11 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
           duration: const Duration(seconds: 5),
           action: SnackBarAction(
             label: 'Settings',
-            textColor: Colors.white,
+            textColor: AppColors.white,
             onPressed: () {
               // Optionally open device settings
               // You can use url_launcher or app_settings package
@@ -226,8 +229,8 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
       );
 
     } catch (e, stackTrace) {
-      print("❌ GENERAL ERROR: $e");
-      print("❌ Stack trace: $stackTrace");
+      debugPrint("❌ GENERAL ERROR: $e");
+      debugPrint("❌ Stack trace: $stackTrace");
 
       if (!mounted) return;
 
@@ -249,7 +252,7 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
           duration: const Duration(seconds: 5),
         ),
       );
@@ -311,7 +314,7 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
                   title: Text(session['device'] ?? 'Unknown Device'),
                   subtitle: Text('Added: ${session['addedAt'] ?? 'Unknown'}'),
                   trailing: IconButton(
-                    icon: const Icon(Icons.logout, color: Colors.red),
+                    icon: const Icon(Icons.logout, color: AppColors.error),
                     onPressed: () => _logoutDevice(session['_id']),
                   ),
                 );
@@ -341,7 +344,7 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sending reset link...')),
       );
-      await ref.read(profileRepositoryProvider).requestPasswordReset(profile!.email!);
+      await ref.read(profileRepositoryProvider).requestPasswordReset(profile!.email);
       if (!mounted) return;
       _showSuccessDialog('Email Sent', 'Password reset link sent to ${profile.email}');
     } catch (e) {
@@ -467,8 +470,8 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
               ),
               const Divider(height: 1),
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+                leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                title: const Text('Delete Account', style: TextStyle(color: AppColors.error)),
                 onTap: _showDeleteAccountDialog,
               ),
             ],
@@ -487,7 +490,7 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondaryLight)),
     );
   }
 
@@ -529,7 +532,7 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => context.go('/auth/login'),
             child: const Text('Delete'),
           ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../data/models/product_model.dart';
-import '../../../../core/utils/logger.dart';
+import 'package:intl/intl.dart';
 
 extension ProductImageExtension on ProductModel {
   String get primaryImageFullUrl {
@@ -16,79 +18,193 @@ class ProductCard extends StatelessWidget {
 
   const ProductCard({super.key, required this.product, this.onTap});
 
+  String _getConditionText(String condition) {
+    switch (condition.toLowerCase()) {
+      case 'new': return 'New';
+      case 'like_new': return 'Like New';
+      case 'good': return 'Good';
+      case 'fair': return 'Fair';
+      case 'poor': return 'Poor';
+      default: return condition;
+    }
+  }
+
+  Color _getConditionColor(String condition) {
+    switch (condition.toLowerCase()) {
+      case 'new': return AppColors.success;
+      case 'like_new': return AppColors.primary;
+      case 'good': return AppColors.accent;
+      case 'fair': return AppColors.warning;
+      case 'poor': return AppColors.error;
+      default: return AppColors.textMutedLight;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isSold = product.status.toLowerCase() == 'sold';
-    final Color statusColor = isSold ? Colors.red : Colors.green;
+    final Color statusColor = isSold ? AppColors.error : AppColors.success;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        elevation: 2,
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Image.network(
-                    product.primaryImageFullUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      product.status.toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-              child: Text(
-                product.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.surfaceDark
+            : AppColors.surfaceLight,
+        borderRadius: AppSpacing.roundedLg,
+        boxShadow: AppSpacing.cardShadow,
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.borderDark
+              : AppColors.borderLight,
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppSpacing.roundedLg,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppSpacing.roundedLg,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Image Section
+              Stack(
                 children: [
-                  Text(
-                    '${product.price.amount.toStringAsFixed(0)} XAF',
-                    style: TextStyle(
-                      color: isSold ? Colors.grey : Colors.green,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      decoration: isSold ? TextDecoration.lineThrough : null,
+                  AspectRatio(
+                    aspectRatio: 1, // Square image
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusLg)),
+                      child: Image.network(
+                        product.primaryImageFullUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.backgroundDark
+                              : AppColors.backgroundLight,
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            size: 40,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textMutedLight.withValues(alpha: 0.5)
+                                : AppColors.textMutedLight,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+                  
+                  // Status Badge (Sold/Available)
+                  Positioned(
+                    top: AppSpacing.sm,
+                    right: AppSpacing.sm,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        borderRadius: AppSpacing.roundedSm,
+                      ),
+                      child: Text(
+                        product.status.toUpperCase(),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // Condition Badge
+                  Positioned(
+                    bottom: AppSpacing.sm,
+                    left: AppSpacing.sm,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getConditionColor(product.condition).withValues(alpha: 0.9),
+                        borderRadius: AppSpacing.roundedSm,
+                      ),
+                      child: Text(
+                        _getConditionText(product.condition),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ],
+              
+              // Details Section
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Title
+                      Text(
+                        product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                      ),
+                      
+                      const SizedBox(height: AppSpacing.xs),
+                      
+                      // Price & Action
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              NumberFormat.currency(
+                                symbol: '${product.price.currency} ',
+                                decimalDigits: 0,
+                              ).format(product.price.amount),
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: isSold 
+                                    ? AppColors.textMutedLight 
+                                    : Theme.of(context).primaryColor,
+                                fontWeight: FontWeight.bold,
+                                decoration: isSold ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.xs),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                              borderRadius: AppSpacing.roundedFull,
+                            ),
+                            child: Icon(
+                              Icons.arrow_forward,
+                              size: 16,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

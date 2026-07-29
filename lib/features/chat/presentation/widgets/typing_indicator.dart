@@ -1,13 +1,6 @@
-// Typing Indicator
-
-// ============================================================================
-// TYPING INDICATOR WIDGET
-// lib/features/chat/presentation/widgets/typing_indicator.dart
-// ============================================================================
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 class TypingIndicator extends StatefulWidget {
   const TypingIndicator({super.key});
@@ -38,19 +31,22 @@ class _TypingIndicatorState extends State<TypingIndicator>
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       child: Row(
         children: [
           const CircleAvatar(
             radius: 16,
-            child: Icon(Icons.person, size: 16),
+            backgroundColor: AppColors.surfaceLight,
+            child: Icon(Icons.person, size: 16, color: AppColors.textSecondaryLight),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(16),
+              color: AppColors.surfaceLight,
+              borderRadius: AppSpacing.roundedLg,
+              border: Border.all(color: AppColors.borderLight),
+              boxShadow: AppSpacing.cardShadow,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -67,8 +63,8 @@ class _TypingIndicatorState extends State<TypingIndicator>
                         margin: const EdgeInsets.symmetric(horizontal: 2),
                         width: 6,
                         height: 6,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[600],
+                        decoration: const BoxDecoration(
+                          color: AppColors.textMutedLight,
                           shape: BoxShape.circle,
                         ),
                       ),
