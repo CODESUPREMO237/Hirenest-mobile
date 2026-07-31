@@ -228,7 +228,7 @@ class BalancePage extends ConsumerWidget {
           error: (err, stack) {
             AppLogger.error('Balance Page Major Error', error: err, stackTrace: stack);
             return CustomErrorWidget(
-              message: err.toString(),
+              error: err,
               onRetry: () => ref.invalidate(balanceProvider),
             );
           },
@@ -461,7 +461,7 @@ class BalancePage extends ConsumerWidget {
                             itemBuilder: (context, i) => _buildModernTransactionTile(context, list[i]),
                           ),
                     loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                    error: (e, s) => CustomErrorWidget(message: e.toString()),
+                    error: (e, s) => CustomErrorWidget(error: e),
                   ),
                 ),
               ],

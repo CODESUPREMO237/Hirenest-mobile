@@ -388,7 +388,7 @@ class _PrivacySecurityPageState extends ConsumerState<PrivacySecurityPage> {
       appBar: AppBar(title: const Text('Privacy & Security')),
       body: profileAsync.when(
         data: (_) => _loading ? const Center(child: CircularProgressIndicator()) : _buildBody(),
-        error: (e, _) => CustomErrorWidget(message: e.toString(), onRetry: () => ref.refresh(profileProvider)),
+        error: (e, _) => CustomErrorWidget(error: e, onRetry: () => ref.refresh(profileProvider)),
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
     );

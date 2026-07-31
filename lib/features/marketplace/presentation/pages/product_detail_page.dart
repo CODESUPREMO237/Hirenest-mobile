@@ -313,7 +313,7 @@ class ProductDetailPage extends ConsumerWidget {
         error: (error, stack) {
           AppLogger.error('Failed to load product details', error: error, stackTrace: stack);
           return CustomErrorWidget(
-            message: error.toString(),
+            error: error,
             onRetry: () => ref.refresh(productDetailProvider(productId)),
           );
         },

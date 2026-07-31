@@ -1,6 +1,8 @@
 // lib/features/profile/presentation/pages/notifications_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -144,26 +146,7 @@ class NotificationsPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-              const SizedBox(height: AppSpacing.lg),
-              Text('Error: $error', style: const TextStyle(color: AppColors.textSecondaryLight)),
-              const SizedBox(height: AppSpacing.lg),
-              ElevatedButton(
-                onPressed: () => ref.refresh(profileProvider),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
-                  shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
-                ),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+        error: (error, stack) => CustomErrorWidget(error: error, onRetry: () => ref.refresh(profileProvider)),
       ),
     );
   }

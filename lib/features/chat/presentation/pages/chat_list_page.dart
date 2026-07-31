@@ -2,6 +2,8 @@
 // lib/features/chat/presentation/pages/chat_list_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -218,60 +220,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                 loading: () => const Center(
                   child: CircularProgressIndicator(color: AppColors.primary),
                 ),
-                error: (error, stack) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.xl),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.lg),
-                          decoration: BoxDecoration(
-                            color: AppColors.error.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.error_outline,
-                            color: AppColors.error,
-                            size: 48,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          'Error loading chats',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimaryLight,
-                              ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          error.toString(),
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondaryLight,
-                              ),
-                        ),
-                        const SizedBox(height: AppSpacing.xl),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            ref.read(chatsProvider.notifier).loadChats(refresh: true);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: AppColors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: AppSpacing.roundedMd,
-                            ),
-                          ),
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                error: (error, stack) => CustomErrorWidget(error: error, onRetry: () => ref.read(chatsProvider.notifier).loadChats(refresh: true)),
               ),
             ),
           ),

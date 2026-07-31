@@ -1,6 +1,8 @@
 // lib/features/jobs/presentation/pages/jobs_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -199,21 +201,7 @@ class _JobsPageState extends ConsumerState<JobsPage> {
                     child: ShimmerLoading(width: double.infinity, height: 160),
                   ),
                 ),
-                error: (error, stack) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.xl),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-                        const SizedBox(height: AppSpacing.md),
-                        Text('Oops! Something went wrong', style: AppTextStyles.textTheme.titleMedium),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(error.toString(), textAlign: TextAlign.center, style: AppTextStyles.textTheme.bodyMedium?.copyWith(color: AppColors.textMutedLight)),
-                      ],
-                    ),
-                  ),
-                ),
+                error: (error, stack) => CustomErrorWidget(error: error, onRetry: () => ref.read(jobsProvider.notifier).loadJobs(refresh: true)),
               ),
             ),
           ),

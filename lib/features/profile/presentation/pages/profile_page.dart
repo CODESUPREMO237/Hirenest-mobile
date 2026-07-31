@@ -4,6 +4,8 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -383,30 +385,7 @@ class ProfilePage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Error: $error',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondaryLight),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(profileProvider),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
-                  shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
-                ),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+        error: (error, stack) => CustomErrorWidget(error: error, onRetry: () => ref.invalidate(profileProvider)),
       ),
     );
   }

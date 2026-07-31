@@ -4,6 +4,8 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -132,20 +134,7 @@ class _AdminDisputesPageState extends ConsumerState<AdminDisputesPage> {
       ),
       body: disputesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 16),
-              Text('Failed to load disputes: $error'),
-              TextButton(
-                onPressed: () => ref.invalidate(disputedOrdersProvider),
-                child: const Text('Retry'),
-              )
-            ],
-          ),
-        ),
+        error: (error, stack) => CustomErrorWidget(error: error, onRetry: () => ref.invalidate(disputedOrdersProvider)),
         data: (orders) {
           if (orders.isEmpty) {
             return const Center(

@@ -1,5 +1,7 @@
 // Payment Page
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter/services.dart';
@@ -283,7 +285,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           ),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error loading product: $error')),
+        error: (error, stack) => CustomErrorWidget(error: error),
       ),
     );
   }

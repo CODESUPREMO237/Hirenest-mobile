@@ -1,6 +1,8 @@
 // lib/features/jobs/presentation/pages/job_detail_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -73,7 +75,7 @@ class JobDetailPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (error, stack) => Center(child: Text('Error: $error', style: AppTextStyles.textTheme.bodyLarge?.copyWith(color: AppColors.error))),
+        error: (error, stack) => CustomErrorWidget(error: error),
       ),
       bottomNavigationBar: jobAsync.maybeWhen(
         data: (job) {
@@ -229,17 +231,51 @@ class JobDetailPage extends ConsumerWidget {
   }
 
   Widget _buildCompanyHeader(BuildContext context, JobModel job) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primaryDark, AppColors.primary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      padding: const EdgeInsets.only(top: AppSpacing.xxl, bottom: AppSpacing.xl, left: AppSpacing.xl, right: AppSpacing.xl),
-      child: Column(
+    return GestureDetector(
+      onTap: () => context.push('/company/${job.company.id}'),
+      child: Stack(
+      children: [
+        // Background
+        if (job.company.banner != null && job.company.banner!.isNotEmpty)
+          Positioned.fill(
+            child: Image.network(
+              job.company.banner!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primaryDark, AppColors.primary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+            ),
+          )
+        else
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primaryDark, AppColors.primary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+          ),
+
+        // Dark overlay if there's an image
+        if (job.company.banner != null && job.company.banner!.isNotEmpty)
+          Positioned.fill(
+            child: Container(color: Colors.black.withValues(alpha: 0.5)),
+          ),
+
+        // Content
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.only(top: AppSpacing.xxl, bottom: AppSpacing.xl, left: AppSpacing.xl, right: AppSpacing.xl),
+          child: Column(
         children: [
           if (job.company.logo != null)
             Container(
@@ -279,7 +315,10 @@ class JobDetailPage extends ConsumerWidget {
           ),
         ],
       ),
-    );
+    ), // Close inner Container
+    ], // Close Stack children
+    ), // Close Stack
+    ); // Close GestureDetector
   }
 
   Widget _buildTitleSection(BuildContext context, JobModel job) {

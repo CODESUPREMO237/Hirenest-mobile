@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/services/feature_providers.dart';
@@ -21,7 +23,7 @@ class RecommendedJobsPage extends ConsumerWidget {
       ),
       body: recAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.error))),
+        error: (e, _) => CustomErrorWidget(error: e),
         data: (recommendations) {
           if (recommendations.isEmpty) {
             return Center(

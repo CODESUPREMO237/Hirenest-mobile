@@ -2,6 +2,8 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -136,8 +138,8 @@ class _EditCompanyPageState extends ConsumerState<EditCompanyPage> {
         'industry': _selectedIndustry,
         'companySize': _selectedCompanySize,
         'website': _websiteController.text,
-        'contactEmail': _emailController.text,
-        'contactPhone': _phoneController.text,
+        'email': _emailController.text,
+        'phone': _phoneController.text,
         'locations': jsonEncode(locationsList),
         if (_logoFile != null) 'logo': await MultipartFile.fromFile(_logoFile!.path, filename: 'logo.jpg'),
         if (_bannerFile != null) 'banner': await MultipartFile.fromFile(_bannerFile!.path, filename: 'banner.jpg'),
@@ -221,8 +223,24 @@ class _EditCompanyPageState extends ConsumerState<EditCompanyPage> {
                   children: [
                     if (_logoFile != null)
                       CircleAvatar(radius: 50, backgroundImage: FileImage(_logoFile!))
-                    else if (company.logo != null)
-                      CircleAvatar(radius: 50, backgroundImage: NetworkImage(company.logo!))
+                    else if (company.logo != null && company.logo!.isNotEmpty)
+                      Container(
+                        width: 100, height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.borderLight),
+                        ),
+                        child: ClipOval(
+                          child: Image.network(
+                            company.logo!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: AppColors.backgroundLight,
+                              child: const Icon(Icons.business, size: 40, color: AppColors.textMutedLight),
+                            ),
+                          ),
+                        ),
+                      )
                     else
                       Container(
                         width: 100, height: 100,
@@ -239,10 +257,24 @@ class _EditCompanyPageState extends ConsumerState<EditCompanyPage> {
                         borderRadius: AppSpacing.roundedLg,
                         child: Image.file(_bannerFile!, height: 150, width: double.infinity, fit: BoxFit.cover),
                       )
-                    else if (company.banner != null)
+                    else if (company.banner != null && company.banner!.isNotEmpty)
                       ClipRRect(
                         borderRadius: AppSpacing.roundedLg,
-                        child: Image.network(company.banner!, height: 150, width: double.infinity, fit: BoxFit.cover),
+                        child: Image.network(
+                          company.banner!, 
+                          height: 150, 
+                          width: double.infinity, 
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            height: 150, width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: AppColors.backgroundLight,
+                              borderRadius: AppSpacing.roundedLg,
+                              border: Border.all(color: AppColors.borderLight),
+                            ),
+                            child: const Center(child: Icon(Icons.image_outlined, size: 40, color: AppColors.textMutedLight)),
+                          ),
+                        ),
                       )
                     else
                       Container(
@@ -439,16 +471,7 @@ class _EditCompanyPageState extends ConsumerState<EditCompanyPage> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-              const SizedBox(height: AppSpacing.md),
-              Text('Error loading company: $error', style: const TextStyle(color: AppColors.error)),
-            ],
-          ),
-        ),
+        error: (error, stack) => CustomErrorWidget(error: error),
       ),
     );
   }

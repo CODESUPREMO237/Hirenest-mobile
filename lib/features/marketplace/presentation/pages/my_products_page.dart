@@ -1,6 +1,8 @@
 // lib/features/marketplace/presentation/pages/my_products_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -101,18 +103,7 @@ class MyProductsPage extends ConsumerWidget {
               loading: () => const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (err, _) => SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, color: AppColors.error, size: 48),
-                      const SizedBox(height: 16),
-                      Text('Error: $err'),
-                    ],
-                  ),
-                ),
-              ),
+              error: (err, _) => SliverFillRemaining(child: CustomErrorWidget(error: err)),
             ),
           ],
         ),

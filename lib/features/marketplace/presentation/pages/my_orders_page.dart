@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -29,16 +31,7 @@ class MyOrdersPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Error loading orders', style: TextStyle(color: AppColors.error)),
-              const SizedBox(height: AppSpacing.sm),
-              ElevatedButton(onPressed: () => ref.invalidate(myOrdersProvider), child: const Text('Retry')),
-            ],
-          ),
-        ),
+        error: (error, stack) => CustomErrorWidget(error: error, onRetry: () => ref.invalidate(myOrdersProvider)),
       ),
     );
   }
@@ -141,4 +134,4 @@ class MyOrdersPage extends ConsumerWidget {
       child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
-}
+}

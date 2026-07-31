@@ -224,20 +224,7 @@ class EmployerDashboardPage extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  error: (error, _) => Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: CustomErrorWidget(
-                        error: error,
-                        onRetry: () {
-                          AppLogger.info('Retrying employer dashboard stats');
-                          ref.invalidate(userAnalyticsProvider);
-                          ref.invalidate(myJobsProvider);
-                          ref.invalidate(talentListProvider);
-                        },
-                      ),
-                    ),
-                  ),
+                  error: (error, _) => CustomErrorWidget(error: error, onRetry: () => ref.invalidate(userAnalyticsProvider)),
                 ),
               ),
             ),
@@ -338,20 +325,7 @@ class EmployerDashboardPage extends ConsumerWidget {
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (error, _) => Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                      child: CustomErrorWidget(
-                        error: error,
-                        onRetry: () {
-                          AppLogger.info('Retrying employer dashboard talent');
-                          ref.invalidate(userAnalyticsProvider);
-                          ref.invalidate(myJobsProvider);
-                          ref.invalidate(talentListProvider);
-                        },
-                      ),
-                    ),
-                  ),
+                  error: (error, _) => CustomErrorWidget(error: error, onRetry: () => ref.invalidate(userAnalyticsProvider)),
                 ),
               ),
             ),

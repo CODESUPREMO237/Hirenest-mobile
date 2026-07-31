@@ -30,6 +30,17 @@ class CompanyDashboardPage extends ConsumerWidget {
                 color: AppColors.textPrimaryLight,
               ),
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimaryLight),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              // Fallback to main layout if the stack was cleared
+              context.go('/');
+            }
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimaryLight),

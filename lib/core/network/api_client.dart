@@ -40,7 +40,7 @@ final dioProvider = Provider<Dio>((ref) {
     );
   }
 
-  dio.interceptors.add(ErrorInterceptor());
+  dio.interceptors.add(ErrorInterceptor(ref));
 
   return dio;
 });
@@ -136,6 +136,9 @@ class AuthInterceptor extends Interceptor {
 // ERROR INTERCEPTOR
 // ============================================================================
 class ErrorInterceptor extends Interceptor {
+  final Ref ref;
+  ErrorInterceptor(this.ref);
+
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     String errorMessage = 'An error occurred';
@@ -144,16 +147,15 @@ class ErrorInterceptor extends Interceptor {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        errorMessage = 'Connection timeout. Please check your internet connection.';
+      case DioExceptionType.connectionError:
+      case DioExceptionType.unknown:
+        errorMessage = 'Unable to connect to the server. Please check your internet connection.';
         break;
       case DioExceptionType.badResponse:
         errorMessage = _handleResponseError(err.response);
         break;
       case DioExceptionType.cancel:
         errorMessage = 'Request cancelled';
-        break;
-      case DioExceptionType.connectionError:
-        errorMessage = 'No internet connection';
         break;
       default:
         errorMessage = 'Something went wrong';

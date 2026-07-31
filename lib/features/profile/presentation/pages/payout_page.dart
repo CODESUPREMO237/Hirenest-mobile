@@ -3,6 +3,8 @@
 // lib/features/profile/presentation/pages/payout_page.dart
 // =====================================================
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter/services.dart';
@@ -279,7 +281,7 @@ class _PayoutPageState extends ConsumerState<PayoutPage> {
           ),
         ),
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => CustomErrorWidget(error: error),
       ),
     );
   }

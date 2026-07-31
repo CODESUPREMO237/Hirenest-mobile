@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/services/account_repository.dart';
@@ -64,7 +66,7 @@ class _LegalAcceptancePageState extends ConsumerState<LegalAcceptancePage> {
       ),
       body: legalAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.error))),
+        error: (e, _) => CustomErrorWidget(error: e),
         data: (data) {
           final currentVersions = data['currentVersions'] ?? {};
           final tosVersion = currentVersions['tosVersion'] ?? '1.0';

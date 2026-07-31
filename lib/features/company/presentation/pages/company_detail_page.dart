@@ -1,6 +1,8 @@
 // lib/features/company/presentation/pages/company_detail_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -260,22 +262,7 @@ class CompanyDetailPage extends ConsumerWidget {
           ],
         ),
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-              const SizedBox(height: AppSpacing.md),
-              Text('Error loading company: $error', style: const TextStyle(color: AppColors.error)),
-              const SizedBox(height: AppSpacing.md),
-              FilledButton.icon(
-                onPressed: () => ref.invalidate(companyProvider(companyId)),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+        error: (error, stack) => CustomErrorWidget(error: error, onRetry: () => ref.invalidate(companyProvider(companyId))),
       ),
     );
   }

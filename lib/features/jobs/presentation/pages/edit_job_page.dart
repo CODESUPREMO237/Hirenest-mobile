@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -172,7 +174,7 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, s) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.error))),
+        error: (e, s) => CustomErrorWidget(error: e),
       ),
     );
   }

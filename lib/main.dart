@@ -9,6 +9,8 @@ import 'core/services/notification_service.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/logger.dart';
+import 'core/widgets/global_error_overlay.dart';
+import 'core/widgets/connectivity_banner.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 // ✅ CRITICAL: Background message handler (must be top-level function)
@@ -124,6 +126,16 @@ class MyApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
       routerConfig: router,
+      builder: (context, child) {
+        return GlobalErrorOverlay(
+          child: Column(
+            children: [
+              const ConnectivityBanner(),
+              Expanded(child: child ?? const SizedBox()),
+            ],
+          ),
+        );
+      },
     );
   }
 }

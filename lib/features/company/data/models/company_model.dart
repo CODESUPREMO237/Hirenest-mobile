@@ -50,7 +50,7 @@ class CompanyModel {
       banner: json['banner'],
       website: json['website'],
       email: json['email'],
-      contactPhone: json['contactPhone'],
+      contactPhone: json['phone'] ?? json['contactPhone'],
       locations: json['locations'] != null
           ? (json['locations'] as List)
           .map((l) => Location.fromJson(l))

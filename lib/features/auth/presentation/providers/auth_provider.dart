@@ -5,7 +5,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/providers/global_error_provider.dart';
 import '../../../jobs/presentation/providers/jobs_provider.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/models/user_model.dart';
@@ -31,6 +33,8 @@ final authStateProvider = StreamProvider.autoDispose<User?>((ref) {
 });
 
 /// ✅ FIXED: Cache-first user provider that avoids unnecessary API calls
+/// Critical provider: connection/timeout failures trigger the global error overlay.
+/// Auth failures (401) are handled by the Dio ErrorInterceptor (session clear + redirect to login).
 final currentUserProvider = FutureProvider.autoDispose<UserModel?>((ref) async {
   final authState = ref.watch(authStateProvider);
 
@@ -50,6 +54,8 @@ final currentUserProvider = FutureProvider.autoDispose<UserModel?>((ref) async {
 
         if (cachedData != null) {
           debugPrint('✅ [currentUserProvider] Using cached data for: ${cachedData['email']}');
+          // Clear any stale critical error since we have valid cached data
+          ref.read(globalCriticalErrorProvider.notifier).state = null;
           return UserModel.fromJson(cachedData);
         }
 
@@ -57,6 +63,8 @@ final currentUserProvider = FutureProvider.autoDispose<UserModel?>((ref) async {
         debugPrint('📡 [currentUserProvider] No cache, fetching from server...');
         final user = await ref.read(authRepositoryProvider).getCurrentUser();
         debugPrint('✅ [currentUserProvider] Server fetch successful: ${user.email}');
+        // Clear any stale critical error on success
+        ref.read(globalCriticalErrorProvider.notifier).state = null;
         return user;
 
       } catch (e) {
@@ -73,6 +81,31 @@ final currentUserProvider = FutureProvider.autoDispose<UserModel?>((ref) async {
           }
         } catch (cacheError) {
           debugPrint('❌ [currentUserProvider] Cache fallback also failed: $cacheError');
+        }
+
+        // =====================================================
+        // CRITICAL ERROR ROUTING
+        // =====================================================
+        // Connection/timeout errors → trigger global full-screen overlay
+        // 401/auth errors → let the ErrorInterceptor handle logout (do NOT show overlay)
+        if (e is DioException) {
+          final isConnectionError = e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.sendTimeout ||
+              e.type == DioExceptionType.receiveTimeout ||
+              e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.unknown;
+
+          final is401 = e.response?.statusCode == 401;
+
+          if (isConnectionError && !is401) {
+            debugPrint('🚨 [currentUserProvider] Critical connection failure — triggering global overlay');
+            ref.read(globalCriticalErrorProvider.notifier).state = CriticalError(
+              message: 'Unable to connect to the server. Please check your internet connection.',
+              onRetry: () => ref.invalidateSelf(),
+            );
+          }
+          // 401s fall through — the Dio ErrorInterceptor already clears session
+          // and triggers navigation to login via authStateProvider
         }
 
         // If everything fails, rethrow

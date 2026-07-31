@@ -128,17 +128,8 @@ class MainPage extends ConsumerWidget {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (error, stack) => Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: AppSpacing.md),
-              Text('Error loading user: $error'),
-            ],
-          ),
-        ),
+      error: (error, stack) => const Scaffold(
+        body: SizedBox.shrink(),
       ),
     );
   }

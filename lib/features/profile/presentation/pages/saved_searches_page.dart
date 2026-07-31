@@ -4,6 +4,8 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/account_repository.dart';
 import '../../../../core/services/feature_providers.dart';
@@ -28,7 +30,7 @@ class SavedSearchesPage extends ConsumerWidget {
       ),
       body: searchesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => CustomErrorWidget(error: e),
         data: (searches) {
           if (searches.isEmpty) {
             return Center(

@@ -254,7 +254,7 @@ class _ManageAdminsPageState extends ConsumerState<ManageAdminsPage> {
           );
         },
         loading: () => const Padding(padding: EdgeInsets.only(top: 8.0), child: LinearProgressIndicator(color: AppColors.primary)),
-        error: (e, _) => Padding(padding: const EdgeInsets.only(top: 8.0), child: Text('Error searching users', style: TextStyle(color: AppColors.error.withValues(alpha: 0.8), fontSize: 12))),
+        error: (e, _) => CustomErrorWidget(error: e),
       );
     });
   }

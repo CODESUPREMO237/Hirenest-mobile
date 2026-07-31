@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -107,7 +109,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       ),
       body: profileState.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+        error: (error, stack) => CustomErrorWidget(error: error),
         data: (profile) {
           _populateControllers(profile);
 

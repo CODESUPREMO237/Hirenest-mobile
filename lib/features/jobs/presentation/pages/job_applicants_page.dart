@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -144,29 +146,7 @@ class _JobApplicantsPageState extends ConsumerState<JobApplicantsPage>
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-              const SizedBox(height: AppSpacing.md),
-              Text('Error loading applicants: $error', style: const TextStyle(color: AppColors.textSecondaryLight)),
-              const SizedBox(height: AppSpacing.md),
-              ElevatedButton.icon(
-                onPressed: () {
-                  ref.invalidate(jobApplicantsProvider(widget.jobId));
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
-                  shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
-                ),
-              ),
-            ],
-          ),
-        ),
+        error: (error, stack) => CustomErrorWidget(error: error, onRetry: () => ref.invalidate(jobApplicantsProvider(widget.jobId))),
       ),
     );
   }
@@ -687,22 +667,7 @@ class _ApplicantCard extends ConsumerWidget {
           ),
         ),
       ),
-      error: (err, stack) => Padding(
-        padding: const EdgeInsets.only(top: AppSpacing.md),
-        child: SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: onRate,
-            icon: const Icon(Icons.star, size: 18),
-            label: const Text('Rate Applicant'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              side: const BorderSide(color: AppColors.primary),
-              shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
-            ),
-          ),
-        ),
-      ),
+      error: (err, stack) => CustomErrorWidget(error: err),
     );
   }
 

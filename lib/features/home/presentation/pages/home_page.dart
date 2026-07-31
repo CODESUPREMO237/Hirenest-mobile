@@ -18,6 +18,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../../core/widgets/error_widget.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/utils/helpers.dart';
 import './main_page.dart';
 
 class HomePageSimple extends ConsumerWidget {
@@ -82,7 +83,7 @@ class HomePageSimple extends ConsumerWidget {
           }),
         ),
         SliverToBoxAdapter(
-          child: _buildFeaturedJobsList(context, jobsState),
+          child: _buildFeaturedJobsList(context, ref, jobsState),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
         SliverToBoxAdapter(
@@ -91,7 +92,7 @@ class HomePageSimple extends ConsumerWidget {
           }),
         ),
         SliverToBoxAdapter(
-          child: _buildMarketplaceList(context, productsState),
+          child: _buildMarketplaceList(context, ref, productsState),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
         SliverToBoxAdapter(
@@ -134,7 +135,7 @@ class HomePageSimple extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    user != null ? 'Good Morning, ${_getDisplayName(user)}!' : 'Good Morning!',
+                    user != null ? '${Helpers.getGreeting()}, ${_getDisplayName(user)}!' : '${Helpers.getGreeting()}!',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -251,7 +252,7 @@ class HomePageSimple extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeaturedJobsList(BuildContext context, AsyncValue jobsState) {
+  Widget _buildFeaturedJobsList(BuildContext context, WidgetRef ref, AsyncValue jobsState) {
     return jobsState.when(
       data: (jobs) {
         if (jobs.isEmpty) {
@@ -292,14 +293,14 @@ class HomePageSimple extends ConsumerWidget {
           itemBuilder: (context, index) => const _ShimmerCard(width: 280, height: 160),
         ),
       ),
-      error: (error, _) => const Padding(
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: Center(child: Text('Error loading jobs')),
+      error: (error, _) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: CustomErrorWidget(error: error, onRetry: () => ref.invalidate(featuredJobsProvider)),
       ),
     );
   }
 
-  Widget _buildMarketplaceList(BuildContext context, AsyncValue productsState) {
+  Widget _buildMarketplaceList(BuildContext context, WidgetRef ref, AsyncValue productsState) {
     return productsState.when(
       data: (state) {
         if (state.products.isEmpty) {
@@ -340,9 +341,9 @@ class HomePageSimple extends ConsumerWidget {
           itemBuilder: (context, index) => const _ShimmerCard(width: 140, height: 200),
         ),
       ),
-      error: (error, _) => const Padding(
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: Center(child: Text('Error loading products')),
+      error: (error, _) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: CustomErrorWidget(error: error, onRetry: () => ref.read(paginatedProductsProvider.notifier).refresh()),
       ),
     );
   }

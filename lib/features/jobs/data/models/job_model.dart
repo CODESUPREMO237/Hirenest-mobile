@@ -227,19 +227,21 @@ class CompanyModel {
   final String id;
   final String name;
   final String? logo;
+  final String? banner;
 
-  CompanyModel({required this.id, required this.name, this.logo});
+  CompanyModel({required this.id, required this.name, this.logo, this.banner});
 
   factory CompanyModel.fromJson(Map<String, dynamic> json) {
     return CompanyModel(
       id: json['_id'] ?? json['id'],
       name: json['name'],
       logo: json['logo'],
+      banner: json['banner'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'_id': id, 'name': name, 'logo': logo};
+    return {'_id': id, 'name': name, 'logo': logo, 'banner': banner};
   }
 }
 

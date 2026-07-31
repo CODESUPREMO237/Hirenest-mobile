@@ -1,6 +1,8 @@
 // lib/features/talent/presentation/pages/talent_profile_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -136,7 +138,7 @@ class TalentProfilePage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (err, _) => Center(child: Text('Error loading profile: $err', style: const TextStyle(color: AppColors.error))),
+        error: (err, _) => CustomErrorWidget(error: err),
       ),
       floatingActionButton: talentAsync.whenData((user) => FloatingActionButton.extended(
         onPressed: () => _handleContact(context, ref, user),

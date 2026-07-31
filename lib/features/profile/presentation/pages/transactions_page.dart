@@ -65,12 +65,7 @@ class TransactionsPage extends ConsumerWidget {
             loading: () => const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
             ),
-            error: (error, stack) => SliverFillRemaining(
-              child: CustomErrorWidget(
-                message: 'Unable to load your transactions. Please try again.',
-                onRetry: () => ref.invalidate(transactionsProvider),
-              ),
-            ),
+            error: (error, stack) => SliverFillRemaining(child: CustomErrorWidget(error: error, onRetry: () => ref.invalidate(transactionsProvider))),
             data: (transactions) {
               if (transactions.isEmpty) {
                 return SliverFillRemaining(child: _buildEmptyState(context));

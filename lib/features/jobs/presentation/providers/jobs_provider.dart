@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 // ============================================================================
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import '../../../../core/providers/global_error_provider.dart';
 import '../../data/models/job_model.dart';
 import '../../data/repositories/jobs_repository.dart';
 import '../../../applications/data/models/application_model.dart';
@@ -120,6 +122,21 @@ class MyJobsNotifier extends StateNotifier<AsyncValue<List<JobModel>>> {
       final response = await repository.getMyJobs();
       state = AsyncValue.data(response.items);
     } catch (e, stack) {
+      if (e is DioException) {
+        final isConnectionError = e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.sendTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionError ||
+            e.type == DioExceptionType.unknown;
+
+        if (isConnectionError) {
+          debugPrint('🚨 [myJobsProvider] Critical connection failure — triggering global overlay');
+          ref.read(globalCriticalErrorProvider.notifier).state = CriticalError(
+            message: 'Unable to connect to the server. Please check your internet connection.',
+            onRetry: () => ref.read(myJobsProvider.notifier).loadJobs(),
+          );
+        }
+      }
       state = AsyncValue.error(e, stack);
     }
   }
@@ -193,8 +210,27 @@ final applicationStatsProvider = FutureProvider<Map<String, int>>((ref) async {
 
 // Featured jobs provider
 final featuredJobsProvider = FutureProvider<List<JobModel>>((ref) async {
-  final repository = ref.read(jobsRepositoryProvider);
-  return await repository.getFeaturedJobs();
+  try {
+    final repository = ref.read(jobsRepositoryProvider);
+    return await repository.getFeaturedJobs();
+  } catch (e) {
+    if (e is DioException) {
+      final isConnectionError = e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.unknown;
+
+      if (isConnectionError) {
+        debugPrint('🚨 [featuredJobsProvider] Critical connection failure — triggering global overlay');
+        ref.read(globalCriticalErrorProvider.notifier).state = CriticalError(
+          message: 'Unable to connect to the server. Please check your internet connection.',
+          onRetry: () => ref.invalidateSelf(),
+        );
+      }
+    }
+    rethrow;
+  }
 });
 
 // ============================================================================

@@ -1,6 +1,9 @@
 // lib/features/marketplace/domain/notifiers/paginated_products_notifier.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
+import '../../../../core/providers/global_error_provider.dart';
 import '../../data/models/product_model.dart';
 import '../../data/repositories/marketplace_repository.dart';
 import '../providers/products_state.dart';
@@ -33,6 +36,21 @@ class PaginatedProductsNotifier extends AsyncNotifier<ProductsState> {
       );
     } catch (e, st) {
       AppLogger.error('Failed to load initial products', error: e, stackTrace: st);
+      if (e is DioException) {
+        final isConnectionError = e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.sendTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionError ||
+            e.type == DioExceptionType.unknown;
+
+        if (isConnectionError) {
+          debugPrint('🚨 [paginatedProductsProvider] Critical connection failure — triggering global overlay');
+          ref.read(globalCriticalErrorProvider.notifier).state = CriticalError(
+            message: 'Unable to connect to the server. Please check your internet connection.',
+            onRetry: () => ref.read(paginatedProductsProvider.notifier).refresh(),
+          );
+        }
+      }
       rethrow;
     }
   }

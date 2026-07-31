@@ -1,6 +1,8 @@
 // lib/features/applications/presentation/pages/applications_page.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -116,28 +118,7 @@ class ApplicationsPage extends ConsumerWidget {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                error: (error, stack) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, color: AppColors.error, size: 48),
-                      const SizedBox(height: AppSpacing.md),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-                        child: Text(
-                          'Error: $error',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: AppColors.error),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      TextButton(
-                        onPressed: () => ref.invalidate(myApplicationsProvider),
-                        child: const Text('Retry', style: TextStyle(color: AppColors.primary)),
-                      ),
-                    ],
-                  ),
-                ),
+                error: (error, stack) => CustomErrorWidget(error: error, onRetry: () => ref.invalidate(myApplicationsProvider)),
               ),
             ),
           ),
@@ -220,22 +201,7 @@ class ApplicationsPage extends ConsumerWidget {
           ),
         ),
       ),
-      error: (err, stack) => Padding(
-        padding: const EdgeInsets.only(top: AppSpacing.sm),
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton.tonalIcon(
-            onPressed: () => _showRatingDialog(context, ref, application),
-            icon: const Icon(Icons.star_outline, size: 18),
-            label: const Text('Rate Employer'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.accent.withValues(alpha: 0.1),
-              foregroundColor: AppColors.accent,
-              shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
-            ),
-          ),
-        ),
-      ),
+      error: (err, stack) => CustomErrorWidget(error: err),
     );
   }
 

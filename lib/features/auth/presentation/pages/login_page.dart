@@ -444,8 +444,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Hero Logo
-                      Hero(
-                        tag: 'app_icon',
+                      Center(
+                        child: Hero(
+                          tag: 'app_icon',
                         child: Container(
                           width: 120,
                           height: 120,
@@ -478,6 +479,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             ),
                           ),
                         ),
+                      ),
                       ),
                       const SizedBox(height: AppSpacing.xl),
 

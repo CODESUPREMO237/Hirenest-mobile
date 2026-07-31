@@ -10,7 +10,9 @@ class ErrorHandler {
         case DioExceptionType.connectionTimeout:
         case DioExceptionType.sendTimeout:
         case DioExceptionType.receiveTimeout:
-          return 'Please check your internet connection and try again.';
+        case DioExceptionType.connectionError:
+        case DioExceptionType.unknown:
+          return 'Unable to connect to the server. Please check your internet connection.';
         case DioExceptionType.badResponse:
           // Try to extract the backend's provided message
           final data = error.response?.data;
@@ -18,17 +20,15 @@ class ErrorHandler {
             return data['message'].toString();
           }
           return 'Something went wrong on our end. Please try again later.';
-        case DioExceptionType.connectionError:
-          return 'Unable to connect to the server. Please check your internet connection.';
         case DioExceptionType.cancel:
           return 'Request was cancelled.';
         default:
-          return 'An unexpected error occurred. Please try again.';
+          return 'Unable to connect to the server. Please check your internet connection.';
       }
     }
     
     // For any other unexpected Dart errors
     AppLogger.error('Unexpected App Error', error: error);
-    return 'An unexpected error occurred. Please try again.';
+    return 'Unable to connect to the server. Please check your internet connection.';
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/error_widget.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -136,28 +138,7 @@ class MyJobsPage extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-                const SizedBox(height: AppSpacing.md),
-                Text('Error: $error', style: const TextStyle(color: AppColors.textSecondaryLight)),
-                const SizedBox(height: AppSpacing.md),
-                ElevatedButton(
-                  onPressed: () {
-                    ref.read(myJobsProvider.notifier).loadJobs();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.white,
-                    shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
-                  ),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
+          error: (error, stack) => CustomErrorWidget(error: error),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(

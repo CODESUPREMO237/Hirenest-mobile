@@ -354,12 +354,7 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
                 loading: () => const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator()),
                 ),
-                error: (error, stack) => SliverFillRemaining(
-                  child: CustomErrorWidget(
-                    message: error.toString(),
-                    onRetry: () => ref.invalidate(paginatedProductsProvider),
-                  ),
-                ),
+                error: (error, stack) => SliverFillRemaining(child: CustomErrorWidget(error: error, onRetry: () => ref.invalidate(paginatedProductsProvider))),
               ),
             ],
           ),

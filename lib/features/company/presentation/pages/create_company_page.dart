@@ -91,7 +91,7 @@ class _CreateCompanyPageState extends ConsumerState<CreateCompanyPage> {
         'companySize': _selectedCompanySize,
         'website': _websiteController.text,
         'email': _emailController.text,
-        'contactPhone': _phoneController.text,
+        'phone': _phoneController.text,
       };
 
       final formData = FormData.fromMap(data);

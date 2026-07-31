@@ -28,7 +28,7 @@ class CustomErrorWidget extends StatelessWidget {
     
     final displayMessage = error != null 
         ? ErrorHandler.getUserFacingMessage(error)
-        : (message ?? 'An unexpected error occurred.');
+        : (message ?? 'Unable to connect to the server. Please check your internet connection.');
 
     return Center(
       child: SingleChildScrollView(
